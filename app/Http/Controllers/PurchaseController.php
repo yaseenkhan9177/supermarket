@@ -7,6 +7,9 @@ use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Item;
 use App\Models\Supplier;
+use App\Models\Batch;
+use App\Models\SupplierLedger;
+use App\Models\Account;
 use Illuminate\Support\Facades\DB;
 
 class PurchaseController extends Controller
@@ -79,21 +82,61 @@ class PurchaseController extends Controller
                             'total' => $line_total
                         ]);
 
-                        // 3. INCREMENT Stock 
+                        // 3. INCREMENT Stock & Update Cost
                         $item->increment('on_hand', $row['qty']);
+                        
+                        // Update Master Item Cost Price
+                        if ($row['rate'] > 0) {
+                            $item->update(['cost_rate' => $row['rate']]);
+                        }
+
+                        // 4. CREATE FIFO Batch
+                        Batch::create([
+                            'item_id' => $row['item_id'],
+                            'batch_no' => !empty($row['batch_no']) ? $row['batch_no'] : 'B-' . date('Ymd') . '-' . mt_rand(1000, 9999),
+                            'quantity_available' => $row['qty'],
+                            'sale_price' => $item->sale_rate ?? 0,
+                            'cost_price' => $row['rate'],
+                            'received_at' => $request->purchase_date ?? now(),
+                            'expires_at' => !empty($row['expiry_date']) ? $row['expiry_date'] : null,
+                        ]);
                     }
                 }
 
-                // 4. Update Header Totals
+                // 5. Update Header Totals
                 $net_total = $subtotal + ($request->tax_amount ?? 0) - ($request->discount ?? 0);
                 $purchase->update([
                     'subtotal' => $subtotal,
                     'net_total' => $net_total
                 ]);
 
-                // 5. Update Supplier Balance if Credit
+                // 6. Update Accounting & Ledger
                 if ($paymentType === 'Credit') {
-                    Supplier::where('id', $request->supplier_id)->increment('balance', $net_total);
+                    $supplier = Supplier::find($request->supplier_id);
+                    if ($supplier) {
+                        $supplier->increment('balance', $net_total);
+                        
+                        // Create Supplier Ledger Entry
+                        SupplierLedger::create([
+                            'supplier_id' => $supplier->id,
+                            'date' => $request->purchase_date ?? now(),
+                            'reference_type' => 'Purchase',
+                            'reference_id' => $purchase->id,
+                            'description' => 'Purchase Inv: ' . $purchase->purchase_no,
+                            'debit' => 0,
+                            'credit' => $net_total,
+                            'balance' => $supplier->fresh()->balance
+                        ]);
+                    }
+                } else {
+                    // Paid immediately via Account
+                    if ($paidFrom) {
+                        $account = Account::find($paidFrom);
+                        if ($account) {
+                            $account->decrement('current_balance', $net_total);
+                            // NOTE: If General Ledger tracking is fully implemented, a GLEntry could also be recorded here.
+                        }
+                    }
                 }
             });
 
