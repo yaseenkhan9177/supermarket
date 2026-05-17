@@ -17,3 +17,16 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+
+# Local debug, logs, backups and temporary files
+/vendor.zip
+/error_log*.txt
+/error_log.txt
+/debug_*.php
+/check_*.php
+/test_*.php
+/tmp_*.php
+/drop_*.php
+/verify_*.php
+/restart_apache.bat
+/public/phpinfo.php

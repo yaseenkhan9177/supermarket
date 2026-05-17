@@ -1,0 +1,1163 @@
+ @extends('layouts.admin')
+
+ @section('content')
+ <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pb-32" x-data="debitSaleInvoice()" @keydown.window="handleGlobalKeys($event)" x-init="init()">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+         <!-- TOP SEARCH BAR (STICKY) -->
+         <div class="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-blue-200 shadow-lg mb-6 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+             <div class="py-4 lg:py-5">
+                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                     <h3 class="text-gray-900 font-bold text-lg flex items-center gap-2">
+                         <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                             <i class="fas fa-search text-white"></i>
+                         </div>
+                         Quick Item Search
+                     </h3>
+                     <div class="hidden md:flex gap-2 text-xs">
+                         <span class="px-2 py-1 bg-blue-100 border border-blue-300 rounded-lg text-blue-700 font-mono font-bold">Enter</span>
+                         <span class="text-gray-600">Add Item</span>
+                         <span class="mx-2 text-gray-300">|</span>
+                         <span class="px-2 py-1 bg-green-100 border border-green-300 rounded-lg text-green-700 font-mono font-bold">Enter (Empty)</span>
+                         <span class="text-gray-600">Jump to Payment</span>
+                     </div>
+                 </div>
+                 <div class="relative group">
+                     <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                         <svg class="w-6 h-6 text-gray-400 group-focus-within:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                         </svg>
+                     </div>
+                     <input type="text"
+                         id="item-search"
+                         x-ref="searchInput"
+                         x-model="searchQuery"
+                         @input.debounce.200ms="performSearch()"
+                         @keydown.down.prevent="highlightNext()"
+                         @keydown.up.prevent="highlightPrev()"
+                         @keydown.enter.prevent="handleSearchEnter()"
+                         @keydown.esc="clearSearch()"
+                         placeholder="🔍 Scan Barcode or Type Item Name..."
+                         class="w-full bg-white border-2 border-gray-200 rounded-2xl pl-14 pr-12 py-4 text-gray-900 text-lg font-medium focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none placeholder-gray-400 shadow-sm hover:shadow-md transition-all">
+                     <button
+                         x-show="searchQuery.length > 0"
+                         @click="clearSearch()"
+                         class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-900 transition">
+                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                         </svg>
+                     </button>
+                 </div>
+
+                 <!-- SEARCH RESULTS DROPDOWN -->
+                 <div x-show="searchResults.length > 0"
+                     @click.outside="searchResults = []"
+                     class="mt-4 bg-white border-2 border-blue-200 rounded-2xl shadow-2xl max-h-96 overflow-y-auto"
+                     style="display: none;">
+                     <template x-for="(item, index) in searchResults" :key="item.id">
+                         <div class="p-4 flex justify-between items-center transition-all border-b border-gray-100 last:border-0"
+                             :class="{
+                                'bg-gradient-to-r from-blue-500 to-purple-600 text-white': activeSearchIndex === index && item.stock_qty > 0,
+                                'hover:bg-blue-50': activeSearchIndex !== index && item.stock_qty > 0,
+                                'bg-gray-50 opacity-60': item.stock_qty <= 0 && activeSearchIndex !== index,
+                                'bg-red-100 text-red-900': item.stock_qty <= 0 && activeSearchIndex === index,
+                                'cursor-pointer': item.stock_qty > 0,
+                                'cursor-default': item.stock_qty <= 0
+                            }">
+                             <div @click="item.stock_qty > 0 ? selectItem(item) : null" class="flex-1">
+                                 <div class="font-bold flex items-center gap-2">
+                                     <span x-text="item.name"></span>
+                                     <span x-show="item.stock_qty > 0 && item.stock_qty <= 5" class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-yellow-100 text-yellow-700 border border-yellow-300">LOW STOCK</span>
+                                     <span x-show="item.stock_qty <= 0" class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-red-100 text-red-700 border border-red-300">OUT OF STOCK</span>
+                                 </div>
+                                 <div class="text-xs opacity-70 mt-1">
+                                     Code: <span class="font-mono" x-text="item.code"></span> |
+                                     Stock: <span :class="{'text-red-600 font-bold': item.stock_qty <= 0, 'text-green-600 font-bold': item.stock_qty > 0}" x-text="item.stock_qty"></span>
+                                 </div>
+                             </div>
+                             <div class="text-right flex items-center gap-3">
+                                 <div class="font-mono font-bold text-lg" x-text="'Rs. ' + parseFloat(item.price).toFixed(2)"></div>
+                                 <!-- Stock Update Button (only for out of stock items) -->
+                                 <button x-show="item.stock_qty <= 0"
+                                     @click.stop="openStockUpdate(item)"
+                                     type="button"
+                                     class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm"
+                                     :class="activeSearchIndex === index ? 'bg-white text-red-600 hover:bg-red-50' : 'bg-red-500 text-white hover:bg-red-600'">
+                                     <i class="fas fa-box-open mr-1"></i>Update Stock
+                                 </button>
+                             </div>
+                         </div>
+                     </template>
+                 </div>
+
+                 <!-- PENDING ITEM (Selected but not added yet) -->
+                 <div x-show="pendingItem" class="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-2xl p-5 shadow-lg" style="display: none;">
+                     <div class="flex items-center justify-between mb-4">
+                         <h4 class="text-gray-900 font-bold flex items-center gap-2">
+                             <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                                 <i class="fas fa-box text-white text-sm"></i>
+                             </div>
+                             <span>Configure Item</span>
+                         </h4>
+                         <button @click="cancelPendingItem()" class="text-gray-500 hover:text-red-600 transition">
+                             <i class="fas fa-times-circle text-xl"></i>
+                         </button>
+                     </div>
+
+                     <div x-show="pendingItem" class="space-y-3">
+                         <div class="bg-white rounded-xl p-3 border border-green-200">
+                             <div class="font-bold text-gray-900" x-text="pendingItem.name"></div>
+                             <div class="text-xs text-gray-600 mt-1">
+                                 Code: <span class="font-mono" x-text="pendingItem.code"></span> |
+                                 Stock: <span class="text-green-600 font-bold" x-text="pendingItem.stock_qty"></span>
+                             </div>
+                         </div>
+
+                         <div class="grid grid-cols-3 gap-3">
+                             <div>
+                                 <label class="text-xs text-gray-700 font-bold mb-1 block">Quantity *</label>
+                                 <input type="number"
+                                     x-ref="pendingQty"
+                                     x-model="pendingQty"
+                                     min="1"
+                                     :max="pendingItem.stock_qty"
+                                     @keydown.enter="focusPendingRate()"
+                                     class="w-full bg-white border-2 border-gray-200 rounded-lg p-2.5 text-center text-gray-900 font-bold focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all">
+                             </div>
+                             <div>
+                                 <label class="text-xs text-gray-700 font-bold mb-1 block">Rate *</label>
+                                 <input type="number"
+                                     x-ref="pendingRate"
+                                     x-model="pendingRate"
+                                     min="0"
+                                     step="0.01"
+                                     @keydown.enter="focusPendingDiscount()"
+                                     class="w-full bg-white border-2 border-gray-200 rounded-lg p-2.5 text-right text-gray-900 font-mono focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+                             </div>
+                             <div>
+                                 <label class="text-xs text-gray-700 font-bold mb-1 block">Disc %</label>
+                                 <input type="number"
+                                     x-ref="pendingDiscount"
+                                     x-model="pendingDiscount"
+                                     min="0"
+                                     max="100"
+                                     step="0.1"
+                                     @keydown.enter="focusAddButton()"
+                                     placeholder="0"
+                                     class="w-full bg-white border-2 border-gray-200 rounded-lg p-2.5 text-center text-gray-900 font-mono focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all">
+                             </div>
+                         </div>
+
+                         <div class="text-right text-sm text-gray-600">
+                             Subtotal: <span class="font-bold text-gray-900" x-text="'Rs. ' + (pendingQty * pendingRate).toFixed(2)"></span>
+                             <span x-show="pendingDiscount > 0" class="text-red-600">
+                                 - <span x-text="pendingDiscount + '%'"></span> =
+                                 <span class="font-bold" x-text="'Rs. ' + ((pendingQty * pendingRate) - ((pendingQty * pendingRate) * (pendingDiscount / 100))).toFixed(2)"></span>
+                             </span>
+                         </div>
+
+                         <button
+                             x-ref="addButton"
+                             @click="confirmAddItem()"
+                             @keydown.enter="confirmAddItem()"
+                             class="w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2">
+                             <i class="fas fa-plus-circle"></i> Add to Cart
+                         </button>
+                     </div>
+                 </div>
+             </div>
+         </div>
+
+         <!-- TWO-COLUMN LAYOUT: Customer/Invoice & Payment/Summary -->
+         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6">
+
+             <!-- LEFT: Customer & Invoice Details -->
+             <div class="space-y-4">
+                 <!-- Customer Card -->
+                 <div class="bg-white rounded-2xl p-5 lg:p-6 border border-red-200 shadow-lg hover:shadow-xl transition-shadow">
+                     <h3 class="text-gray-900 font-bold mb-4 flex items-center gap-2">
+                         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center">
+                             <i class="fas fa-user text-white text-sm"></i>
+                         </div>
+                         Customer (Required)
+                     </h3>
+                     <div class="relative mb-2">
+                         <input type="text"
+                             x-ref="customerInput"
+                             x-model="customerSearchQuery"
+                             @click="showCustomerDropdown = true"
+                             @focus="showCustomerDropdown = true"
+                             @input="filterCustomers()"
+                             @keydown.enter.prevent="handleCustomerEnter()"
+                             @keydown.down.prevent="highlightNextCustomer()"
+                             @keydown.up.prevent="highlightPrevCustomer()"
+                             @keydown.esc="showCustomerDropdown = false"
+                             placeholder="Click or press Enter to select customer..."
+                             class="w-full bg-white border-2 border-gray-200 rounded-xl p-3 text-gray-900 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 outline-none transition-all"
+                             readonly>
+
+                         <!-- Customer Dropdown -->
+                         <div x-show="showCustomerDropdown"
+                             @click.outside="showCustomerDropdown = false"
+                             class="absolute z-50 w-full mt-2 bg-white border-2 border-red-200 rounded-xl shadow-2xl max-h-80 overflow-y-auto"
+                             style="display: none;">
+
+                             <!-- Add New Option -->
+                             <div @click="openAddCustomerModal()"
+                                 @mouseenter="activeCustomerIndex = -1"
+                                 class="p-3 flex items-center gap-3 cursor-pointer transition-all border-b-2 border-red-100"
+                                 :class="activeCustomerIndex === -1 ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white' : 'hover:bg-red-50'">
+                                 <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                                     :class="activeCustomerIndex === -1 ? 'bg-white/20' : 'bg-gradient-to-br from-red-500 to-pink-600'">
+                                     <i class="fas fa-plus" :class="activeCustomerIndex === -1 ? 'text-white' : 'text-white'"></i>
+                                 </div>
+                                 <div>
+                                     <div class="font-bold">Add New Customer</div>
+                                     <div class="text-xs opacity-70">Create a new customer record</div>
+                                 </div>
+                             </div>
+
+                             <!-- Customer List -->
+                             <template x-for="(customer, index) in filteredCustomers" :key="customer.id">
+                                 <div @click="selectCustomer(customer)"
+                                     @mouseenter="activeCustomerIndex = index"
+                                     class="p-3 flex items-center gap-3 cursor-pointer transition-all border-b border-gray-100 last:border-0"
+                                     :class="activeCustomerIndex === index ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white' : 'hover:bg-red-50'">
+                                     <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                                         :class="activeCustomerIndex === index ? 'bg-white/20' : 'bg-gradient-to-br from-gray-400 to-gray-500'">
+                                         <i class="fas fa-user text-white text-sm"></i>
+                                     </div>
+                                     <div class="flex-1">
+                                         <div class="font-bold" x-text="customer.name"></div>
+                                         <div class="text-xs opacity-70" x-text="customer.phone"></div>
+                                     </div>
+                                 </div>
+                             </template>
+
+                             <!-- No Results -->
+                             <div x-show="filteredCustomers.length === 0" class="p-4 text-center text-gray-500">
+                                 <i class="fas fa-search text-2xl mb-2 opacity-50"></i>
+                                 <p class="text-sm">No customers found</p>
+                             </div>
+                         </div>
+                     </div>
+                     <p x-show="!customer_id" class="text-xs text-red-600 mt-1 flex items-center gap-1">
+                         <i class="fas fa-exclamation-circle"></i> Required for Debit sales
+                     </p>
+                 </div>
+
+                 <!-- Invoice Details Card -->
+                 <div class="bg-white rounded-2xl p-5 lg:p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-shadow">
+                     <h3 class="text-gray-900 font-bold mb-4 flex items-center gap-2">
+                         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                             <i class="fas fa-file-invoice text-white text-sm"></i>
+                         </div>
+                         Invoice Details
+                     </h3>
+                     <div class="grid grid-cols-2 gap-3">
+                         <div>
+                             <label class="text-xs text-gray-600 font-bold uppercase mb-1 block">Inv No</label>
+                             <input type="text" x-model="invoice_no" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-gray-900 font-mono text-sm" readonly>
+                         </div>
+                         <div>
+                             <label class="text-xs text-gray-600 font-bold uppercase mb-1 block">Date</label>
+                             <input type="date" x-model="date" class="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-gray-900 text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none">
+                         </div>
+                     </div>
+                 </div>
+             </div>
+
+             <!-- RIGHT: Payment & Summary -->
+             <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-5 lg:p-6 border-2 border-green-200 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden">
+                 <div class="absolute -top-20 -right-20 w-40 h-40 bg-green-400/10 rounded-full blur-3xl"></div>
+                 <h3 class="text-gray-900 font-bold mb-4 flex items-center gap-2 relative z-10">
+                     <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                         <i class="fas fa-cash-register text-white text-sm"></i>
+                     </div>
+                     Payment & Summary
+                 </h3>
+
+                 <div class="relative z-10 space-y-4">
+                     <div class="flex justify-between items-end pb-4 border-b-2 border-green-200">
+                         <span class="text-sm text-gray-600 font-bold uppercase">Total Bill</span>
+                         <span class="text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight" x-text="'Rs. ' + netTotal"></span>
+                     </div>
+
+                     <div>
+                         <label class="text-xs text-gray-600 font-bold uppercase mb-2 block">Amount Paid</label>
+                         <div class="flex gap-2 mb-3">
+                             <div class="relative flex-1">
+                                 <span class="absolute left-4 top-3.5 text-gray-500 font-bold">Rs.</span>
+                                 <input type="number"
+                                     id="paid-amount"
+                                     x-ref="paidInput"
+                                     x-model="received_amount"
+                                     @keydown.enter="saveInvoice()"
+                                     placeholder="0"
+                                     class="w-full bg-white border-2 border-gray-200 rounded-xl pl-12 pr-3 py-3 text-gray-900 text-xl font-bold focus:border-green-500 focus:ring-4 focus:ring-green-500/20 outline-none transition-all shadow-sm">
+                             </div>
+                             <button type="button" @click="received_amount = 0" class="px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 font-bold rounded-xl transition border-2 border-gray-200">
+                                 Zero
+                             </button>
+                         </div>
+
+                         <!-- Quick Amount Buttons -->
+                         <div class="grid grid-cols-3 gap-2">
+                             <button type="button" @click="received_amount = parseFloat(netTotal)" class="px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-sm font-bold rounded-lg transition-all shadow-sm">
+                                 <i class="fas fa-check-circle mr-1"></i>Exact
+                             </button>
+                             <button type="button" @click="received_amount = (parseFloat(netTotal) / 2).toFixed(2)" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-all shadow-sm">
+                                 Half
+                             </button>
+                             <button type="button" @click="received_amount = 500" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-lg transition-all border border-gray-300">
+                                 500
+                             </button>
+                             <button type="button" @click="received_amount = 1000" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-lg transition-all border border-gray-300">
+                                 1000
+                             </button>
+                             <button type="button" @click="received_amount = 2000" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-lg transition-all border border-gray-300">
+                                 2000
+                             </button>
+                             <button type="button" @click="received_amount = 5000" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-lg transition-all border border-gray-300">
+                                 5000
+                             </button>
+                         </div>
+                     </div>
+
+                     <div class="flex justify-between items-center p-4 bg-gradient-to-r from-red-50 to-pink-50 rounded-xl border-2 border-red-200">
+                         <span class="text-sm text-red-700 font-bold uppercase">Balance Due</span>
+                         <span class="font-mono font-bold text-2xl text-red-600" x-text="'Rs. ' + (netTotal - received_amount).toFixed(2)"></span>
+                     </div>
+                 </div>
+             </div>
+         </div>
+
+         <!-- ITEMS TABLE -->
+         <div class="bg-white rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition-shadow mb-6 overflow-hidden">
+             <div class="overflow-x-auto">
+                 <table class="w-full text-left text-sm min-w-[600px]">
+                     <thead class="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                         <tr>
+                             <th class="p-4 w-12 text-center text-gray-700 font-bold">#</th>
+                             <th class="p-4 w-32 text-gray-700 font-bold">Code</th>
+                             <th class="p-4 text-gray-700 font-bold">Item Name</th>
+                             <th class="p-4 w-20 text-center text-gray-700 font-bold">Qty</th>
+                             <th class="p-4 w-28 text-right text-gray-700 font-bold">Rate</th>
+                             <th class="p-4 w-24 text-center text-gray-700 font-bold">Disc%</th>
+                             <th class="p-4 w-28 text-right text-gray-700 font-bold">Total</th>
+                             <th class="p-4 w-12 text-center text-gray-700 font-bold"></th>
+                         </tr>
+                     </thead>
+                     <tbody class="divide-y divide-gray-100">
+                         <template x-for="(row, index) in rows" :key="index">
+                             <tr class="hover:bg-blue-50 transition-colors">
+                                 <td class="p-4 text-center text-gray-500 font-medium" x-text="index + 1"></td>
+                                 <td class="p-4 font-mono text-gray-700 text-xs" x-text="row.code"></td>
+                                 <td class="p-4">
+                                     <div class="flex flex-col">
+                                         <span class="text-gray-900 font-bold" x-text="row.name"></span>
+                                         <span class="text-xs text-gray-500 mt-0.5">
+                                             Stock: <span class="text-orange-600 font-mono font-bold" x-text="row.stock"></span>
+                                         </span>
+                                     </div>
+                                 </td>
+                                 <td class="p-4">
+                                     <input type="number" x-model="row.qty" min="1" @keydown.enter="focusDiscount(index)" class="w-full bg-white border-2 border-gray-200 rounded-lg p-2 text-center text-gray-900 font-bold focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all">
+                                 </td>
+                                 <td class="p-4 text-right">
+                                     <input type="number" x-model="row.price" min="0" step="0.01" @keydown.enter="focusDiscountFromPrice(index)" class="w-full bg-white border-2 border-gray-200 rounded-lg p-2 text-right text-gray-900 font-mono focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all">
+                                 </td>
+                                 <td class="p-4 text-center">
+                                     <input type="number" x-model="row.discount" min="0" max="100" step="0.1" @keydown.enter="focusSearch()" placeholder="0" class="w-full bg-white border-2 border-gray-200 rounded-lg p-2 text-center text-gray-900 font-mono focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all">
+                                 </td>
+                                 <td class="p-4 text-right font-bold text-gray-900 font-mono" x-text="getRowTotal(row).toFixed(2)"></td>
+                                 <td class="p-4 text-center">
+                                     <button type="button" @click="removeRow(index)" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition">
+                                         <i class="fas fa-trash-alt"></i>
+                                     </button>
+                                 </td>
+                             </tr>
+                         </template>
+                         <tr x-show="rows.length === 0">
+                             <td colspan="7" class="p-8 text-center text-gray-400">
+                                 <i class="fas fa-inbox text-4xl mb-2 opacity-50"></i>
+                                 <p class="font-medium">No items added yet. Search and add items above.</p>
+                             </td>
+                         </tr>
+                     </tbody>
+                 </table>
+             </div>
+         </div>
+
+         <!-- Keyboard Shortcuts Legend -->
+         <div class="bg-white rounded-2xl border border-gray-200 p-4 mb-6 shadow-sm">
+             <div class="flex items-center justify-between flex-wrap gap-3">
+                 <h4 class="text-gray-600 font-bold text-xs uppercase flex items-center gap-2">
+                     <i class="fas fa-keyboard text-blue-500"></i> Keyboard Shortcuts
+                 </h4>
+                 <div class="flex flex-wrap gap-3 text-xs">
+                     <span class="text-gray-600"><kbd class="px-2 py-1 bg-gray-100 rounded border border-gray-300 text-gray-700 font-mono">Alt+S</kbd> Focus Search</span>
+                     <span class="text-gray-600"><kbd class="px-2 py-1 bg-gray-100 rounded border border-gray-300 text-gray-700 font-mono">F2</kbd> Jump to Payment</span>
+                     <span class="text-gray-600"><kbd class="px-2 py-1 bg-gray-100 rounded border border-gray-300 text-gray-700 font-mono">Ctrl+Enter</kbd> Save Sale</span>
+                     <span class="text-gray-600"><kbd class="px-2 py-1 bg-gray-100 rounded border border-gray-300 text-gray-700 font-mono">Backspace</kbd> Go Back</span>
+                     <span class="text-gray-600"><kbd class="px-2 py-1 bg-gray-100 rounded border border-gray-300 text-gray-700 font-mono">Esc</kbd> Clear Search</span>
+                     <span class="text-gray-600"><kbd class="px-2 py-1 bg-gray-100 rounded border border-gray-300 text-gray-700 font-mono">Alt+Q</kbd> Edit Last Qty</span>
+                 </div>
+             </div>
+         </div>
+
+         <!-- Sticky Footer Actions -->
+         <div class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t-2 border-gray-200 p-4 z-40 shadow-2xl">
+             <div class="max-w-7xl mx-auto flex justify-end gap-3">
+                 <button type="button" @click="window.location.href='/admin/dashboard'" class="px-4 lg:px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-bold hover:bg-gray-50 text-sm lg:text-base transition-all">
+                     <i class="fas fa-times mr-2"></i>Cancel
+                 </button>
+                 <button type="button" @click="saveInvoice()" class="px-6 lg:px-8 py-3 rounded-xl bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-bold shadow-lg hover:shadow-xl flex items-center gap-2 transform active:scale-95 transition-all text-sm lg:text-base">
+                     <i class="fas fa-save"></i>
+                     <span class="hidden lg:inline">Confirm Debit Sale</span>
+                     <span class="lg:hidden">Save</span>
+                     <span class="text-xs opacity-90">(Ctrl+Enter)</span>
+                 </button>
+             </div>
+         </div>
+
+         <!-- Add Customer Modal -->
+         <div x-show="showAddCustomer" @keydown.esc.window="showAddCustomer && closeAddCustomer()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" style="display: none;">
+             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+                 <div class="bg-gradient-to-r from-red-500 to-pink-600 p-5 rounded-t-2xl">
+                     <div class="flex items-center justify-between">
+                         <h2 class="text-white font-bold text-lg flex items-center gap-2">
+                             <i class="fas fa-user-plus"></i> Add New Customer
+                         </h2>
+                         <button type="button" @click="closeAddCustomer()" class="text-white/80 hover:text-white transition">
+                             <i class="fas fa-times text-xl"></i>
+                         </button>
+                     </div>
+                 </div>
+                 <div class="p-6 space-y-4">
+                     <div>
+                         <label class="text-gray-700 text-sm font-bold mb-2 block">Customer Name *</label>
+                         <input type="text" x-ref="newCustomerName" x-model="newCustomer.name" @keydown.enter="saveNewCustomer()" class="w-full bg-white border-2 border-gray-200 rounded-xl p-3 text-gray-900 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 outline-none transition-all" placeholder="Enter customer name">
+                     </div>
+                     <div>
+                         <label class="text-gray-700 text-sm font-bold mb-2 block">Phone Number *</label>
+                         <input type="text" x-model="newCustomer.phone" @keydown.enter="saveNewCustomer()" class="w-full bg-white border-2 border-gray-200 rounded-xl p-3 text-gray-900 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 outline-none transition-all" placeholder="03XX-XXXXXXX">
+                     </div>
+                     <div>
+                         <label class="text-gray-700 text-sm font-bold mb-2 block">Address (Optional)</label>
+                         <textarea x-model="newCustomer.address" rows="2" class="w-full bg-white border-2 border-gray-200 rounded-xl p-3 text-gray-900 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 outline-none transition-all resize-none" placeholder="Enter address"></textarea>
+                     </div>
+                 </div>
+                 <div class="p-4 bg-gray-50 rounded-b-2xl flex gap-3">
+                     <button type="button" @click="closeAddCustomer()" class="flex-1 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-bold hover:bg-white transition">
+                         Cancel
+                     </button>
+                     <button type="button" @click="saveNewCustomer()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-bold transition flex items-center justify-center gap-2 shadow-lg">
+                         <i class="fas fa-save"></i> Save Customer
+                     </button>
+                 </div>
+             </div>
+         </div>
+
+         <!-- Success Modal -->
+         <div x-show="showSuccess"
+             @keydown.window.arrow-left="showSuccess && moveFocus(-1)"
+             @keydown.window.arrow-right="showSuccess && moveFocus(1)"
+             @keydown.window.enter="showSuccess && activateButton()"
+             class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+             style="display: none;"
+             x-data="{
+                  focusedButton: 0,
+                  moveFocus(direction) {
+                      this.focusedButton = (this.focusedButton + direction + 3) % 3;
+                  },
+                  activateButton() {
+                      if (this.focusedButton === 0) this.printReceipt();
+                      else if (this.focusedButton === 1) this.editDebitSale();
+                      else if (this.focusedButton === 2) this.resetForm();
+                  },
+                  printReceipt() {
+                      if (lastSaleId) window.open(`/debit-sales/${lastSaleId}/print`, '_blank', 'width=400,height=600');
+                  },
+                  editDebitSale() {
+                      if (lastSaleId) window.location.href = `/debit-sales/${lastSaleId}/edit`;
+                  },
+                  resetForm() {
+                      window.location.reload();
+                  }
+              }">
+             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col max-h-[90vh]">
+                 <div class="bg-gradient-to-r from-green-500 to-emerald-600 p-5 text-center rounded-t-2xl">
+                     <h2 class="text-white font-bold text-lg"><i class="fas fa-check-circle mr-2"></i>Sale Saved</h2>
+                 </div>
+                 <div class="p-4 bg-gray-50 overflow-y-auto flex-1 flex justify-center">
+                     <div class="bg-white p-2 shadow-sm w-[300px] text-black" x-html="receiptHtml"></div>
+                 </div>
+                 <div class="p-4 bg-white border-t border-gray-200 rounded-b-2xl">
+                     <!-- Keyboard hint -->
+                     <div class="text-center text-xs text-gray-500 mb-3">
+                         <kbd class="px-2 py-1 bg-gray-100 rounded border border-gray-300 text-gray-700 font-mono">←</kbd>
+                         <kbd class="px-2 py-1 bg-gray-100 rounded border border-gray-300 text-gray-700 font-mono">→</kbd>
+                         Navigate |
+                         <kbd class="px-2 py-1 bg-gray-100 rounded border border-gray-300 text-gray-700 font-mono">Enter</kbd>
+                         Select
+                     </div>
+
+                     <div class="flex gap-3">
+                         <!-- Print Button with Gradient -->
+                         <button type="button"
+                             @click="printReceipt()"
+                             class="flex-1 py-3 rounded-xl text-white font-bold shadow-lg transition-all duration-300 relative overflow-hidden group"
+                             :class="focusedButton === 0 ? 'ring-4 ring-blue-300' : ''">
+                             <div class="absolute inset-0 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-600 transition-all duration-300"></div>
+                             <span class="relative z-10"><i class="fas fa-print mr-2"></i>Print</span>
+                         </button>
+
+                         <!-- Edit Button with Gradient -->
+                         <button type="button"
+                             @click="editDebitSale()"
+                             class="flex-1 py-3 rounded-xl text-white font-bold shadow-lg transition-all duration-300 relative overflow-hidden group"
+                             :class="focusedButton === 1 ? 'ring-4 ring-orange-300' : ''">
+                             <div class="absolute inset-0 bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 group-hover:from-orange-600 group-hover:via-red-600 group-hover:to-pink-600 transition-all duration-300"></div>
+                             <span class="relative z-10"><i class="fas fa-edit mr-2"></i>Edit</span>
+                         </button>
+
+                         <!-- New Sale Button with Gradient Border -->
+                         <button type="button"
+                             @click="resetForm()"
+                             class="flex-1 py-3 rounded-xl font-bold shadow-lg transition-all duration-300 relative overflow-hidden group"
+                             :class="focusedButton === 2 ? 'ring-4 ring-emerald-300' : ''">
+                             <div class="absolute inset-0 bg-gradient-to-r from-gray-50 via-white to-gray-100 group-hover:from-emerald-50 group-hover:via-green-50 group-hover:to-teal-50 transition-all duration-300"></div>
+                             <div class="absolute inset-0 rounded-xl bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 group-hover:from-green-600 group-hover:via-emerald-600 group-hover:to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style="padding: 2px; -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude;"></div>
+                             <span class="relative z-10 text-gray-700 group-hover:text-emerald-700 transition-colors duration-300"><i class="fas fa-plus mr-2"></i>New Sale</span>
+                         </button>
+                     </div>
+                 </div>
+             </div>
+         </div>
+
+     </div>
+ </div>
+
+ <script>
+     function debitSaleInvoice() {
+         return {
+             customer_id: '',
+             salesman_id: '{{ Auth::id() }}',
+             invoice_no: '{{ $nextInvoice }}',
+             date: new Date().toISOString().slice(0, 10),
+             rows: [],
+             received_amount: '',
+             searchQuery: '',
+             searchResults: [],
+             activeSearchIndex: -1,
+             showSuccess: false,
+             receiptHtml: '',
+             lastSaleId: null,
+             isEditMode: false,
+             editSaleId: null,
+             showAddCustomer: false,
+             newCustomer: {
+                 name: '',
+                 phone: '',
+                 address: ''
+             },
+             // Pending item (selected but not added to cart yet)
+             pendingItem: null,
+             pendingQty: 1,
+             pendingRate: 0,
+             pendingDiscount: 0,
+             // Customer dropdown
+             showCustomerDropdown: false,
+             customerSearchQuery: '',
+             allCustomers: @json($customers),
+             filteredCustomers: [],
+             activeCustomerIndex: -1,
+
+             get netTotal() {
+                 return this.rows.reduce((sum, row) => sum + this.getRowTotal(row), 0).toFixed(2);
+             },
+
+             // Calculate row total with discount
+             getRowTotal(row) {
+                 const subtotal = row.qty * row.price;
+                 const discount = row.discount || 0;
+                 const discountAmount = subtotal * (discount / 100);
+                 return subtotal - discountAmount;
+             },
+
+             init() {
+                 // Initialize filtered customers with all customers
+                 this.filteredCustomers = this.allCustomers;
+
+                 @if(isset($sale))
+                 this.customer_id = {
+                     {
+                         $sale - > customer_id
+                     }
+                 };
+                 this.salesman_id = {
+                     {
+                         $sale - > user_id
+                     }
+                 };
+                 this.customerSearchQuery = '{{ $sale->customer->name ?? "" }}';
+                 this.rows = @json($sale - > items - > map(function($item) {
+                     return [
+                         'id' => $item - > item_id,
+                         'code' => $item - > item - > code ?? '',
+                         'name' => $item - > item_name,
+                         'qty' => $item - > qty,
+                         'price' => $item - > rate,
+                         'stock' => $item - > item - > on_hand ?? 0,
+                         'discount' => 0
+                     ];
+                 }));
+                 this.isEditMode = true;
+                 this.editSaleId = {
+                     {
+                         $sale - > id
+                     }
+                 };
+                 @endif
+
+                 this.$nextTick(() => {
+                     if (this.$refs.customerInput) {
+                         this.$refs.customerInput.focus();
+                     }
+                 });
+             },
+
+             handleSearchEnter() {
+                 // If search is empty
+                 if (this.searchQuery.trim() === '') {
+                     // Check if customer is selected
+                     if (!this.customer_id) {
+                         // Focus customer input
+                         if (this.$refs.customerInput) {
+                             this.$refs.customerInput.focus();
+                             this.showCustomerDropdown = true;
+                         }
+                         return;
+                     }
+                     // Customer selected, jump to payment
+                     if (this.$refs.paidInput) {
+                         this.$refs.paidInput.focus();
+                         this.$refs.paidInput.select();
+                     }
+                     return;
+                 }
+                 // Otherwise, select the highlighted result
+                 this.selectFirstResult();
+             },
+
+             // Handle Enter key on customer input
+             handleCustomerEnter() {
+                 if (!this.showCustomerDropdown) {
+                     this.showCustomerDropdown = true;
+                     this.activeCustomerIndex = -1; // Highlight "Add New"
+                     return;
+                 }
+
+                 // If "Add New" is highlighted (index -1)
+                 if (this.activeCustomerIndex === -1) {
+                     this.openAddCustomerModal();
+                 } else if (this.activeCustomerIndex >= 0 && this.filteredCustomers[this.activeCustomerIndex]) {
+                     // Select the highlighted customer
+                     this.selectCustomer(this.filteredCustomers[this.activeCustomerIndex]);
+                 } else if (!this.customer_id) {
+                     // No selection, open Add Customer modal
+                     this.openAddCustomerModal();
+                 } else {
+                     // Customer already selected, go to search
+                     this.showCustomerDropdown = false;
+                     this.focusSearch();
+                 }
+             },
+
+             // Customer dropdown methods
+             filterCustomers() {
+                 const query = this.customerSearchQuery.toLowerCase();
+                 if (!query) {
+                     this.filteredCustomers = this.allCustomers;
+                 } else {
+                     this.filteredCustomers = this.allCustomers.filter(c =>
+                         c.name.toLowerCase().includes(query) ||
+                         c.phone.toLowerCase().includes(query)
+                     );
+                 }
+                 this.activeCustomerIndex = -1;
+             },
+
+             selectCustomer(customer) {
+                 this.customer_id = customer.id;
+                 this.customerSearchQuery = `${customer.name} (${customer.phone})`;
+                 this.showCustomerDropdown = false;
+                 this.focusSearch();
+             },
+
+             highlightNextCustomer() {
+                 if (!this.showCustomerDropdown) {
+                     this.showCustomerDropdown = true;
+                     this.activeCustomerIndex = -1;
+                     return;
+                 }
+                 if (this.activeCustomerIndex < this.filteredCustomers.length - 1) {
+                     this.activeCustomerIndex++;
+                 }
+             },
+
+             highlightPrevCustomer() {
+                 if (!this.showCustomerDropdown) {
+                     this.showCustomerDropdown = true;
+                     this.activeCustomerIndex = -1;
+                     return;
+                 }
+                 if (this.activeCustomerIndex > -1) {
+                     this.activeCustomerIndex--;
+                 }
+             },
+
+             openAddCustomerModal() {
+                 this.showCustomerDropdown = false;
+                 this.showAddCustomer = true;
+                 this.$nextTick(() => {
+                     if (this.$refs.newCustomerName) {
+                         this.$refs.newCustomerName.focus();
+                     }
+                 });
+             },
+
+             handleGlobalKeys(event) {
+                 // Backspace: Navigate backwards
+                 if ((event.key === 'Backspace' || (event.ctrlKey && event.key === 'Backspace')) &&
+                     !['INPUT', 'TEXTAREA'].includes(event.target.tagName)) {
+                     event.preventDefault();
+                     // If in payment field, go back to search
+                     if (document.activeElement === this.$refs.paidInput) {
+                         this.focusSearch();
+                     }
+                     // If in search and there are items, go to last item quantity
+                     else if (document.activeElement === this.$refs.searchInput && this.rows.length > 0) {
+                         this.$nextTick(() => {
+                             const qtyInputs = document.querySelectorAll('input[type="number"][x-model="row.qty"]');
+                             const lastQtyInput = qtyInputs[this.rows.length - 1];
+                             if (lastQtyInput) {
+                                 lastQtyInput.focus();
+                                 lastQtyInput.select();
+                             }
+                         });
+                     }
+                     // If in search and no items, go to customer field
+                     else if (document.activeElement === this.$refs.searchInput && this.rows.length === 0) {
+                         if (this.$refs.customerInput) {
+                             this.$refs.customerInput.focus();
+                             this.showCustomerDropdown = true;
+                         }
+                     }
+                 }
+
+                 if (event.altKey && event.key.toLowerCase() === 's') {
+                     event.preventDefault();
+                     this.focusSearch();
+                 }
+                 if (event.key === 'F2') {
+                     event.preventDefault();
+                     if (this.$refs.paidInput) {
+                         this.$refs.paidInput.focus();
+                         this.$refs.paidInput.select();
+                     }
+                 }
+                 if (event.ctrlKey && event.key === 'Enter') {
+                     event.preventDefault();
+                     this.saveInvoice();
+                 }
+                 if (event.altKey && event.key.toLowerCase() === 'q') {
+                     event.preventDefault();
+                     if (this.rows.length > 0) {
+                         this.$nextTick(() => {
+                             const qtyInputs = document.querySelectorAll('input[type="number"][x-model="row.qty"]');
+                             const lastQtyInput = qtyInputs[this.rows.length - 1];
+                             if (lastQtyInput) {
+                                 lastQtyInput.focus();
+                                 lastQtyInput.select();
+                             }
+                         });
+                     }
+                 }
+                 if (event.key === 'Escape' && this.searchResults.length > 0) {
+                     this.clearSearch();
+                 }
+             },
+
+             clearSearch() {
+                 this.searchQuery = '';
+                 this.searchResults = [];
+                 this.activeSearchIndex = -1;
+                 if (this.$refs.searchInput) this.$refs.searchInput.focus();
+             },
+
+             focusSearch() {
+                 this.$nextTick(() => {
+                     if (this.$refs.searchInput) {
+                         this.$refs.searchInput.focus();
+                     }
+                 });
+             },
+
+             focusNextQtyOrSearch(index) {
+                 if (index + 1 < this.rows.length) {
+                     this.$nextTick(() => {
+                         const nextQtyInput = document.querySelectorAll('input[type="number"][x-model="row.qty"]')[index + 1];
+                         if (nextQtyInput) nextQtyInput.focus();
+                     });
+                 } else {
+                     this.focusSearch();
+                 }
+             },
+
+             focusDiscount(index) {
+                 this.$nextTick(() => {
+                     const discountInputs = document.querySelectorAll('input[type="number"][x-model="row.discount"]');
+                     if (discountInputs[index]) {
+                         discountInputs[index].focus();
+                         discountInputs[index].select();
+                     }
+                 });
+             },
+
+             focusDiscountFromPrice(index) {
+                 this.$nextTick(() => {
+                     const discountInputs = document.querySelectorAll('input[type="number"][x-model="row.discount"]');
+                     if (discountInputs[index]) {
+                         discountInputs[index].focus();
+                         discountInputs[index].select();
+                     }
+                 });
+             },
+
+             async performSearch() {
+                 this.activeSearchIndex = -1;
+                 if (this.searchQuery.length < 1) {
+                     this.searchResults = [];
+                     return;
+                 }
+                 try {
+                     let response = await fetch(`/debit-sales/search?q=${this.searchQuery}`);
+                     this.searchResults = await response.json();
+                     // Highlight first result (in-stock or out-of-stock)
+                     if (this.searchResults.length > 0) {
+                         this.activeSearchIndex = 0;
+                     }
+                 } catch (error) {
+                     console.error("Search failed");
+                 }
+             },
+
+             highlightNext() {
+                 if (this.searchResults.length === 0) return;
+                 // Allow highlighting both in-stock and out-of-stock items
+                 if (this.activeSearchIndex < this.searchResults.length - 1) {
+                     this.activeSearchIndex++;
+                 }
+             },
+
+             highlightPrev() {
+                 if (this.searchResults.length === 0) return;
+                 // Allow highlighting both in-stock and out-of-stock items
+                 if (this.activeSearchIndex > 0) {
+                     this.activeSearchIndex--;
+                 } else if (this.activeSearchIndex === -1 && this.searchResults.length > 0) {
+                     this.activeSearchIndex = this.searchResults.length - 1;
+                 }
+             },
+
+             addItem(item) {
+                 // This function is now just for legacy support
+                 // The new flow uses selectItem instead
+                 this.selectItem(item);
+             },
+
+             selectItem(item) {
+                 if (item.stock_qty <= 0) {
+                     alert('Out of Stock!');
+                     return;
+                 }
+
+                 // Load item into pending state
+                 this.pendingItem = item;
+                 this.pendingQty = 1;
+                 this.pendingRate = item.price;
+                 this.pendingDiscount = 0;
+
+                 // Clear search
+                 this.searchQuery = '';
+                 this.searchResults = [];
+                 this.activeSearchIndex = -1;
+
+                 // Focus quantity input
+                 this.$nextTick(() => {
+                     if (this.$refs.pendingQty) {
+                         this.$refs.pendingQty.focus();
+                         this.$refs.pendingQty.select();
+                     }
+                 });
+             },
+
+             confirmAddItem() {
+                 if (!this.pendingItem) return;
+
+                 // Validate
+                 if (this.pendingQty < 1) {
+                     alert('Quantity must be at least 1');
+                     return;
+                 }
+
+                 // Calculate how much of this item is already in the cart
+                 let existing = this.rows.find(r => r.id === this.pendingItem.id);
+                 let qtyInCart = existing ? parseInt(existing.qty) : 0;
+                 let availableStock = this.pendingItem.stock_qty - qtyInCart;
+
+                 // Check if the quantity being added exceeds available stock
+                 if (this.pendingQty > availableStock) {
+                     alert(`Only ${availableStock} left in stock! (${qtyInCart} already in cart)`);
+                     return;
+                 }
+
+                 if (this.pendingRate <= 0) {
+                     alert('Rate must be greater than 0');
+                     return;
+                 }
+
+                 // Check if item already in cart
+                 if (existing) {
+                     // Update existing row
+                     existing.qty = parseInt(existing.qty) + parseInt(this.pendingQty);
+                     // Double-check we don't exceed total stock
+                     if (existing.qty > this.pendingItem.stock_qty) {
+                         existing.qty = this.pendingItem.stock_qty;
+                         alert(`Adjusted to maximum stock: ${this.pendingItem.stock_qty}`);
+                     }
+                 } else {
+                     // Add new row
+                     this.rows.push({
+                         id: this.pendingItem.id,
+                         code: this.pendingItem.code,
+                         name: this.pendingItem.name,
+                         qty: this.pendingQty,
+                         price: this.pendingRate,
+                         stock: this.pendingItem.stock_qty,
+                         discount: this.pendingDiscount
+                     });
+                 }
+
+                 // Clear pending state
+                 this.cancelPendingItem();
+
+                 // Focus search
+                 this.focusSearch();
+             },
+
+             cancelPendingItem() {
+                 this.pendingItem = null;
+                 this.pendingQty = 1;
+                 this.pendingRate = 0;
+                 this.pendingDiscount = 0;
+                 this.focusSearch();
+             },
+
+             focusPendingRate() {
+                 this.$nextTick(() => {
+                     if (this.$refs.pendingRate) {
+                         this.$refs.pendingRate.focus();
+                         this.$refs.pendingRate.select();
+                     }
+                 });
+             },
+
+             focusPendingDiscount() {
+                 this.$nextTick(() => {
+                     if (this.$refs.pendingDiscount) {
+                         this.$refs.pendingDiscount.focus();
+                         this.$refs.pendingDiscount.select();
+                     }
+                 });
+             },
+
+             focusAddButton() {
+                 this.$nextTick(() => {
+                     if (this.$refs.addButton) {
+                         this.$refs.addButton.focus();
+                     }
+                 });
+             },
+
+             selectFirstResult() {
+                 if (this.activeSearchIndex >= 0 && this.searchResults[this.activeSearchIndex]) {
+                     const selectedItem = this.searchResults[this.activeSearchIndex];
+                     // If out of stock, trigger stock update
+                     if (selectedItem.stock_qty <= 0) {
+                         this.openStockUpdate(selectedItem);
+                     } else {
+                         // In stock, add to cart
+                         this.selectItem(selectedItem);
+                     }
+                 } else if (this.searchResults.length > 0) {
+                     // No specific item highlighted, select first result
+                     const firstItem = this.searchResults[0];
+                     if (firstItem.stock_qty <= 0) {
+                         this.openStockUpdate(firstItem);
+                     } else {
+                         this.selectItem(firstItem);
+                     }
+                 }
+             },
+
+             openStockUpdate(item) {
+                 // Store redirect information for return journey
+                 sessionStorage.setItem('redirectAfterStock', 'debit-sales');
+                 sessionStorage.setItem('redirectItemName', item.name);
+
+                 // Show loading alert
+                 Swal.fire({
+                     title: 'Loading Stock Update...',
+                     html: `Preparing to add stock for <strong>${item.name}</strong>`,
+                     icon: 'info',
+                     allowOutsideClick: false,
+                     showConfirmButton: false,
+                     timer: 1500,
+                     timerProgressBar: true,
+                     didOpen: () => {
+                         Swal.showLoading();
+                     }
+                 }).then(() => {
+                     // Redirect to add-stock page
+                     const itemId = item.id;
+                     window.location.href = `/items/${itemId}/add-stock`;
+                 });
+             },
+
+             removeRow(index) {
+                 this.rows.splice(index, 1);
+             },
+
+             async saveInvoice() {
+                 if (!this.customer_id) {
+                     alert("Please select a Customer for Debit Sales.");
+                     return;
+                 }
+                 if (this.rows.length === 0) {
+                     alert("Please add items.");
+                     return;
+                 }
+
+                 let payload = {
+                     invoice_no: this.invoice_no,
+                     customer_id: this.customer_id,
+                     salesman_id: this.salesman_id,
+                     date: this.date,
+                     rows: this.rows,
+                     grand_total: this.netTotal,
+                     received_amount: this.received_amount
+                 };
+
+                 try {
+                     // Use update route if in edit mode, otherwise use store route
+                     const url = this.isEditMode ?
+                         `/debit-sales/${this.editSaleId}/update` :
+                         '/debit-sales/store';
+
+                     let response = await fetch(url, {
+                         method: 'POST',
+                         headers: {
+                             'Content-Type': 'application/json',
+                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                         },
+                         body: JSON.stringify(payload)
+                     });
+                     let result = await response.json();
+                     if (result.success) {
+                         this.receiptHtml = result.receipt_html;
+                         this.lastSaleId = result.sale_id;
+                         this.showSuccess = true;
+
+                         // Print window will only open when user clicks Print button
+                         // Removed auto-print: if (result.print_url) { window.open(...) }
+                     } else {
+                         alert("Error: " + result.message);
+                     }
+                 } catch (error) {
+                     alert("System Error.");
+                 }
+             },
+
+             printReceipt() {
+                 if (this.lastSaleId) window.open(`/debit-sales/${this.lastSaleId}/print`, '_blank', 'width=400,height=600');
+             },
+
+             resetForm() {
+                 window.location.reload();
+             },
+
+             closeAddCustomer() {
+                 this.showAddCustomer = false;
+                 this.newCustomer = {
+                     name: '',
+                     phone: '',
+                     address: ''
+                 };
+                 // Automatically reopen customer dropdown and focus input
+                 this.$nextTick(() => {
+                     this.showCustomerDropdown = true;
+                     if (this.$refs.customerInput) {
+                         this.$refs.customerInput.focus();
+                     }
+                 });
+             },
+
+             async saveNewCustomer() {
+                 if (!this.newCustomer.name.trim()) {
+                     alert('Please enter customer name');
+                     return;
+                 }
+                 if (!this.newCustomer.phone.trim()) {
+                     alert('Please enter phone number');
+                     return;
+                 }
+
+                 try {
+                     const response = await fetch('/api/customers/create', {
+                         method: 'POST',
+                         headers: {
+                             'Content-Type': 'application/json',
+                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                         },
+                         body: JSON.stringify(this.newCustomer)
+                     });
+
+                     const result = await response.json();
+
+                     if (result.success) {
+                         // Add to customers array
+                         this.allCustomers.push(result.customer);
+                         this.filteredCustomers = this.allCustomers;
+
+                         // Select the new customer
+                         this.customer_id = result.customer.id;
+                         this.customerSearchQuery = `${result.customer.name} (${result.customer.phone})`;
+                         this.closeAddCustomer();
+                         this.focusSearch();
+
+                         alert('Customer added successfully!');
+                     } else {
+                         alert('Error: ' + (result.message || 'Failed to create customer'));
+                     }
+                 } catch (error) {
+                     console.error('Error creating customer:', error);
+                     alert('Failed to create customer. Please try again.');
+                 }
+             }
+         }
+     }
+ </script>
+ @endsection

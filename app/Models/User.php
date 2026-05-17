@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'phone',
+        'role',
     ];
 
     /**
@@ -42,4 +44,35 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function store()
+    {
+        return $this->hasOne(Store::class);
+    }
+
+    public function userPermissions()
+    {
+        return $this->morphOne(UserPermission::class, 'model');
+    }
+
+    public function hasPermission($permission)
+    {
+        // For now, if the user role is 'owner' or 'admin', grant all permissions
+        if (in_array($this->role, ['owner', 'admin', 'Store Admin'])) {
+            return true;
+        }
+
+        // Example usage: hasPermission('sales_cash.view')
+        if (str_contains($permission, '.')) {
+            [$module, $action] = explode('.', $permission);
+            if ($this->permissions && isset($this->permissions->$module)) {
+                $modulePerms = $this->permissions->$module;
+                // It's cast to array in model, but accessed as array or object? 
+                // If cast to 'array', it's an array.
+                return $modulePerms[$action] ?? false;
+            }
+        }
+
+        return false;
+    }
 }
