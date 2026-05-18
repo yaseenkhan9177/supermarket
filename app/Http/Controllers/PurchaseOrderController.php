@@ -19,11 +19,18 @@ class PurchaseOrderController extends Controller
     {
         $request->validate([
             'supplier_id' => 'required',
-            'items' => 'required|array|min:1'
+            'items' => 'nullable|array'
         ]);
 
+        // Filter out blank rows (no item_id)
+        $items = array_filter($request->items ?? [], fn($row) => !empty($row['item_id']));
+
+        if (empty($items)) {
+            return back()->with('error', 'Please add at least one valid item.')->withInput();
+        }
+
         try {
-            DB::transaction(function () use ($request) {
+            DB::transaction(function () use ($request, $items) {
 
                 // 1. Create PO Header
                 $po = PurchaseOrder::create([
@@ -40,19 +47,17 @@ class PurchaseOrderController extends Controller
                 $total = 0;
 
                 // 2. Save Items (NO STOCK UPDATE)
-                foreach ($request->items as $row) {
-                    if (!empty($row['item_id'])) {
-                        $line_total = $row['qty'] * $row['rate'];
-                        $total += $line_total;
+                foreach ($items as $row) {
+                    $line_total = $row['qty'] * $row['rate'];
+                    $total += $line_total;
 
-                        PurchaseOrderItem::create([
-                            'purchase_order_id' => $po->id,
-                            'item_id' => $row['item_id'],
-                            'qty' => $row['qty'],
-                            'rate' => $row['rate'],
-                            'total' => $line_total
-                        ]);
-                    }
+                    PurchaseOrderItem::create([
+                        'purchase_order_id' => $po->id,
+                        'item_id' => $row['item_id'],
+                        'qty' => $row['qty'],
+                        'rate' => $row['rate'],
+                        'total' => $line_total
+                    ]);
                 }
 
                 // 3. Update Header Total

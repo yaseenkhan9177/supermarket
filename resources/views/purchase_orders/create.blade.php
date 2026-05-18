@@ -16,6 +16,36 @@
 
 <body class="bg-gray-900 font-sans text-gray-200" x-data="poForm(@json(session('success')), @json(session('error')))">
 
+@if(session('success'))
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        Swal.fire({
+            title: 'Success!',
+            text: "{{ session('success') }}",
+            icon: 'success',
+            background: '#1f2937',
+            color: '#fff',
+            confirmButtonColor: '#0284c7'
+        });
+    });
+</script>
+@endif
+
+@if(session('error'))
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        Swal.fire({
+            title: 'Error!',
+            text: "{{ session('error') }}",
+            icon: 'error',
+            background: '#1f2937',
+            color: '#fff',
+            confirmButtonColor: '#0284c7'
+        });
+    });
+</script>
+@endif
+
     <nav class="bg-white border-b border-gray-200 px-6 py-3 shadow-sm sticky top-0 z-50 mb-8">
         <div class="container mx-auto max-w-[1400px] flex justify-between items-center">
             <div class="flex items-center gap-4">
@@ -109,6 +139,7 @@
                                 <th class="p-3 w-24 text-center">Qty</th>
                                 <th class="p-3 w-32 text-right">Est. Cost</th>
                                 <th class="p-3 w-32 text-right">Est. Total</th>
+                                <th class="p-3 w-28 text-center">In Stock</th>
                                 <th class="p-3 w-10"></th>
                             </tr>
                         </thead>
@@ -122,7 +153,8 @@
                                     </td>
 
                                     <td class="p-3">
-                                        <input type="text" x-model="row.name" class="w-full p-1 border rounded text-xs bg-gray-50" readonly>
+                                        <input type="text" x-model="row.name" class="w-full p-1 border rounded text-xs bg-white" placeholder="Item description...">
+                                        <span class="text-[10px] text-gray-400">Stock: <span :class="row.stock > 0 ? 'text-green-600 font-bold' : 'text-red-500 font-bold'" x-text="row.stock ?? '—'"></span></span>
                                         <input type="hidden" :name="`items[${index}][item_id]`" x-model="row.item_id">
                                     </td>
 
@@ -139,12 +171,53 @@
                                     </td>
 
                                     <td class="p-3 text-center">
+                                        <span :class="row.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'" class="text-xs font-bold px-2 py-0.5 rounded-full" x-text="row.stock > 0 ? row.stock : 'N/A'"></span>
+                                    </td>
+
+                                    <td class="p-3 text-center">
                                         <button type="button" @click="removeRow(index)" class="text-gray-300 hover:text-red-500">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </td>
                                 </tr>
                             </template>
+
+                            <!-- Live Search Row -->
+                            <tr class="bg-sky-50/50 border-t-2 border-sky-200">
+                                <td class="p-3 text-center"><i class="fas fa-search text-sky-500"></i></td>
+                                <td class="p-3 relative" colspan="5">
+                                    <input
+                                        type="text"
+                                        x-model="searchQuery"
+                                        @input.debounce.200ms="performSearch()"
+                                        @keydown.enter.prevent="selectFirstResult()"
+                                        placeholder="🔍 Type product name or barcode to search and add..."
+                                        class="w-full bg-white border border-sky-300 rounded-lg py-2.5 px-4 text-gray-800 focus:ring-2 focus:ring-sky-500 outline-none placeholder-gray-400 text-sm shadow-sm"
+                                    >
+                                    <div x-show="searchResults.length > 0"
+                                        @click.outside="searchResults = []"
+                                        class="absolute top-14 left-3 w-[95%] bg-white border border-sky-200 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto"
+                                        style="display: none;">
+                                        <ul>
+                                            <template x-for="item in searchResults" :key="item.id">
+                                                <li @click="addItem(item)" class="p-3 hover:bg-sky-600 hover:text-white cursor-pointer flex justify-between items-center border-b border-gray-100 last:border-0 group transition">
+                                                    <div class="flex-1 min-w-0 pr-4">
+                                                        <span class="font-bold text-gray-800 group-hover:text-white block truncate text-sm" x-text="item.name"></span>
+                                                        <span class="text-xs text-gray-400 font-mono group-hover:text-sky-200" x-text="item.code"></span>
+                                                    </div>
+                                                    <div class="text-right whitespace-nowrap">
+                                                        <span class="block font-bold text-sky-600 group-hover:text-white text-sm" x-text="'Rs. ' + item.price"></span>
+                                                        <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded"
+                                                            :class="item.stock_qty > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'"
+                                                            x-text="item.stock_qty > 0 ? 'Stock: ' + item.stock_qty : 'Out of Stock'"></span>
+                                                    </div>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </div>
+                                </td>
+                                <td class="p-3" colspan="2"></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -184,41 +257,86 @@
                     code: '',
                     name: '',
                     qty: 1,
-                    rate: 0
+                    rate: 0,
+                    stock: null
                 }],
+                searchQuery: '',
+                searchResults: [],
 
                 init() {
-                    if (sessionSuccess) Swal.fire('Success', sessionSuccess, 'success');
-                    if (sessionError) Swal.fire('Error', sessionError, 'error');
+                    // Handled at Blade level now for 100% reliability
                 },
 
-                fetchProduct(index) {
+                async performSearch() {
+                    if (this.searchQuery.length < 1) { this.searchResults = []; return; }
+                    try {
+                        let r = await fetch(`/cash-sales/search?q=${this.searchQuery}`);
+                        this.searchResults = await r.json();
+                    } catch(e) { console.error('Search failed'); }
+                },
+
+                addItem(item) {
+                    let existing = this.rows.find(r => r.item_id == item.id);
+                    if (existing) {
+                        existing.qty++;
+                    } else {
+                        let emptyIdx = this.rows.findIndex(r => !r.item_id);
+                        let newRow = {
+                            item_id: item.id,
+                            code: item.code,
+                            name: item.name,
+                            qty: 1,
+                            rate: item.cost_price || item.price || 0,
+                            stock: item.stock_qty ?? 0
+                        };
+                        if (emptyIdx !== -1) {
+                            this.rows[emptyIdx] = newRow;
+                        } else {
+                            this.rows.push(newRow);
+                        }
+                    }
+                    this.searchQuery = '';
+                    this.searchResults = [];
+                },
+
+                selectFirstResult() {
+                    if (this.searchResults.length > 0) this.addItem(this.searchResults[0]);
+                },
+
+                async fetchProduct(index) {
                     const code = this.rows[index].code;
                     if (!code) return;
 
-                    // USING REAL API (Important fix!)
-                    fetch(`/api/products/search?barcode=${code}`)
-                        .then(response => {
-                            if (response.status === 404) throw new Error('Item not found');
-                            if (!response.ok) throw new Error('Server error');
-                            return response.json();
-                        })
-                        .then(data => {
-                            this.rows[index].item_id = data.id;
-                            this.rows[index].name = data.description;
-                            this.rows[index].rate = 0; // PO usually needs cost price, defaulted to 0 for user input
+                    try {
+                        let response = await fetch(`/cash-sales/search?q=${code}`);
+                        let data = await response.json();
+
+                        if (data.length > 0) {
+                            let item = data.find(i => i.code === code) || data[0];
+                            this.rows[index].item_id = item.id;
+                            this.rows[index].name = item.name;
+                            this.rows[index].rate = item.cost_price || item.price || 0;
+                            this.rows[index].stock = item.stock_qty ?? 0;
 
                             if (index === this.rows.length - 1) this.addRow();
-                        })
-                        .catch(error => {
+                        } else {
                             Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: error.message
+                                title: 'Not Found',
+                                text: 'Product not found!',
+                                icon: 'warning',
+                                background: '#1f2937',
+                                color: '#fff',
+                                timer: 1500,
+                                showConfirmButton: false
                             });
                             this.rows[index].item_id = '';
                             this.rows[index].name = '';
-                        });
+                            this.rows[index].rate = 0;
+                            this.rows[index].stock = null;
+                        }
+                    } catch (error) {
+                        console.error("Search failed");
+                    }
                 },
                 addRow() {
                     this.rows.push({
@@ -226,7 +344,8 @@
                         code: '',
                         name: '',
                         qty: 1,
-                        rate: 0
+                        rate: 0,
+                        stock: null
                     });
                 },
                 removeRow(index) {
@@ -237,7 +356,7 @@
                         Swal.fire('Error', 'Please select a supplier', 'error');
                         return;
                     }
-                    if (this.subtotal <= 0) {
+                    if (parseFloat(this.subtotal) <= 0) {
                         Swal.fire('Error', 'Order amount cannot be zero', 'error');
                         return;
                     }
