@@ -149,11 +149,11 @@
                                     <td class="p-3 text-center text-gray-400" x-text="index + 1"></td>
 
                                     <td class="p-3">
-                                        <input type="text" x-model="row.code" @keydown.enter.prevent="fetchProduct(index)" class="w-full p-1 border rounded text-xs" placeholder="Scan...">
+                                        <input type="text" x-model="row.code" @keydown.enter.prevent="fetchProduct(index)" @blur="fetchProduct(index)" class="w-full p-1 border rounded text-xs text-gray-950" placeholder="Scan...">
                                     </td>
 
                                     <td class="p-3">
-                                        <input type="text" x-model="row.name" class="w-full p-1 border rounded text-xs bg-white" placeholder="Item description...">
+                                        <input type="text" x-model="row.name" class="w-full p-1 border rounded text-xs bg-white text-gray-950" placeholder="Item description...">
                                         <span class="text-[10px] text-gray-400">Stock: <span :class="row.stock > 0 ? 'text-green-600 font-bold' : 'text-red-500 font-bold'" x-text="row.stock ?? '—'"></span></span>
                                         <input type="hidden" :name="`items[${index}][item_id]`" x-model="row.item_id">
                                     </td>
@@ -163,7 +163,7 @@
                                     </td>
 
                                     <td class="p-3">
-                                        <input type="number" step="0.01" x-model="row.rate" :name="`items[${index}][rate]`" class="w-full p-1 border rounded text-right text-sm">
+                                        <input type="number" step="0.01" x-model="row.rate" :name="`items[${index}][rate]`" class="w-full p-1 border rounded text-right text-sm text-gray-950">
                                     </td>
 
                                     <td class="p-3 text-right font-bold text-gray-900">
@@ -181,43 +181,6 @@
                                     </td>
                                 </tr>
                             </template>
-
-                            <!-- Live Search Row -->
-                            <tr class="bg-sky-50/50 border-t-2 border-sky-200">
-                                <td class="p-3 text-center"><i class="fas fa-search text-sky-500"></i></td>
-                                <td class="p-3 relative" colspan="5">
-                                    <input
-                                        type="text"
-                                        x-model="searchQuery"
-                                        @input.debounce.200ms="performSearch()"
-                                        @keydown.enter.prevent="selectFirstResult()"
-                                        placeholder="🔍 Type product name or barcode to search and add..."
-                                        class="w-full bg-white border border-sky-300 rounded-lg py-2.5 px-4 text-gray-800 focus:ring-2 focus:ring-sky-500 outline-none placeholder-gray-400 text-sm shadow-sm"
-                                    >
-                                    <div x-show="searchResults.length > 0"
-                                        @click.outside="searchResults = []"
-                                        class="absolute top-14 left-3 w-[95%] bg-white border border-sky-200 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto"
-                                        style="display: none;">
-                                        <ul>
-                                            <template x-for="item in searchResults" :key="item.id">
-                                                <li @click="addItem(item)" class="p-3 hover:bg-sky-600 hover:text-white cursor-pointer flex justify-between items-center border-b border-gray-100 last:border-0 group transition">
-                                                    <div class="flex-1 min-w-0 pr-4">
-                                                        <span class="font-bold text-gray-800 group-hover:text-white block truncate text-sm" x-text="item.name"></span>
-                                                        <span class="text-xs text-gray-400 font-mono group-hover:text-sky-200" x-text="item.code"></span>
-                                                    </div>
-                                                    <div class="text-right whitespace-nowrap">
-                                                        <span class="block font-bold text-sky-600 group-hover:text-white text-sm" x-text="'Rs. ' + item.price"></span>
-                                                        <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded"
-                                                            :class="item.stock_qty > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'"
-                                                            x-text="item.stock_qty > 0 ? 'Stock: ' + item.stock_qty : 'Out of Stock'"></span>
-                                                    </div>
-                                                </li>
-                                            </template>
-                                        </ul>
-                                    </div>
-                                </td>
-                                <td class="p-3" colspan="2"></td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -260,47 +223,9 @@
                     rate: 0,
                     stock: null
                 }],
-                searchQuery: '',
-                searchResults: [],
 
                 init() {
                     // Handled at Blade level now for 100% reliability
-                },
-
-                async performSearch() {
-                    if (this.searchQuery.length < 1) { this.searchResults = []; return; }
-                    try {
-                        let r = await fetch(`/cash-sales/search?q=${this.searchQuery}`);
-                        this.searchResults = await r.json();
-                    } catch(e) { console.error('Search failed'); }
-                },
-
-                addItem(item) {
-                    let existing = this.rows.find(r => r.item_id == item.id);
-                    if (existing) {
-                        existing.qty++;
-                    } else {
-                        let emptyIdx = this.rows.findIndex(r => !r.item_id);
-                        let newRow = {
-                            item_id: item.id,
-                            code: item.code,
-                            name: item.name,
-                            qty: 1,
-                            rate: item.cost_price || item.price || 0,
-                            stock: item.stock_qty ?? 0
-                        };
-                        if (emptyIdx !== -1) {
-                            this.rows[emptyIdx] = newRow;
-                        } else {
-                            this.rows.push(newRow);
-                        }
-                    }
-                    this.searchQuery = '';
-                    this.searchResults = [];
-                },
-
-                selectFirstResult() {
-                    if (this.searchResults.length > 0) this.addItem(this.searchResults[0]);
                 },
 
                 async fetchProduct(index) {
