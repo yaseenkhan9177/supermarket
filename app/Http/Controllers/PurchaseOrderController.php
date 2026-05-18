@@ -22,8 +22,8 @@ class PurchaseOrderController extends Controller
             'items' => 'nullable|array'
         ]);
 
-        // Filter out blank rows (no item_id)
-        $items = array_filter($request->items ?? [], fn($row) => !empty($row['item_id']));
+        // Filter out blank rows (has either item_id or code)
+        $items = array_filter($request->items ?? [], fn($row) => !empty($row['item_id']) || !empty($row['code']));
 
         if (empty($items)) {
             return back()->with('error', 'Please add at least one valid item.')->withInput();
@@ -48,12 +48,27 @@ class PurchaseOrderController extends Controller
 
                 // 2. Save Items (NO STOCK UPDATE)
                 foreach ($items as $row) {
+                    $itemId = $row['item_id'];
+                    if (empty($itemId) || $itemId === 'new') {
+                        $item = \App\Models\Item::firstOrCreate(
+                            ['code' => trim($row['code'])],
+                            [
+                                'item_type' => 'Stock',
+                                'description' => $row['name'] ?: 'New Item ' . $row['code'],
+                                'cost_rate' => $row['rate'],
+                                'sale_rate' => $row['rate'] * 1.25,
+                                'on_hand' => 0
+                            ]
+                        );
+                        $itemId = $item->id;
+                    }
+
                     $line_total = $row['qty'] * $row['rate'];
                     $total += $line_total;
 
                     PurchaseOrderItem::create([
                         'purchase_order_id' => $po->id,
-                        'item_id' => $row['item_id'],
+                        'item_id' => $itemId,
                         'qty' => $row['qty'],
                         'rate' => $row['rate'],
                         'total' => $line_total

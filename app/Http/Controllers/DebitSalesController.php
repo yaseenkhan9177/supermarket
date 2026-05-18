@@ -38,7 +38,7 @@ class DebitSalesController extends Controller
         $query = $request->get('q');
         // Schema Mapping: description -> name, sale_rate -> price
         $items = Item::where('description', 'like', "%{$query}%")
-            ->orWhere('code', 'like', "{$query}%")
+            ->orWhere('code', 'like', "%{$query}%")
             ->select('id', 'description as name', 'code', 'sale_rate as price', 'on_hand as stock_qty', 'item_type')
             ->limit(50)
             ->get();

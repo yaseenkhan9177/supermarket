@@ -428,7 +428,7 @@
 
                 // Real API Fetch
                 async fetchProduct(index) {
-                    const code = this.rows[index].code;
+                    const code = this.rows[index].code ? this.rows[index].code.trim() : '';
                     if (!code) return;
 
                     try {
@@ -446,17 +446,19 @@
                             if (index === this.rows.length - 1) this.addRow();
                         } else {
                             Swal.fire({
-                                title: 'Not Found',
-                                text: 'Product not found!',
-                                icon: 'warning',
-                                background: '#1f2937',
+                                title: 'New Item!',
+                                text: 'This barcode does not exist yet. You can type the description and cost rate manually!',
+                                icon: 'info',
+                                background: '#6366f1',
                                 color: '#fff',
-                                timer: 1500,
+                                timer: 3000,
                                 showConfirmButton: false
                             });
-                            this.rows[index].item_id = '';
+                            this.rows[index].item_id = 'new';
                             this.rows[index].name = '';
                             this.rows[index].rate = 0;
+                            this.rows[index].stock = 0;
+                            if (index === this.rows.length - 1) this.addRow();
                         }
                     } catch (error) {
                         console.error("Search failed");

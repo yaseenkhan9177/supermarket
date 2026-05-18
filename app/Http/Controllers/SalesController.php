@@ -30,7 +30,7 @@ class SalesController extends Controller
         $query = $request->get('query');
 
         $products = Item::where('description', 'LIKE', "%{$query}%")
-            ->orWhere('code', 'LIKE', "{$query}%")
+            ->orWhere('code', 'LIKE', "%{$query}%")
             ->select('id', 'description as name', 'code', 'sale_rate as sale_price', 'on_hand as stock_qty', 'image_path')
             // ->selectRaw('10 as tax_percent') // Fallback if column missing, or remove if you added migration
             ->limit(10)

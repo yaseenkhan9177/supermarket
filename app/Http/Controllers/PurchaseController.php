@@ -34,8 +34,8 @@ class PurchaseController extends Controller
             'items'       => 'nullable|array'
         ]);
 
-        // Filter out blank rows (no item_id) — rows without item_id are silently skipped
-        $items = array_filter($request->items ?? [], fn($row) => !empty($row['item_id']));
+        // Filter out blank rows (has either item_id or code) — rows without both are skipped
+        $items = array_filter($request->items ?? [], fn($row) => !empty($row['item_id']) || !empty($row['code']));
 
         if (empty($items)) {
             return back()->with('error', 'Please add at least one valid item.')->withInput();
@@ -76,7 +76,22 @@ class PurchaseController extends Controller
 
                 // 2. Process Items
                 foreach ($items as $row) {
-                    $item = Item::find($row['item_id']);
+                    $itemId = $row['item_id'];
+                    if (empty($itemId) || $itemId === 'new') {
+                        $item = Item::firstOrCreate(
+                            ['code' => trim($row['code'])],
+                            [
+                                'item_type' => 'Stock',
+                                'description' => $row['name'] ?: 'New Item ' . $row['code'],
+                                'cost_rate' => $row['rate'],
+                                'sale_rate' => $row['rate'] * 1.25,
+                                'on_hand' => 0
+                            ]
+                        );
+                        $itemId = $item->id;
+                    } else {
+                        $item = Item::find($itemId);
+                    }
                     if (!$item) continue;
 
                     $line_total = ($row['qty'] ?? 0) * ($row['rate'] ?? 0);
@@ -86,7 +101,7 @@ class PurchaseController extends Controller
 
                     PurchaseItem::create([
                         'purchase_id' => $purchase->id,
-                        'item_id'     => $row['item_id'],
+                        'item_id'     => $itemId,
                         'batch_no'    => $batchNo,
                         'expiry_date' => !empty($row['expiry_date']) ? $row['expiry_date'] : null,
                         'qty'         => $row['qty'],
@@ -108,7 +123,7 @@ class PurchaseController extends Controller
                     }
 
                     Batch::create([
-                        'item_id'            => $row['item_id'],
+                        'item_id'            => $itemId,
                         'batch_no'           => $batchNo,
                         'quantity_available' => $row['qty'],
                         'sale_price'         => $item->sale_rate ?? 0,

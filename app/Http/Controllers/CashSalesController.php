@@ -33,7 +33,7 @@ class CashSalesController extends Controller
         // 🔥 UPDATED: Select 'on_hand' instead of stock_qty to show correct stock in search
         // Schema mapping: description -> name, sale_rate -> sale_price
         $items = Item::where('description', 'like', "%{$query}%")
-            ->orWhere('code', 'like', "{$query}%")
+            ->orWhere('code', 'like', "%{$query}%")
             ->select('id', 'description as name', 'code', 'sale_rate as price', 'on_hand as stock_qty', 'item_type')
             ->limit(50) // ✅ CHANGED: Increased limit to show more results
             ->get();
