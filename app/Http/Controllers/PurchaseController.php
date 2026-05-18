@@ -37,6 +37,10 @@ class PurchaseController extends Controller
         // Filter out blank rows (no item_id) — rows without item_id are silently skipped
         $items = array_filter($request->items ?? [], fn($row) => !empty($row['item_id']));
 
+        if (empty($items)) {
+            return back()->with('error', 'Please add at least one valid item.')->withInput();
+        }
+
         try {
             DB::transaction(function () use ($request, $items) {
 
