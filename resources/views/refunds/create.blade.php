@@ -149,7 +149,7 @@
                                     </td>
 
                                     <td class="p-3">
-                                        <input type="text" :name="`rows[${index}][name]`" x-model="row.name" class="w-full p-1 border rounded bg-gray-50 text-sm" readonly>
+                                        <input type="text" :name="`rows[${index}][name]`" x-model="row.name" class="w-full p-1 border rounded bg-white text-sm text-gray-950 focus:ring-2 focus:ring-red-500" placeholder="Item description...">
                                     </td>
 
                                     <td class="p-3">
@@ -402,13 +402,14 @@
                     const barcode = this.rows[index].barcode;
                     if (!barcode) return;
 
-                    fetch(`/api/products/search?barcode=${barcode}`)
+                    fetch(`/cash-sales/search?q=${barcode}`)
                         .then(res => res.json())
                         .then(data => {
-                            if (data && data.id) {
-                                this.rows[index].id = data.id;
-                                this.rows[index].name = data.description;
-                                this.rows[index].rate = data.sale_rate;
+                            if (data && data.length > 0) {
+                                let item = data.find(i => i.code === barcode) || data[0];
+                                this.rows[index].id = item.id;
+                                this.rows[index].name = item.name;
+                                this.rows[index].rate = item.price;
                                 this.rows[index].qty = 1;
 
                                 if (index === this.rows.length - 1) {
@@ -420,18 +421,6 @@
                         })
                         .catch(err => {
                             console.error('API Error', err);
-                            // Demo Fallback
-                            const demoProduct = {
-                                id: 202,
-                                name: 'DEMO ITEM ' + barcode,
-                                price: 60.00
-                            };
-                            this.rows[index].id = demoProduct.id;
-                            this.rows[index].name = demoProduct.name;
-                            this.rows[index].rate = demoProduct.price;
-                            if (index === this.rows.length - 1) {
-                                this.addRow();
-                            }
                         });
                 },
 
