@@ -1,130 +1,2308 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <title>OwnStore – Smart Retail System</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mart — Your Software, Your Terms | mart.vectabyte.net</title>
+  <meta name="description" content="Mart is a premium SaaS marketplace offering Monthly, Yearly, and Rental software subscriptions. Subscribe to the tools your business actually needs." />
+  <meta name="keywords" content="SaaS, software subscriptions, monthly plan, yearly plan, rental software, business tools" />
+  <link rel="canonical" href="https://mart.vectabyte.net" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ============================================================
+       CSS CUSTOM PROPERTIES
+    ============================================================ */
+    :root {
+      --bg-base:       #0A0F1E;
+      --bg-surface:    #0E1426;
+      --bg-card:       rgba(14, 20, 38, 0.7);
+      --cyan:          #00E5FF;
+      --cyan-dim:      rgba(0, 229, 255, 0.15);
+      --cyan-glow:     rgba(0, 229, 255, 0.35);
+      --gold:          #FFD700;
+      --gold-dim:      rgba(255, 215, 0, 0.15);
+      --gold-glow:     rgba(255, 215, 0, 0.3);
+      --silver:        #B0BEC5;
+      --silver-dim:    rgba(176, 190, 197, 0.1);
+      --text-primary:  #F0F4FF;
+      --text-secondary:#8A9BB5;
+      --text-muted:    #4A5568;
+      --border:        rgba(255,255,255,0.07);
+      --border-cyan:   rgba(0, 229, 255, 0.3);
+      --border-gold:   rgba(255, 215, 0, 0.3);
+      --font-display:  'Syne', sans-serif;
+      --font-body:     'DM Sans', sans-serif;
+      --font-mono:     'JetBrains Mono', monospace;
+      --radius-sm:     8px;
+      --radius-md:     16px;
+      --radius-lg:     24px;
+      --radius-xl:     32px;
+      --transition:    0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Grain/Noise Texture Overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.5;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+    img { max-width: 100%; display: block; }
+
+    section { position: relative; }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ============================================================
+       SCROLLBAR
+    ============================================================ */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: var(--cyan-glow); border-radius: 3px; }
+
+    /* ============================================================
+       NAVBAR
+    ============================================================ */
+    #navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 999;
+      padding: 20px 0;
+      transition: var(--transition);
+    }
+
+    #navbar.scrolled {
+      background: rgba(10, 15, 30, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 0;
+      box-shadow: 0 4px 30px rgba(0,0,0,0.4);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 28px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      letter-spacing: -1px;
+    }
+
+    .nav-logo .dot {
+      width: 9px;
+      height: 9px;
+      background: var(--cyan);
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 2px;
+      box-shadow: 0 0 10px var(--cyan), 0 0 20px var(--cyan);
+      animation: dotPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes dotPulse {
+      0%, 100% { box-shadow: 0 0 8px var(--cyan), 0 0 16px var(--cyan); opacity: 1; }
+      50%       { box-shadow: 0 0 16px var(--cyan), 0 0 32px var(--cyan); opacity: 0.7; }
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 36px;
+    }
+
+    .nav-links a {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px; left: 0;
+      width: 0; height: 2px;
+      background: var(--cyan);
+      border-radius: 1px;
+      transition: var(--transition);
+    }
+
+    .nav-links a:hover { color: var(--text-primary); }
+    .nav-links a:hover::after { width: 100%; }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 26px;
+      background: linear-gradient(135deg, var(--cyan), #0099CC);
+      color: #0A0F1E;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 0 0 0 var(--cyan-glow);
+      white-space: nowrap;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 25px var(--cyan-glow), 0 8px 24px rgba(0,229,255,0.25);
+    }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 26px;
+      background: transparent;
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 14px;
+      border-radius: 50px;
+      border: 1px solid var(--border-cyan);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      background: var(--cyan-dim);
+      transform: translateY(-2px);
+    }
+
+    /* Login Button */
+    .btn-login {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      background: rgba(255,255,255,0.04);
+      color: var(--text-secondary);
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 14px;
+      border-radius: 50px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn-login:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.2);
+      color: var(--text-primary);
+      transform: translateY(-2px);
+    }
+
+    .btn-login::before {
+      content: '→';
+      font-size: 12px;
+      opacity: 0;
+      transform: translateX(-6px);
+      transition: var(--transition);
+      display: inline-block;
+    }
+
+    .btn-login:hover::before {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* Nav action group */
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+    .hamburger span { width: 24px; height: 2px; background: var(--text-primary); border-radius: 2px; transition: var(--transition); }
+
+    /* ============================================================
+       HERO SECTION
+    ============================================================ */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      padding: 120px 0 80px;
+    }
+
+    /* Canvas for particles */
+    #hero-canvas {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    /* Radial glow blobs */
+    .hero-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.12;
+      pointer-events: none;
+    }
+
+    .hero-blob-1 {
+      width: 600px; height: 600px;
+      background: var(--cyan);
+      top: -150px; left: -200px;
+    }
+
+    .hero-blob-2 {
+      width: 400px; height: 400px;
+      background: var(--gold);
+      bottom: -100px; right: -100px;
+    }
+
+    .hero-blob-3 {
+      width: 350px; height: 350px;
+      background: #7B2FF7;
+      top: 30%; left: 40%;
+      opacity: 0.08;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .hero-content { max-width: 580px; }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0,229,255,0.08);
+      border: 1px solid var(--border-cyan);
+      border-radius: 50px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--cyan);
+      margin-bottom: 28px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards;
+    }
+
+    .hero-badge .badge-dot {
+      width: 6px; height: 6px;
+      background: var(--cyan);
+      border-radius: 50%;
+      animation: dotPulse 1.5s ease-in-out infinite;
+    }
+
+    .hero-headline {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: clamp(52px, 7vw, 88px);
+      line-height: 1.05;
+      letter-spacing: -2px;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease 0.15s forwards;
+    }
+
+    .hero-headline span {
+      background: linear-gradient(135deg, var(--cyan) 0%, #60EFFF 50%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 18px;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+      max-width: 480px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease 0.3s forwards;
+    }
+
+    .hero-ctas {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp 0.6s ease 0.45s forwards;
+    }
+
+    .hero-ctas .btn-primary { padding: 15px 34px; font-size: 15px; }
+    .hero-ctas .btn-ghost  { padding: 15px 34px; font-size: 15px; }
+
+    .play-icon {
+      width: 18px; height: 18px;
+      border-left: 14px solid currentColor;
+      border-top: 9px solid transparent;
+      border-bottom: 9px solid transparent;
+      display: inline-block;
+    }
+
+    /* Hero visual - dashboard mockup */
+    .hero-visual {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      animation: fadeUp 0.6s ease 0.45s forwards;
+    }
+
+    .dashboard-card {
+      width: 100%;
+      max-width: 500px;
+      background: rgba(14, 20, 38, 0.85);
+      border: 1px solid var(--border-cyan);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      backdrop-filter: blur(20px);
+      box-shadow:
+        0 0 60px rgba(0,229,255,0.12),
+        0 40px 80px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+      animation: levitate 4s ease-in-out infinite;
+    }
+
+    @keyframes levitate {
+      0%, 100% { transform: translateY(0px) rotate(-1deg); }
+      50%       { transform: translateY(-18px) rotate(1deg); }
+    }
+
+    .dashboard-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dashboard-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .dashboard-dots { display: flex; gap: 6px; }
+    .dashboard-dots span {
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+    .dashboard-dots span:nth-child(1) { background: #FF5F57; }
+    .dashboard-dots span:nth-child(2) { background: #FEBC2E; }
+    .dashboard-dots span:nth-child(3) { background: #28C840; }
+
+    .dashboard-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .stat-val {
+      font-family: var(--font-mono);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    .stat-val.gold { color: var(--gold); }
+
+    .stat-change {
+      font-size: 11px;
+      color: #4CAF50;
+      margin-top: 3px;
+    }
+
+    .dashboard-bar-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .dashboard-bars { display: flex; flex-direction: column; gap: 8px; }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bar-name {
+      font-size: 11px;
+      color: var(--text-secondary);
+      width: 55px;
+      flex-shrink: 0;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      animation: barGrow 1.5s ease forwards;
+      transform-origin: left;
+    }
+
+    .bar-fill.cyan { background: linear-gradient(90deg, var(--cyan), #60EFFF); }
+    .bar-fill.gold { background: linear-gradient(90deg, var(--gold), #FFE566); }
+    .bar-fill.purple { background: linear-gradient(90deg, #7B2FF7, #C471ED); }
+
+    @keyframes barGrow {
+      from { width: 0; }
+    }
+
+    .bar-pct {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      width: 28px;
+      text-align: right;
+    }
+
+    .dashboard-footer {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      background: #4CAF50;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 8px #4CAF50;
+      animation: dotPulse 2s infinite;
+    }
+
+    .status-text { font-size: 12px; color: var(--text-secondary); margin-left: 8px; }
+
+    .plan-badge-mini {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 3px 10px;
+      border-radius: 50px;
+      background: var(--cyan-dim);
+      color: var(--cyan);
+      border: 1px solid var(--border-cyan);
+    }
+
+    /* ============================================================
+       FADE ANIMATIONS
+    ============================================================ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* Scroll-triggered animation */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* ============================================================
+       SECTION SHARED
+    ============================================================ */
+    .section-tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 12px;
+      padding: 5px 14px;
+      background: var(--cyan-dim);
+      border: 1px solid var(--border-cyan);
+      border-radius: 50px;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: clamp(32px, 4vw, 50px);
+      line-height: 1.1;
+      letter-spacing: -1px;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+
+    .section-sub {
+      font-size: 17px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      max-width: 540px;
+    }
+
+    .section-header { margin-bottom: 64px; }
+    .section-header.center { text-align: center; }
+    .section-header.center .section-sub { margin: 0 auto; }
+
+    /* ============================================================
+       TRUST BAR
+    ============================================================ */
+    #trust {
+      padding: 32px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: rgba(14, 20, 38, 0.5);
+      overflow: hidden;
+    }
+
+    .trust-label {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 24px;
+    }
+
+    .marquee-wrapper {
+      overflow: hidden;
+      position: relative;
+      mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+    }
+
+    .marquee-track {
+      display: flex;
+      gap: 60px;
+      animation: marqueeScroll 30s linear infinite;
+      width: max-content;
+    }
+
+    .marquee-track:hover { animation-play-state: paused; }
+
+    @keyframes marqueeScroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--text-muted);
+      transition: var(--transition);
+      white-space: nowrap;
+      cursor: default;
+    }
+
+    .brand-logo:hover { color: var(--text-secondary); }
+
+    .brand-logo .brand-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    /* ============================================================
+       HOW IT WORKS
+    ============================================================ */
+    #how {
+      padding: 120px 0;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      position: relative;
+    }
+
+    .steps-grid::before {
+      content: '';
+      position: absolute;
+      top: 56px;
+      left: calc(16.67% + 32px);
+      right: calc(16.67% + 32px);
+      height: 1px;
+      background: linear-gradient(90deg, var(--border-cyan), var(--border-cyan));
+      background-image: repeating-linear-gradient(90deg, var(--border-cyan) 0, var(--border-cyan) 8px, transparent 8px, transparent 16px);
+    }
+
+    .step-card {
+      text-align: center;
+      padding: 40px 28px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      backdrop-filter: blur(10px);
+      position: relative;
+      transition: var(--transition);
+    }
+
+    .step-card:hover {
+      border-color: var(--border-cyan);
+      transform: translateY(-6px);
+      box-shadow: 0 20px 60px rgba(0,229,255,0.1);
+    }
+
+    .step-number {
+      position: absolute;
+      top: -14px; left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--cyan);
+      background: var(--bg-base);
+      border: 1px solid var(--border-cyan);
+      border-radius: 50px;
+      padding: 3px 12px;
+      letter-spacing: 1px;
+    }
+
+    .step-icon {
+      width: 72px; height: 72px;
+      border-radius: 20px;
+      background: var(--cyan-dim);
+      border: 1px solid var(--border-cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 28px;
+      animation-name: none;
+      transition: var(--transition);
+    }
+
+    .step-card:hover .step-icon {
+      box-shadow: 0 0 30px var(--cyan-glow);
+      animation: iconPulse 1s ease-in-out infinite;
+    }
+
+    @keyframes iconPulse {
+      0%, 100% { transform: scale(1); }
+      50%       { transform: scale(1.08); }
+    }
+
+    .step-visible .step-icon {
+      animation: iconDraw 0.6s ease forwards;
+    }
+
+    @keyframes iconDraw {
+      0%   { opacity: 0; transform: scale(0.5) rotate(-10deg); }
+      60%  { transform: scale(1.1) rotate(2deg); }
+      100% { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+
+    .step-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+
+    .step-desc {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    /* ============================================================
+       PRICING SECTION
+    ============================================================ */
+    #pricing {
+      padding: 120px 0;
+      background: linear-gradient(180deg, transparent 0%, rgba(0,229,255,0.03) 50%, transparent 100%);
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+      align-items: start;
+    }
+
+    .pricing-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 40px 32px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      position: relative;
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1),
+                  box-shadow 0.35s cubic-bezier(0.4,0,0.2,1),
+                  border-color 0.35s ease;
+      cursor: pointer;
+    }
+
+    .pricing-card:hover {
+      transform: translateY(-10px);
+    }
+
+    .pricing-card.monthly {
+      border-color: var(--border-cyan);
+      box-shadow: 0 0 40px rgba(0,229,255,0.08);
+    }
+
+    .pricing-card.monthly:hover {
+      box-shadow: 0 20px 80px rgba(0,229,255,0.25), 0 0 60px rgba(0,229,255,0.15);
+      border-color: var(--cyan);
+    }
+
+    .pricing-card.yearly {
+      border-color: var(--border-gold);
+      box-shadow: 0 0 40px rgba(255,215,0,0.06);
+    }
+
+    .pricing-card.yearly:hover {
+      box-shadow: 0 20px 80px rgba(255,215,0,0.2), 0 0 60px rgba(255,215,0,0.12);
+      border-color: var(--gold);
+    }
+
+    .pricing-card.rental {
+      border-color: rgba(176,190,197,0.2);
+    }
+
+    .pricing-card.rental:hover {
+      box-shadow: 0 20px 80px rgba(176,190,197,0.1);
+      border-color: var(--silver);
+    }
+
+    /* Popular card is slightly taller */
+    .pricing-card.monthly { padding-top: 48px; }
+
+    .plan-badge {
+      position: absolute;
+      top: -14px; left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-radius: 50px;
+      padding: 5px 18px;
+      white-space: nowrap;
+    }
+
+    .plan-badge.cyan {
+      background: var(--cyan);
+      color: #0A0F1E;
+      box-shadow: 0 0 20px var(--cyan-glow);
+    }
+
+    .plan-badge.gold {
+      background: var(--gold);
+      color: #0A0F1E;
+      box-shadow: 0 0 20px var(--gold-glow);
+    }
+
+    .plan-badge.silver {
+      background: rgba(176,190,197,0.15);
+      color: var(--silver);
+      border: 1px solid rgba(176,190,197,0.3);
+    }
+
+    .plan-icon { font-size: 32px; margin-bottom: 16px; }
+
+    .plan-name {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+
+    .plan-tagline {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+    }
+
+    .plan-price {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .price-currency {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .price-amount {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 52px;
+      line-height: 1;
+    }
+
+    .price-amount.cyan { color: var(--cyan); }
+    .price-amount.gold { color: var(--gold); }
+    .price-amount.silver { color: var(--silver); }
+
+    .price-period {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .price-note {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.03);
+      border-radius: var(--radius-sm);
+    }
+
+    .plan-divider {
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 28px;
+    }
+
+    .plan-features { display: flex; flex-direction: column; gap: 14px; margin-bottom: 36px; }
+
+    .plan-feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .check-icon {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .check-icon.cyan { background: var(--cyan-dim); color: var(--cyan); border: 1px solid var(--border-cyan); }
+    .check-icon.gold { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--border-gold); }
+    .check-icon.silver { background: var(--silver-dim); color: var(--silver); border: 1px solid rgba(176,190,197,0.3); }
+
+    .plan-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      border: none;
+      transition: var(--transition);
+    }
+
+    .plan-btn.cyan {
+      background: linear-gradient(135deg, var(--cyan), #0099CC);
+      color: #0A0F1E;
+      box-shadow: 0 0 20px rgba(0,229,255,0.2);
+    }
+
+    .plan-btn.cyan:hover { box-shadow: 0 0 40px rgba(0,229,255,0.5); transform: translateY(-2px); }
+
+    .plan-btn.gold {
+      background: linear-gradient(135deg, var(--gold), #F4A800);
+      color: #0A0F1E;
+      box-shadow: 0 0 20px rgba(255,215,0,0.2);
+    }
+
+    .plan-btn.gold:hover { box-shadow: 0 0 40px rgba(255,215,0,0.4); transform: translateY(-2px); }
+
+    .plan-btn.silver {
+      background: rgba(176,190,197,0.1);
+      color: var(--silver);
+      border: 1px solid rgba(176,190,197,0.3);
+    }
+
+    .plan-btn.silver:hover { background: rgba(176,190,197,0.2); transform: translateY(-2px); }
+
+    /* ============================================================
+       FEATURES SECTION
+    ============================================================ */
+    #features {
+      padding: 120px 0;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 32px 28px;
+      backdrop-filter: blur(10px);
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan-dim), transparent);
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .feature-card:hover {
+      border-color: var(--border-cyan);
+      transform: translateY(-6px);
+      box-shadow: 0 16px 48px rgba(0,229,255,0.1);
+    }
+
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      font-size: 32px;
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .feature-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .feature-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    /* ============================================================
+       TESTIMONIALS
+    ============================================================ */
+    #testimonials {
+      padding: 120px 0;
+      background: linear-gradient(180deg, transparent, rgba(14,20,38,0.5), transparent);
+    }
+
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+    }
+
+    .testimonial-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px 30px;
+      backdrop-filter: blur(10px);
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .testimonial-card:hover {
+      border-color: var(--border-cyan);
+      transform: translateY(-6px);
+      box-shadow: 0 16px 48px rgba(0,229,255,0.08);
+    }
+
+    .quote-mark {
+      font-family: var(--font-display);
+      font-size: 64px;
+      line-height: 0.6;
+      color: var(--cyan-glow);
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .testimonial-text {
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--text-secondary);
+      margin-bottom: 28px;
+      font-style: italic;
+    }
+
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .author-avatar {
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 18px;
+      flex-shrink: 0;
+      border: 2px solid var(--border-cyan);
+    }
+
+    .author-name {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 3px;
+    }
+
+    .author-role {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .stars {
+      display: flex;
+      gap: 3px;
+      margin-bottom: 16px;
+    }
+
+    .stars span { color: var(--gold); font-size: 14px; }
+
+    /* ============================================================
+       FINAL CTA
+    ============================================================ */
+    #cta {
+      padding: 120px 0;
+    }
+
+    .cta-box {
+      text-align: center;
+      position: relative;
+      padding: 80px 60px;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      background: var(--bg-surface);
+    }
+
+    .cta-box::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius-xl);
+      padding: 2px;
+      background: linear-gradient(135deg, var(--cyan), #7B2FF7, var(--gold), var(--cyan));
+      background-size: 300% 300%;
+      animation: gradientBorder 6s ease infinite;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+
+    @keyframes gradientBorder {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .cta-glow {
+      position: absolute;
+      width: 500px; height: 300px;
+      background: radial-gradient(ellipse, rgba(0,229,255,0.08), transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .cta-box .section-title { font-size: clamp(36px, 4vw, 56px); margin-bottom: 16px; }
+    .cta-box .section-sub   { margin: 0 auto 48px; }
+
+    .btn-shimmer {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 48px;
+      background: linear-gradient(135deg, var(--cyan), #0099CC);
+      color: #0A0F1E;
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 16px;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition);
+      box-shadow: 0 0 40px rgba(0,229,255,0.3);
+    }
+
+    .btn-shimmer::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 60%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      animation: shimmerSweep 2.5s ease-in-out infinite;
+    }
+
+    @keyframes shimmerSweep {
+      0%   { left: -100%; }
+      100% { left: 200%; }
+    }
+
+    .btn-shimmer:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 0 60px rgba(0,229,255,0.5), 0 12px 32px rgba(0,229,255,0.3);
+    }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    #footer {
+      padding: 60px 0 40px;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-inner {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr;
+      gap: 48px;
+      margin-bottom: 48px;
+    }
+
+    .footer-brand .nav-logo { font-size: 26px; margin-bottom: 14px; }
+
+    .footer-tagline {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      max-width: 280px;
+      margin-bottom: 16px;
+    }
+
+    .footer-url {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--cyan);
+      opacity: 0.7;
+    }
+
+    .footer-col-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+    }
+
+    .footer-links { display: flex; flex-direction: column; gap: 12px; }
+
+    .footer-links a {
+      font-size: 14px;
+      color: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .footer-links a:hover { color: var(--cyan); padding-left: 6px; }
+
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-copy {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .footer-copy span { color: var(--text-secondary); }
+
+    .footer-socials { display: flex; gap: 12px; }
+
+    .social-btn {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: var(--text-muted);
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .social-btn:hover {
+      border-color: var(--border-cyan);
+      color: var(--cyan);
+      background: var(--cyan-dim);
+    }
+
+    /* ============================================================
+       MOBILE NAV MENU
+    ============================================================ */
+    .mobile-menu {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(10, 15, 30, 0.98);
+      backdrop-filter: blur(20px);
+      z-index: 998;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .mobile-menu.open { transform: translateX(0); }
+
+    .mobile-menu a {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      transition: var(--transition);
+    }
+
+    .mobile-menu a:hover { color: var(--cyan); }
+
+    .mobile-close {
+      position: absolute;
+      top: 24px; right: 24px;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      font-size: 28px;
+      cursor: pointer;
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 1024px) {
+      .hero-inner       { grid-template-columns: 1fr; text-align: center; }
+      .hero-content     { max-width: 100%; }
+      .hero-sub         { margin: 0 auto 40px; }
+      .hero-ctas        { justify-content: center; }
+      .hero-badge       { margin: 0 auto 28px; }
+      .hero-visual      { margin-top: 48px; }
+      .dashboard-card   { max-width: 420px; }
+      .pricing-grid     { grid-template-columns: 1fr; max-width: 440px; margin: 0 auto; }
+      .features-grid    { grid-template-columns: repeat(2, 1fr); }
+      .testimonials-grid{ grid-template-columns: 1fr; }
+      .steps-grid       { grid-template-columns: 1fr; }
+      .steps-grid::before { display: none; }
+      .footer-inner     { grid-template-columns: 1fr; gap: 32px; }
+      .footer-bottom    { flex-direction: column; gap: 16px; text-align: center; }
+    }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .nav-cta   { display: none; }
+      .hamburger { display: flex; }
+      .features-grid { grid-template-columns: 1fr; }
+      .cta-box   { padding: 50px 28px; }
+      .hero-headline { font-size: 44px; letter-spacing: -1px; }
+    }
+
+    @media (max-width: 480px) {
+      .hero-ctas { flex-direction: column; align-items: stretch; }
+      .hero-ctas .btn-primary,
+      .hero-ctas .btn-ghost { text-align: center; justify-content: center; }
+    }
+
+  </style>
 </head>
+<body>
 
-<body class="bg-gray-50 text-gray-800">
+  <!-- ============================================================
+       NAVBAR
+  ============================================================ -->
+  <nav id="navbar">
+    <div class="container">
+      <div class="nav-inner">
 
-    <!-- NAVBAR -->
-    <header class="bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="#" class="flex items-center gap-2">
-                <img src="{{ asset('images/logo.png') }}" alt="OwnStore Logo" class="h-10 w-10 rounded-full">
-                <span class="text-2xl font-bold text-indigo-600">OwnStore</span>
-            </a>
-            <nav class="space-x-6 hidden md:block">
-                <a href="#" class="hover:text-indigo-600">Features</a>
-                <a href="#" class="hover:text-indigo-600">Business Types</a>
-                <a href="#" class="hover:text-indigo-600">Pricing</a>
-                <a href="{{ route('login') }}" class="hover:text-indigo-600">Login</a>
-            </nav>
-            <a href="{{ route('store.register.form') }}" class="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700">
-                Get Started
-            </a>
-        </div>
-    </header>
-
-    <!-- HERO SECTION -->
-    <section class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-        <div class="max-w-7xl mx-auto px-6 py-24 grid md:grid-cols-2 gap-12 items-center">
-            <div>
-                <h2 class="text-4xl md:text-5xl font-extrabold leading-tight">
-                    One Smart System <br> For Every Store
-                </h2>
-                <p class="mt-6 text-lg text-indigo-100">
-                    Manage your Super Market, Medical Store, Shoe Shop, and more —
-                    all from one powerful & easy-to-use platform.
-                </p>
-                <div class="mt-8 flex gap-4">
-                    <a href="{{ route('store.register.form') }}" class="bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100">
-                        Start Free
-                    </a>
-                    <a href="#" class="border border-white px-6 py-3 rounded-lg hover:bg-white hover:text-indigo-600">
-                        Watch Demo
-                    </a>
-                </div>
-            </div>
-
-            <div class="hidden md:block">
-                <img src="https://illustrations.popsy.co/gray/sales.svg" alt="Dashboard" class="w-full">
-            </div>
-        </div>
-    </section>
-
-    <!-- BUSINESS TYPES -->
-    <section class="max-w-7xl mx-auto px-6 py-20">
-        <h3 class="text-3xl font-bold text-center mb-12">
-            Built for Every Type of Business
-        </h3>
-
-        <div class="grid md:grid-cols-4 gap-8">
-            <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-                <h4 class="text-xl font-semibold mb-2">🛒 Super Market</h4>
-                <p class="text-gray-600">Barcode billing, stock & supplier management.</p>
-            </div>
-
-            <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-                <h4 class="text-xl font-semibold mb-2">💊 Medical Store</h4>
-                <p class="text-gray-600">Expiry alerts, batch tracking & safe sales.</p>
-            </div>
-
-            <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-                <h4 class="text-xl font-semibold mb-2">👟 Shoe Shop</h4>
-                <p class="text-gray-600">Size, color variants & brand control.</p>
-            </div>
-
-            <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-                <h4 class="text-xl font-semibold mb-2">🏪 Retail Stores</h4>
-                <p class="text-gray-600">Flexible setup for any type of shop.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- FEATURES -->
-    <section class="bg-white py-20">
-        <div class="max-w-7xl mx-auto px-6">
-            <h3 class="text-3xl font-bold text-center mb-12">
-                Powerful Features You’ll Love
-            </h3>
-
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="p-6 border rounded-xl">
-                    <h4 class="font-semibold text-lg mb-2">⚡ Fast POS</h4>
-                    <p class="text-gray-600">Quick billing with keyboard & barcode support.</p>
-                </div>
-                <div class="p-6 border rounded-xl">
-                    <h4 class="font-semibold text-lg mb-2">📦 Inventory</h4>
-                    <p class="text-gray-600">Real-time stock, low stock & expiry alerts.</p>
-                </div>
-                <div class="p-6 border rounded-xl">
-                    <h4 class="font-semibold text-lg mb-2">📊 Reports</h4>
-                    <p class="text-gray-600">Sales, profit & performance insights.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA -->
-    <section class="bg-indigo-600 text-white py-20 text-center">
-        <h3 class="text-4xl font-bold mb-6">
-            Ready to Run Your Store Smarter?
-        </h3>
-        <a href="{{ route('store.register.form') }}" class="bg-white text-indigo-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100">
-            Create Your Store Now
+        <!-- Logo -->
+        <a href="#" class="nav-logo" aria-label="Mart Home">
+          mart<span class="dot"></span>
         </a>
-        <p class="mt-4 text-indigo-200">Setup takes less than 10 minutes</p>
-    </section>
 
-    <!-- FOOTER -->
-    <footer class="bg-gray-900 text-gray-400 py-6 text-center">
-        © 2026 OwnStore. All rights reserved.
-    </footer>
+        <!-- Links -->
+        <ul class="nav-links" role="navigation" aria-label="Primary navigation">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#how">How It Works</a></li>
+          <li><a href="#footer">Contact</a></li>
+        </ul>
+
+        <!-- CTA Buttons -->
+        <div class="nav-actions nav-cta">
+          <a href="{{ route('login') }}" class="btn-login" id="nav-login-btn">Log In</a>
+          <a href="#pricing" class="btn-primary" id="nav-cta-btn">Get Started</a>
+        </div>
+
+        <!-- Hamburger -->
+        <button class="hamburger" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+    <button class="mobile-close" id="mobile-close-btn" aria-label="Close menu">✕</button>
+    <a href="#features" class="mobile-link">Features</a>
+    <a href="#pricing" class="mobile-link">Pricing</a>
+    <a href="#how" class="mobile-link">How It Works</a>
+    <a href="#footer" class="mobile-link">Contact</a>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:260px">
+      <a href="{{ route('login') }}" class="btn-login" style="width:100%;text-align:center;padding:13px 36px;font-size:15px;">Log In</a>
+      <a href="#pricing" class="btn-primary" style="width:100%;text-align:center;font-size:16px;padding:14px 36px;">Get Started</a>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       HERO
+  ============================================================ -->
+  <section id="hero" aria-label="Hero section">
+    <canvas id="hero-canvas"></canvas>
+
+    <!-- Ambient blobs -->
+    <div class="hero-blob hero-blob-1"></div>
+    <div class="hero-blob hero-blob-2"></div>
+    <div class="hero-blob hero-blob-3"></div>
+
+    <div class="container">
+      <div class="hero-inner">
+
+        <!-- Content -->
+        <div class="hero-content">
+
+          <!-- Badge -->
+          <div class="hero-badge" aria-label="Trust indicator">
+            <span class="badge-dot"></span>
+            ⚡ Trusted by 500+ businesses
+          </div>
+
+          <!-- Headline -->
+          <h1 class="hero-headline">
+            Your Software.<br/><span>Your Terms.</span>
+          </h1>
+
+          <!-- Subheadline -->
+          <p class="hero-sub">
+            Monthly, Yearly, or Rental — subscribe to the tools your business actually needs. No lock-ins, no surprises.
+          </p>
+
+          <!-- CTAs -->
+          <div class="hero-ctas">
+            <a href="#pricing" class="btn-primary" id="hero-browse-btn">Browse Plans</a>
+            <a href="#how" class="btn-ghost" id="hero-demo-btn">
+              <span class="play-icon" aria-hidden="true"></span>
+              Watch Demo
+            </a>
+          </div>
+
+        </div>
+
+        <!-- Dashboard Visual -->
+        <div class="hero-visual" aria-hidden="true">
+          <div class="dashboard-card">
+
+            <div class="dashboard-header">
+              <div class="dashboard-dots">
+                <span></span><span></span><span></span>
+              </div>
+              <span class="dashboard-title">Mart Dashboard</span>
+              <span class="plan-badge-mini">PRO PLAN</span>
+            </div>
+
+            <div class="dashboard-stats">
+              <div class="stat-box">
+                <div class="stat-label">Active Subs</div>
+                <div class="stat-val">2,847</div>
+                <div class="stat-change">↑ 12.4% this month</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">Revenue</div>
+                <div class="stat-val gold">$84.2K</div>
+                <div class="stat-change">↑ 8.7% this month</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">Tools Active</div>
+                <div class="stat-val">156</div>
+                <div class="stat-change">Across 12 teams</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">Uptime</div>
+                <div class="stat-val">99.9%</div>
+                <div class="stat-change">Last 90 days</div>
+              </div>
+            </div>
+
+            <div class="dashboard-bar-label">Subscription breakdown</div>
+            <div class="dashboard-bars">
+              <div class="bar-row">
+                <span class="bar-name">Monthly</span>
+                <div class="bar-track">
+                  <div class="bar-fill cyan" style="width:72%"></div>
+                </div>
+                <span class="bar-pct">72%</span>
+              </div>
+              <div class="bar-row">
+                <span class="bar-name">Yearly</span>
+                <div class="bar-track">
+                  <div class="bar-fill gold" style="width:54%"></div>
+                </div>
+                <span class="bar-pct">54%</span>
+              </div>
+              <div class="bar-row">
+                <span class="bar-name">Rental</span>
+                <div class="bar-track">
+                  <div class="bar-fill purple" style="width:28%"></div>
+                </div>
+                <span class="bar-pct">28%</span>
+              </div>
+            </div>
+
+            <div class="dashboard-footer">
+              <div style="display:flex;align-items:center">
+                <span class="status-dot"></span>
+                <span class="status-text">All systems operational</span>
+              </div>
+              <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">mart.vectabyte.net</span>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TRUST BAR
+  ============================================================ -->
+  <section id="trust" aria-label="Trusted by brands">
+    <p class="trust-label">Powering businesses across the region</p>
+    <div class="marquee-wrapper">
+      <div class="marquee-track" id="marquee-track">
+        <!-- Set 1 -->
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(0,229,255,0.1);color:var(--cyan)">Nx</div>
+          NexaTech
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(255,215,0,0.1);color:var(--gold)">Sv</div>
+          SolvePro
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(123,47,247,0.15);color:#C471ED">Ql</div>
+          QuantumLab
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(76,175,80,0.1);color:#4CAF50">Vr</div>
+          VeridianCo
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(255,107,53,0.1);color:#FF6B35">Px</div>
+          PixelForge
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(0,229,255,0.1);color:var(--cyan)">Ds</div>
+          DataSync
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(255,215,0,0.1);color:var(--gold)">Ap</div>
+          ApertureAI
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(123,47,247,0.15);color:#C471ED">Cl</div>
+          CloudNest
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(255,107,53,0.1);color:#FF6B35">Sp</div>
+          SparkHub
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(76,175,80,0.1);color:#4CAF50">Fn</div>
+          FinnScale
+        </div>
+        <!-- Set 2 (duplicate for infinite scroll) -->
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(0,229,255,0.1);color:var(--cyan)">Nx</div>
+          NexaTech
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(255,215,0,0.1);color:var(--gold)">Sv</div>
+          SolvePro
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(123,47,247,0.15);color:#C471ED">Ql</div>
+          QuantumLab
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(76,175,80,0.1);color:#4CAF50">Vr</div>
+          VeridianCo
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(255,107,53,0.1);color:#FF6B35">Px</div>
+          PixelForge
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(0,229,255,0.1);color:var(--cyan)">Ds</div>
+          DataSync
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(255,215,0,0.1);color:var(--gold)">Ap</div>
+          ApertureAI
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(123,47,247,0.15);color:#C471ED">Cl</div>
+          CloudNest
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(255,107,53,0.1);color:#FF6B35">Sp</div>
+          SparkHub
+        </div>
+        <div class="brand-logo">
+          <div class="brand-icon" style="background:rgba(76,175,80,0.1);color:#4CAF50">Fn</div>
+          FinnScale
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       HOW IT WORKS
+  ============================================================ -->
+  <section id="how" aria-label="How it works">
+    <div class="container">
+
+      <div class="section-header center reveal">
+        <span class="section-tag">Process</span>
+        <h2 class="section-title">Three Steps to Get Started</h2>
+        <p class="section-sub">From sign-up to deployment — get your team running on the right tools in minutes, not days.</p>
+      </div>
+
+      <div class="steps-grid">
+
+        <div class="step-card reveal reveal-delay-1" id="step-1">
+          <span class="step-number">01</span>
+          <div class="step-icon">🗓️</div>
+          <h3 class="step-title">Choose Your Plan</h3>
+          <p class="step-desc">Pick from Monthly, Yearly, or Rental plans based on your business needs and budget. No commitment required to browse.</p>
+        </div>
+
+        <div class="step-card reveal reveal-delay-2" id="step-2">
+          <span class="step-number">02</span>
+          <div class="step-icon">⚡</div>
+          <h3 class="step-title">Activate Instantly</h3>
+          <p class="step-desc">No waiting, no contracts, no bureaucracy. Your subscription activates immediately after payment — start using your tools right away.</p>
+        </div>
+
+        <div class="step-card reveal reveal-delay-3" id="step-3">
+          <span class="step-number">03</span>
+          <div class="step-icon">🔄</div>
+          <h3 class="step-title">Scale or Cancel Anytime</h3>
+          <p class="step-desc">Upgrade, downgrade, add seats, or cancel with zero friction. Your billing adjusts automatically, prorated to the day.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       PRICING
+  ============================================================ -->
+  <section id="pricing" aria-label="Pricing plans">
+    <div class="container">
+
+      <div class="section-header center reveal">
+        <span class="section-tag">Pricing</span>
+        <h2 class="section-title">Plans Built for Every Business</h2>
+        <p class="section-sub">Transparent pricing, zero hidden fees. Switch plans at any time with a single click.</p>
+      </div>
+
+      <div class="pricing-grid">
+
+        <!-- Monthly -->
+        <div class="pricing-card monthly reveal reveal-delay-1" id="monthly-card" tabindex="0" role="article" aria-label="Monthly plan">
+          <span class="plan-badge cyan">⭐ Popular</span>
+          <div class="plan-icon">🗓️</div>
+          <h3 class="plan-name">Monthly</h3>
+          <p class="plan-tagline">Flexibility First</p>
+          <div class="plan-price">
+            <span class="price-currency">$</span>
+            <span class="price-amount cyan">49</span>
+            <span class="price-period">/mo</span>
+          </div>
+          <p class="price-note">Billed monthly · Cancel anytime</p>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li class="plan-feature">
+              <span class="check-icon cyan">✓</span>
+              Access to all 150+ software tools
+            </li>
+            <li class="plan-feature">
+              <span class="check-icon cyan">✓</span>
+              Up to 5 team members
+            </li>
+            <li class="plan-feature">
+              <span class="check-icon cyan">✓</span>
+              Instant activation
+            </li>
+            <li class="plan-feature">
+              <span class="check-icon cyan">✓</span>
+              24/7 priority support
+            </li>
+            <li class="plan-feature">
+              <span class="check-icon cyan">✓</span>
+              Cancel anytime, no questions
+            </li>
+          </ul>
+          <button class="plan-btn cyan" id="monthly-plan-btn" onclick="window.location='#'">Choose Monthly Plan</button>
+        </div>
+
+        <!-- Yearly -->
+        <div class="pricing-card yearly reveal reveal-delay-2" id="yearly-card" tabindex="0" role="article" aria-label="Yearly plan">
+          <span class="plan-badge gold">💰 Save 30%</span>
+          <div class="plan-icon">📅</div>
+          <h3 class="plan-name">Yearly</h3>
+          <p class="plan-tagline">Best Value</p>
+          <div class="plan-price">
+            <span class="price-currency">$</span>
+            <span class="price-amount gold">34</span>
+            <span class="price-period">/mo</span>
+          </div>
+          <p class="price-note">Billed $408/year · Save $180 annually</p>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li class="plan-feature">
+              <span class="check-icon gold">✓</span>
+              Everything in Monthly
+            </li>
+            <li class="plan-feature">
+              <span class="check-icon gold">✓</span>
+              Up to 25 team members
+            </li>
+            <li class="plan-feature">
+              <span class="check-icon gold">✓</span>
+              Advanced analytics dashboard
+            </li>
+            <li class="plan-feature">
+              <span class="check-icon gold">✓</span>
+              Dedicated account manager
+            </li>
+            <li class="plan-feature">
+              <span class="check-icon gold">✓</span>
+              Custom integrations & API access
+            </li>
+            <li class="plan-feature">
+              <span class="check-icon gold">✓</span>
+              SLA guaranteed uptime 99.9%
+            </li>
+          </ul>
+          <button class="plan-btn gold" id="yearly-plan-btn" onclick="window.location='#'">Choose Yearly Plan</button>
+        </div>
+
+        <!-- Rental -->
+        <div class="pricing-card rental reveal reveal-delay-3" id="rental-card" tabindex="0" role="article" aria-label="Rental plan">
+          <span class="plan-badge silver">🔑 Flexible</span>
+          <div class="plan-icon">⏰</div>
+          <h3 class="plan-name">Rental</h3>
+          <p class="plan-tagline">Short-Term Access</p>
+          <div class="plan-price">
+            <span class="price-currency">$</span>
+            <span class="price-amount silver">15</span>
+            <span class="price-period">/wk</span>
+          </div>
+          <p class="price-note">Weekly or custom duration · Pay as you go</p>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li class="plan-feature">
+              <span class="check-icon silver">✓</span>
+              Full tool access for your rental period
+            </li>
+            <li class="plan-feature">
+              <span class="check-icon silver">✓</span>
+              Up to 3 team members
+            </li>
+            <li class="plan-feature">
+              <span class="check-icon silver">✓</span>
+              Custom duration (7–90 days)
+            </li>
+            <li class="plan-feature">
+              <span class="check-icon silver">✓</span>
+              Perfect for one-time projects
+            </li>
+            <li class="plan-feature">
+              <span class="check-icon silver">✓</span>
+              Standard email support
+            </li>
+          </ul>
+          <button class="plan-btn silver" id="rental-plan-btn" onclick="window.location='#'">Choose Rental Plan</button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FEATURES
+  ============================================================ -->
+  <section id="features" aria-label="Platform features">
+    <div class="container">
+
+      <div class="section-header center reveal">
+        <span class="section-tag">Features</span>
+        <h2 class="section-title">Everything Your Business Needs</h2>
+        <p class="section-sub">Built for speed, security, and scale — so you can focus on what matters.</p>
+      </div>
+
+      <div class="features-grid">
+
+        <div class="feature-card reveal reveal-delay-1" id="feat-1">
+          <span class="feature-icon">⚡</span>
+          <h3 class="feature-title">Instant Activation</h3>
+          <p class="feature-desc">Subscriptions go live the moment payment clears. No manual approvals, no setup delays.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-2" id="feat-2">
+          <span class="feature-icon">🔄</span>
+          <h3 class="feature-title">Flexible Billing Cycles</h3>
+          <p class="feature-desc">Choose monthly, yearly, or custom rental periods. Switch plans anytime with prorated billing.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-3" id="feat-3">
+          <span class="feature-icon">✕</span>
+          <h3 class="feature-title">Cancel Anytime</h3>
+          <p class="feature-desc">No cancellation fees, no lock-in contracts. Cancel or pause your subscription with one click.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-1" id="feat-4">
+          <span class="feature-icon">🔒</span>
+          <h3 class="feature-title">Secure Payments</h3>
+          <p class="feature-desc">PCI-DSS compliant checkout powered by Stripe. Your payment data is always encrypted and safe.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-2" id="feat-5">
+          <span class="feature-icon">👥</span>
+          <h3 class="feature-title">Multi-User Access</h3>
+          <p class="feature-desc">Add team members, assign roles, and manage permissions across your entire organization.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-3" id="feat-6">
+          <span class="feature-icon">💬</span>
+          <h3 class="feature-title">24/7 Support</h3>
+          <p class="feature-desc">Our team is available round the clock via live chat, email, and dedicated account management.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TESTIMONIALS
+  ============================================================ -->
+  <section id="testimonials" aria-label="Customer testimonials">
+    <div class="container">
+
+      <div class="section-header center reveal">
+        <span class="section-tag">Testimonials</span>
+        <h2 class="section-title">What Our Customers Say</h2>
+        <p class="section-sub">Real feedback from real businesses using Mart every day.</p>
+      </div>
+
+      <div class="testimonials-grid">
+
+        <div class="testimonial-card reveal reveal-delay-1" id="testi-1">
+          <div class="stars">
+            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+          </div>
+          <span class="quote-mark">"</span>
+          <p class="testimonial-text">Mart completely transformed how we manage our software stack. The Rental plan was perfect for our short project sprints — we only paid for what we used. Incredible value.</p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:rgba(0,229,255,0.1);color:var(--cyan)">SA</div>
+            <div>
+              <p class="author-name">Sara Al-Rasheed</p>
+              <p class="author-role">CTO · NexaTech Solutions</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card reveal reveal-delay-2" id="testi-2">
+          <div class="stars">
+            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+          </div>
+          <span class="quote-mark">"</span>
+          <p class="testimonial-text">Switched from monthly to yearly and saved over $2,000 annually. The migration was seamless, support was outstanding, and our team was productive within hours.</p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:rgba(255,215,0,0.1);color:var(--gold)">MK</div>
+            <div>
+              <p class="author-name">Marcus Klein</p>
+              <p class="author-role">Head of Ops · VeridianCo</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card reveal reveal-delay-3" id="testi-3">
+          <div class="stars">
+            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+          </div>
+          <span class="quote-mark">"</span>
+          <p class="testimonial-text">As a startup, flexibility is everything. Mart's monthly plan let us scale from 2 users to 18 without any headaches. The dashboard is beautiful and incredibly intuitive.</p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:rgba(123,47,247,0.15);color:#C471ED">LP</div>
+            <div>
+              <p class="author-name">Layla Patel</p>
+              <p class="author-role">Founder · PixelForge Studio</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FINAL CTA
+  ============================================================ -->
+  <section id="cta" aria-label="Call to action">
+    <div class="container">
+      <div class="cta-box reveal" id="cta-box">
+        <div class="cta-glow" aria-hidden="true"></div>
+        <span class="section-tag">Get Started Today</span>
+        <h2 class="section-title" style="margin-top:16px">Ready to Get Started?</h2>
+        <p class="section-sub">Join hundreds of businesses on Mart today.<br/>Your first 14 days are completely free — no credit card required.</p>
+        <br/><br/>
+        <button class="btn-shimmer" id="cta-trial-btn" onclick="window.location='#pricing'" aria-label="Start free trial">
+          🚀 Start Your Free Trial
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FOOTER
+  ============================================================ -->
+  <footer id="footer" aria-label="Footer">
+    <div class="container">
+
+      <div class="footer-inner">
+
+        <div class="footer-brand">
+          <div class="nav-logo" style="margin-bottom:14px">
+            mart<span class="dot"></span>
+          </div>
+          <p class="footer-tagline">
+            The premium SaaS marketplace for businesses that need software on their own terms. Flexible, fast, and fair.
+          </p>
+          <span class="footer-url">mart.vectabyte.net</span>
+        </div>
+
+        <div>
+          <p class="footer-col-title">Platform</p>
+          <ul class="footer-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#how">How It Works</a></li>
+            <li><a href="#">API Docs</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="footer-col-title">Company</p>
+          <ul class="footer-links">
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">Support Center</a></li>
+            <li><a href="#">Contact Us</a></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="footer-bottom">
+        <p class="footer-copy">
+          © 2025 <span>Vectabyte</span>. All rights reserved. ·
+          <span style="font-family:var(--font-mono);font-size:12px">mart.vectabyte.net</span>
+        </p>
+        <div class="footer-socials">
+          <a href="#" class="social-btn" aria-label="Twitter">𝕏</a>
+          <a href="#" class="social-btn" aria-label="LinkedIn">in</a>
+          <a href="#" class="social-btn" aria-label="GitHub">⌨</a>
+          <a href="#" class="social-btn" aria-label="Email">@</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- ============================================================
+       JAVASCRIPT
+  ============================================================ -->
+  <script>
+    'use strict';
+
+    /* ----------------------------------------------------------------
+       1. NAVBAR — glassmorphism on scroll
+    ---------------------------------------------------------------- */
+    const navbar = document.getElementById('navbar');
+
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 60) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+    }, { passive: true });
+
+    /* ----------------------------------------------------------------
+       2. HAMBURGER MENU
+    ---------------------------------------------------------------- */
+    const hamburgerBtn  = document.getElementById('hamburger-btn');
+    const mobileMenu    = document.getElementById('mobile-menu');
+    const mobileCloseBtn= document.getElementById('mobile-close-btn');
+    const mobileLinks   = document.querySelectorAll('.mobile-link');
+
+    function openMenu() {
+      mobileMenu.classList.add('open');
+      hamburgerBtn.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeMenu() {
+      mobileMenu.classList.remove('open');
+      hamburgerBtn.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+
+    hamburgerBtn.addEventListener('click', openMenu);
+    mobileCloseBtn.addEventListener('click', closeMenu);
+    mobileLinks.forEach(link => link.addEventListener('click', closeMenu));
+
+    /* ----------------------------------------------------------------
+       3. HERO CANVAS — floating geometric particles / mesh
+    ---------------------------------------------------------------- */
+    (function initCanvas() {
+      const canvas  = document.getElementById('hero-canvas');
+      const ctx     = canvas.getContext('2d');
+
+      let W, H, particles, mouse;
+
+      mouse = { x: 0, y: 0 };
+
+      function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = canvas.parentElement.offsetHeight;
+      }
+
+      function createParticles() {
+        particles = [];
+        const count = Math.min(80, Math.floor(W / 14));
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x:   Math.random() * W,
+            y:   Math.random() * H,
+            vx:  (Math.random() - 0.5) * 0.25,
+            vy:  (Math.random() - 0.5) * 0.25,
+            r:   Math.random() * 1.5 + 0.5,
+            opacity: Math.random() * 0.4 + 0.1,
+          });
+        }
+      }
+
+      function drawConnections() {
+        const maxDist = 160;
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < maxDist) {
+              const alpha = (1 - dist / maxDist) * 0.15;
+              ctx.strokeStyle = `rgba(0, 229, 255, ${alpha})`;
+              ctx.lineWidth = 0.5;
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, W, H);
+
+        // Draw subtle grid
+        ctx.strokeStyle = 'rgba(0, 229, 255, 0.025)';
+        ctx.lineWidth = 1;
+        const gridSize = 80;
+        for (let x = 0; x < W; x += gridSize) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+        }
+        for (let y = 0; y < H; y += gridSize) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+        }
+
+        // Update & draw particles
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > W) p.vx *= -1;
+          if (p.y < 0 || p.y > H) p.vy *= -1;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(0, 229, 255, ${p.opacity})`;
+          ctx.fill();
+        });
+
+        drawConnections();
+
+        requestAnimationFrame(animate);
+      }
+
+      window.addEventListener('resize', () => { resize(); createParticles(); }, { passive: true });
+      window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true });
+
+      resize();
+      createParticles();
+      animate();
+    })();
+
+    /* ----------------------------------------------------------------
+       4. INTERSECTION OBSERVER — scroll-reveal + step icons
+    ---------------------------------------------------------------- */
+    const revealEls = document.querySelectorAll('.reveal');
+
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    revealEls.forEach(el => revealObserver.observe(el));
+
+    // Step icon animation trigger
+    const stepCards = document.querySelectorAll('.step-card');
+
+    const stepObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('step-visible');
+          const icon = entry.target.querySelector('.step-icon');
+          if (icon) {
+            icon.style.animationName = 'iconDraw';
+            icon.style.animationDuration = '0.6s';
+            icon.style.animationFillMode = 'forwards';
+          }
+          stepObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+
+    stepCards.forEach(c => stepObserver.observe(c));
+
+    /* ----------------------------------------------------------------
+       5. SMOOTH SCROLL for anchor links
+    ---------------------------------------------------------------- */
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          e.preventDefault();
+          const offset = 80;
+          const top = target.getBoundingClientRect().top + window.scrollY - offset;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
+      });
+    });
+
+    /* ----------------------------------------------------------------
+       6. PRICING CARD — keyboard accessibility
+    ---------------------------------------------------------------- */
+    document.querySelectorAll('.pricing-card').forEach(card => {
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          const btn = card.querySelector('.plan-btn');
+          if (btn) btn.click();
+        }
+      });
+    });
+
+    /* ----------------------------------------------------------------
+       7. MARQUEE — clone to fill width if needed
+    ---------------------------------------------------------------- */
+    (function ensureMarquee() {
+      const track = document.getElementById('marquee-track');
+      if (!track) return;
+      // already has duplicate set inside HTML — animation handles it
+    })();
+
+    /* ----------------------------------------------------------------
+       8. Parallax tilt on dashboard card (desktop only)
+    ---------------------------------------------------------------- */
+    const dashCard = document.querySelector('.dashboard-card');
+
+    if (dashCard && window.matchMedia('(min-width: 1024px)').matches) {
+      dashCard.addEventListener('mousemove', e => {
+        const rect = dashCard.getBoundingClientRect();
+        const cx   = rect.left + rect.width  / 2;
+        const cy   = rect.top  + rect.height / 2;
+        const dx   = (e.clientX - cx) / rect.width;
+        const dy   = (e.clientY - cy) / rect.height;
+        dashCard.style.transform = `perspective(900px) rotateY(${dx * 12}deg) rotateX(${-dy * 10}deg) translateY(-6px)`;
+        dashCard.style.animationPlayState = 'paused';
+      });
+
+      dashCard.addEventListener('mouseleave', () => {
+        dashCard.style.transform = '';
+        dashCard.style.animationPlayState = 'running';
+      });
+    }
+
+    /* ----------------------------------------------------------------
+       9. Active nav link highlight on scroll
+    ---------------------------------------------------------------- */
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks  = document.querySelectorAll('.nav-links a');
+
+    const sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          navLinks.forEach(link => {
+            link.style.color = '';
+            if (link.getAttribute('href') === `#${entry.target.id}`) {
+              link.style.color = 'var(--cyan)';
+            }
+          });
+        }
+      });
+    }, { threshold: 0.4 });
+
+    sections.forEach(s => sectionObserver.observe(s));
+
+  </script>
 
 </body>
-
 </html>
