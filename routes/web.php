@@ -216,6 +216,7 @@ Route::middleware(['auth:web,employee'])->group(function () {
     Route::get('/items', [\App\Http\Controllers\ItemController::class, 'index'])->name('items.index');
     Route::get('/items/create', [\App\Http\Controllers\ItemController::class, 'create'])->name('items.create');
     Route::post('/items/store', [\App\Http\Controllers\ItemController::class, 'store'])->name('items.store');
+    Route::post('/items/import', [\App\Http\Controllers\ItemController::class, 'import'])->name('items.import');
     Route::get('/items/{id}/edit', [\App\Http\Controllers\ItemController::class, 'edit'])->name('items.edit');
     Route::post('/items/{id}/update', [\App\Http\Controllers\ItemController::class, 'update'])->name('items.update');
 
