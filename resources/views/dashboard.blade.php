@@ -75,6 +75,95 @@
 
 </div>
 
+<!-- Quick Access Shortcuts -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+
+    <a href="{{ route('reports.index') }}"
+       id="shortcut-reports"
+       class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
+              border border-indigo-100 dark:border-indigo-900 rounded-xl p-4 shadow-sm
+              hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-500
+              hover:-translate-y-0.5 transition-all duration-200">
+        <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center
+                    shadow-md shadow-indigo-300 dark:shadow-indigo-900
+                    group-hover:scale-110 transition-transform">
+            <i class="fas fa-chart-pie text-white text-base"></i>
+        </div>
+        <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Reports</span>
+    </a>
+
+    <a href="{{ route('sales.pos') }}"
+       id="shortcut-pos"
+       class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
+              border border-green-100 dark:border-green-900 rounded-xl p-4 shadow-sm
+              hover:shadow-md hover:border-green-400 dark:hover:border-green-500
+              hover:-translate-y-0.5 transition-all duration-200">
+        <div class="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center
+                    shadow-md shadow-green-200 dark:shadow-green-900
+                    group-hover:scale-110 transition-transform">
+            <i class="fas fa-cash-register text-white text-base"></i>
+        </div>
+        <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">POS Sale</span>
+    </a>
+
+    <a href="{{ route('purchases.create') }}"
+       id="shortcut-purchase"
+       class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
+              border border-blue-100 dark:border-blue-900 rounded-xl p-4 shadow-sm
+              hover:shadow-md hover:border-blue-400 dark:hover:border-blue-500
+              hover:-translate-y-0.5 transition-all duration-200">
+        <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center
+                    shadow-md shadow-blue-200 dark:shadow-blue-900
+                    group-hover:scale-110 transition-transform">
+            <i class="fas fa-shopping-cart text-white text-base"></i>
+        </div>
+        <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Purchase</span>
+    </a>
+
+    <a href="{{ route('general-ledger.index') }}"
+       id="shortcut-accounts"
+       class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
+              border border-purple-100 dark:border-purple-900 rounded-xl p-4 shadow-sm
+              hover:shadow-md hover:border-purple-400 dark:hover:border-purple-500
+              hover:-translate-y-0.5 transition-all duration-200">
+        <div class="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center
+                    shadow-md shadow-purple-200 dark:shadow-purple-900
+                    group-hover:scale-110 transition-transform">
+            <i class="fas fa-sitemap text-white text-base"></i>
+        </div>
+        <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Accounts</span>
+    </a>
+
+    <a href="{{ route('items.index') }}"
+       id="shortcut-items"
+       class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
+              border border-amber-100 dark:border-amber-900 rounded-xl p-4 shadow-sm
+              hover:shadow-md hover:border-amber-400 dark:hover:border-amber-500
+              hover:-translate-y-0.5 transition-all duration-200">
+        <div class="w-10 h-10 rounded-lg bg-amber-500 flex items-center justify-center
+                    shadow-md shadow-amber-200 dark:shadow-amber-900
+                    group-hover:scale-110 transition-transform">
+            <i class="fas fa-boxes text-white text-base"></i>
+        </div>
+        <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Items</span>
+    </a>
+
+    <a href="{{ route('customers.index') }}"
+       id="shortcut-customers"
+       class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
+              border border-teal-100 dark:border-teal-900 rounded-xl p-4 shadow-sm
+              hover:shadow-md hover:border-teal-400 dark:hover:border-teal-500
+              hover:-translate-y-0.5 transition-all duration-200">
+        <div class="w-10 h-10 rounded-lg bg-teal-500 flex items-center justify-center
+                    shadow-md shadow-teal-200 dark:shadow-teal-900
+                    group-hover:scale-110 transition-transform">
+            <i class="fas fa-users text-white text-base"></i>
+        </div>
+        <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Customers</span>
+    </a>
+
+</div>
+
 <!-- Charts & Activity Grid -->
 <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
 

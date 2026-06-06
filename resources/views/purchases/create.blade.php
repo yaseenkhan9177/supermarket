@@ -173,11 +173,11 @@
                                     <td class="p-3 text-center text-gray-400" x-text="index + 1"></td>
 
                                     <td class="p-3">
-                                        <input type="text" x-model="row.code" @keydown.enter.prevent="fetchProduct(index)" class="w-full p-1 border rounded text-xs" placeholder="Scan...">
+                                        <input type="text" :name="`items[${index}][code]`" x-model="row.code" @keydown.enter.prevent="fetchProduct(index)" @blur="fetchProduct(index)" class="w-full p-1 border rounded text-xs text-gray-950" placeholder="Scan...">
                                     </td>
 
                                     <td class="p-3">
-                                        <input type="text" x-model="row.name" class="w-full p-1 border rounded text-xs" placeholder="Item name...">
+                                        <input type="text" :name="`items[${index}][name]`" x-model="row.name" class="w-full p-1 border rounded text-xs text-gray-950" placeholder="Item name...">
                                         <span class="text-[10px] text-gray-400">Stock: <span :class="row.stock > 0 ? 'text-green-600 font-bold' : 'text-red-500 font-bold'" x-text="row.stock ?? '—'"></span></span>
                                         <input type="hidden" :name="`items[${index}][item_id]`" x-model="row.item_id">
                                     </td>

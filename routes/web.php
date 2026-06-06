@@ -156,9 +156,15 @@ Route::middleware(['auth:web,employee'])->group(function () {
     Route::post('/values/search', [\App\Http\Controllers\ValueSearchController::class, 'search'])->name('values.search');
 
     // Report Center
-    Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'accountReports'])->name('reports.index');
     Route::get('/reports/view/{id}', [\App\Http\Controllers\ReportController::class, 'view'])->name('reports.view');
     Route::post('/reports/generate', [\App\Http\Controllers\ReportController::class, 'generate'])->name('reports.generate');
+
+    // Account Reports Tree
+    Route::get('/account/reports', function () {
+        return redirect()->route('reports.index');
+    })->name('account.reports');
+    Route::get('/account/reports/open', [\App\Http\Controllers\ReportController::class, 'openReport'])->name('account.reports.open');
 
     // Universal Add Child
     Route::get('/child/create', [\App\Http\Controllers\ChildController::class, 'create'])->name('child.create');

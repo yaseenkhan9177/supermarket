@@ -28,7 +28,10 @@
                     <span class="text-xs text-slate-400 font-medium mt-0.5">General Ledger / Chart of Accounts</span>
                 </div>
             </div>
-            <div>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('reports.index') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105 border border-indigo-500">
+                    <i class="fas fa-chart-pie"></i> Reports
+                </a>
                 <a href="/dashboard" class="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-black text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105 border border-slate-700">
                     <i class="fas fa-home"></i> Dashboard
                 </a>

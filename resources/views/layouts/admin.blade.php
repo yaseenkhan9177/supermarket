@@ -153,6 +153,11 @@
                     </div>
                 </div>
 
+                <a href="{{ route('reports.index') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
+                    <i class="fas fa-chart-pie"></i>
+                    Reports
+                </a>
+
                 <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
                     <i class="fas fa-home"></i>
                     Dashboard
