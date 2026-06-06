@@ -57,14 +57,7 @@
                 <i class="fas fa-cash-register text-2xl mb-1 text-red-500"></i>
                 <span class="text-[10px] font-bold uppercase tracking-wide">Counter</span>
             </a>
-            <a href="{{ route('debit-sales.create') }}" class="flex flex-col items-center group min-w-[50px] text-gray-500 hover:text-indigo-600 transition">
-                <i class="fas fa-cart-plus text-2xl mb-1 text-blue-500"></i>
-                <span class="text-[10px] font-bold uppercase tracking-wide">New</span>
-            </a>
-            <a href="#" class="flex flex-col items-center group min-w-[50px] text-gray-500 hover:text-indigo-600 transition">
-                <i class="fas fa-globe text-2xl mb-1 text-blue-400"></i>
-                <span class="text-[10px] font-bold uppercase tracking-wide">Online</span>
-            </a>
+
 
             <div class="w-px h-8 bg-gray-200"></div>
 

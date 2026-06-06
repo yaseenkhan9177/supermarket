@@ -213,14 +213,6 @@ class AppServiceProvider extends ServiceProvider
                                     <span class="text-[11px] font-bold text-gray-600 dark:text-gray-300 mt-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">History</span>
                                 </a>
                             
-                                <a href="{{ route('debit-sales.create') }}" class="flex flex-col items-center justify-center min-w-[70px] p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition group gradient-hover-card">
-                                    <span class="text-3xl filter drop-shadow-sm group-hover:scale-110 transition-transform">🛒</span>
-                                    <span class="text-[11px] font-bold text-gray-600 dark:text-gray-300 mt-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">New</span>
-                                </a>
-                                <a href="#" class="flex flex-col items-center justify-center min-w-[70px] p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition group gradient-hover-card">
-                                    <span class="text-3xl filter drop-shadow-sm group-hover:scale-110 transition-transform">🌐</span>
-                                    <span class="text-[11px] font-bold text-gray-600 dark:text-gray-300 mt-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">Online</span>
-                                </a>
                                 <div class="w-px h-10 bg-gray-200 dark:bg-gray-700 mx-2"></div>
                                 <a href="{{ route('cash-sales.create') }}" class="flex flex-col items-center justify-center min-w-[70px] p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition group gradient-hover-card">
                                     <span class="text-3xl filter drop-shadow-sm group-hover:scale-110 transition-transform">💵</span>
