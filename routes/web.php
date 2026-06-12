@@ -238,13 +238,11 @@ use App\Http\Controllers\SuperAdmin\AuthController as SuperAuthController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperDashboardController;
 
 Route::prefix('super')->group(function () {
-    // Redirect legacy super login to main unified login
-    Route::get('/login', function () {
-        return redirect()->route('login');
-    })->name('super.login');
+    // Super Admin Login
+    Route::get('/login', [SuperAuthController::class, 'showLoginForm'])->name('super.login');
+    Route::post('/login', [SuperAuthController::class, 'login'])->name('super.login.submit');
 
-    // Logout can still be specific if needed, or handled globally. 
-    // Keeping separate logout for now as Dashboard layout posts here.
+    // Logout
     Route::post('/logout', [SuperAuthController::class, 'logout'])->name('super.logout');
 
     Route::middleware(['auth:super_admin'])->group(function () {
@@ -264,8 +262,17 @@ Route::prefix('super')->group(function () {
 
         // Secondary Pages
         Route::get('/plans', [SuperDashboardController::class, 'plans'])->name('super.plans');
-        Route::get('/users', [SuperDashboardController::class, 'users'])->name('super.users');
         Route::get('/logs', [SuperDashboardController::class, 'logs'])->name('super.logs');
         Route::get('/settings', [SuperDashboardController::class, 'settings'])->name('super.settings');
+        Route::post('/settings/update', [SuperDashboardController::class, 'updateSettings'])->name('super.settings.update');
+
+        // Super Admin User Management
+        Route::get('/users', [SuperDashboardController::class, 'users'])->name('super.users');
+        Route::get('/users/create', [SuperDashboardController::class, 'createUser'])->name('super.users.create');
+        Route::post('/users/store', [SuperDashboardController::class, 'storeUser'])->name('super.users.store');
+        Route::get('/users/{id}/edit', [SuperDashboardController::class, 'editUser'])->name('super.users.edit');
+        Route::post('/users/{id}/update', [SuperDashboardController::class, 'updateUser'])->name('super.users.update');
+        Route::post('/users/{id}/delete', [SuperDashboardController::class, 'destroyUser'])->name('super.users.destroy');
+        Route::post('/users/{id}/toggle', [SuperDashboardController::class, 'toggleUser'])->name('super.users.toggle');
     });
 });
