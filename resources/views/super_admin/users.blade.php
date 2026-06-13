@@ -147,5 +147,73 @@
         </div>
         @endif
     </div>
+
+    {{-- Registration PINs section --}}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div>
+                <h3 class="text-base font-bold text-slate-800">Dynamic Registration PINs</h3>
+                <p class="text-xs text-slate-400 mt-0.5">One-time PINs generated for registering new super admin users.</p>
+            </div>
+            <form action="{{ route('super.pins.generate') }}" method="POST">
+                @csrf
+                <button type="submit"
+                        class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:from-emerald-700 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/10">
+                    <i class="fas fa-key"></i>
+                    Generate Registration PIN
+                </button>
+            </form>
+        </div>
+
+        <table class="w-full text-sm whitespace-nowrap">
+            <thead>
+                <tr class="bg-slate-50 text-left text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                    <th class="px-6 py-3.5">PIN Code</th>
+                    <th class="px-6 py-3.5">Status</th>
+                    <th class="px-6 py-3.5">Used By</th>
+                    <th class="px-6 py-3.5">Used At</th>
+                    <th class="px-6 py-3.5">Generated At</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+                @forelse($pins as $pin)
+                <tr class="hover:bg-slate-50/70 transition-colors">
+                    <td class="px-6 py-4">
+                        <span class="font-mono text-sm bg-slate-100 text-slate-700 px-2 py-1 rounded font-bold tracking-widest">
+                            {{ $pin->pin }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        @if($pin->used_at)
+                            <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-400 border border-slate-200">
+                                Used
+                            </span>
+                        @else
+                            <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 animate-pulse">
+                                Active / Unused
+                            </span>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4 text-xs text-slate-600">
+                        {{ $pin->used_by_email ?? '—' }}
+                    </td>
+                    <td class="px-6 py-4 text-xs text-slate-400">
+                        {{ $pin->used_at ? $pin->used_at->format('d M Y, H:i') : '—' }}
+                    </td>
+                    <td class="px-6 py-4 text-xs text-slate-400">
+                        {{ $pin->created_at->format('d M Y, H:i') }} ({{ $pin->created_at->diffForHumans() }})
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center text-slate-400">
+                        <i class="fas fa-key text-3xl text-slate-200 mb-2 block"></i>
+                        No registration PINs generated yet.
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 </div>
 @endsection

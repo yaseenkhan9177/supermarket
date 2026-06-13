@@ -89,7 +89,7 @@
                     group-hover:scale-110 transition-transform">
             <i class="fas fa-chart-pie text-white text-base"></i>
         </div>
-        <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Reports</span>
+        <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Reportsss</span>
     </a>
 
     <a href="{{ route('sales.pos') }}"

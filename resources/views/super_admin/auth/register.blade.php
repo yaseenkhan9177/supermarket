@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Admin — OwnStore</title>
+    <title>Super Admin Register — OwnStore</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -98,8 +98,8 @@
     <div class="w-full max-w-md relative z-10 card-enter">
 
         <!-- Logo -->
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 mb-4 shadow-xl">
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 mb-3 shadow-xl">
                 <i class="fas fa-crown text-white text-xl"></i>
             </div>
             <h1 class="text-3xl font-bold logo-text">OwnStore</h1>
@@ -109,20 +109,45 @@
         <!-- Card -->
         <div class="glass-login rounded-2xl shadow-2xl overflow-hidden">
             <div class="p-8">
-                <div class="mb-6">
-                    <h2 class="text-xl font-bold text-white">Welcome back</h2>
-                    <p class="text-slate-400 text-sm mt-1">Sign in to your super admin account</p>
+                <div class="mb-5">
+                    <h2 class="text-xl font-bold text-white">Register Super Admin</h2>
+                    <p class="text-slate-400 text-sm mt-1 font-normal">Create a new secure super admin account</p>
                 </div>
 
                 @if ($errors->any())
-                    <div class="mb-5 flex items-start p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-sm">
-                        <i class="fas fa-exclamation-circle mr-3 mt-0.5 flex-shrink-0"></i>
-                        <span>{{ $errors->first() }}</span>
+                    <div class="mb-5 flex flex-col p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-sm">
+                        <div class="flex items-center mb-1">
+                            <i class="fas fa-exclamation-circle mr-2 flex-shrink-0"></i>
+                            <span class="font-semibold">Registration Errors:</span>
+                        </div>
+                        <ul class="list-disc list-inside space-y-0.5 ml-2">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('super.login.submit') }}" class="space-y-5">
+                <form method="POST" action="{{ route('super.register.submit') }}" class="space-y-4">
                     @csrf
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider" for="name">
+                            Full Name
+                        </label>
+                        <div class="relative">
+                            <i class="fas fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                            <input
+                                id="name"
+                                type="text"
+                                name="name"
+                                value="{{ old('name') }}"
+                                placeholder="John Doe"
+                                required
+                                autofocus
+                                class="input-field w-full pl-10 pr-4 py-3 rounded-xl text-sm">
+                        </div>
+                    </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider" for="email">
@@ -137,7 +162,6 @@
                                 value="{{ old('email') }}"
                                 placeholder="admin@ownstore.com"
                                 required
-                                autofocus
                                 class="input-field w-full pl-10 pr-4 py-3 rounded-xl text-sm">
                         </div>
                     </div>
@@ -158,33 +182,56 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center">
-                        <input
-                            id="remember"
-                            type="checkbox"
-                            name="remember"
-                            class="h-4 w-4 rounded bg-white/10 border border-white/20 text-indigo-500 focus:ring-indigo-500 cursor-pointer">
-                        <label for="remember" class="ml-2 text-sm text-slate-400 cursor-pointer">
-                            Remember me for 30 days
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider" for="password_confirmation">
+                            Confirm Password
                         </label>
+                        <div class="relative">
+                            <i class="fas fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                            <input
+                                id="password_confirmation"
+                                type="password"
+                                name="password_confirmation"
+                                placeholder="••••••••"
+                                required
+                                class="input-field w-full pl-10 pr-4 py-3 rounded-xl text-sm">
+                        </div>
                     </div>
 
-                    <button type="submit" class="btn-submit w-full py-3 rounded-xl text-white font-semibold text-sm tracking-wide">
-                        Sign In to Command Center
-                        <i class="fas fa-arrow-right ml-2"></i>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider" for="pin">
+                            Registration PIN
+                        </label>
+                        <div class="relative">
+                            <i class="fas fa-key absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                            <input
+                                id="pin"
+                                type="text"
+                                name="pin"
+                                placeholder="Enter 6-digit dynamic PIN"
+                                required
+                                class="input-field w-full pl-10 pr-4 py-3 rounded-xl text-sm tracking-widest font-mono">
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-1">
+                            A dynamic, one-time-use PIN is required to register.
+                        </p>
+                    </div>
+
+                    <button type="submit" class="btn-submit w-full py-3 rounded-xl text-white font-semibold text-sm tracking-wide mt-2">
+                        Complete Registration
+                        <i class="fas fa-user-plus ml-2"></i>
                     </button>
                 </form>
             </div>
 
-            <div class="bg-white/3 px-8 py-4 border-t border-white/5 flex flex-col gap-2 items-center text-center">
-                <p class="text-xs text-slate-400">
-                    <a href="{{ route('super.register') }}" class="hover:text-white transition-colors text-indigo-400 font-semibold">
-                        <i class="fas fa-user-plus mr-1"></i> Register with dynamic PIN
-                    </a>
-                </p>
-                <p class="text-[10px] text-slate-500">
-                    <i class="fas fa-shield-alt mr-1 text-slate-600"></i>
-                    Restricted Access — Authorized Personnel Only
+            <div class="bg-white/3 px-8 py-4 border-t border-white/5 flex justify-between items-center text-xs">
+                <a href="{{ route('super.login') }}" class="text-slate-400 hover:text-white transition-colors">
+                    Already have an account? Sign In
+                </a>
+                <span class="text-slate-600">|</span>
+                <p class="text-slate-500">
+                    <i class="fas fa-shield-alt mr-1"></i>
+                    Secure System
                 </p>
             </div>
         </div>

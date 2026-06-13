@@ -256,6 +256,33 @@
       transform: translateX(0);
     }
 
+    /* Super Admin Button */
+    .btn-super-admin {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
+      color: #a78bfa;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: 50px;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn-super-admin:hover {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(139, 92, 246, 0.25) 100%);
+      border-color: rgba(139, 92, 246, 0.6);
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.25);
+    }
+
     /* Nav action group */
     .nav-actions {
       display: flex;
@@ -1448,6 +1475,7 @@
 
         <!-- CTA Buttons -->
         <div class="nav-actions nav-cta">
+          <a href="{{ route('super.register') }}" class="btn-super-admin" id="nav-super-register-btn"><i class="fas fa-crown"></i> Super Admin Register</a>
           <a href="{{ route('login') }}" class="btn-login" id="nav-login-btn">Log In</a>
           <a href="#pricing" class="btn-primary" id="nav-cta-btn">Get Started</a>
         </div>
@@ -1469,6 +1497,7 @@
     <a href="#how" class="mobile-link">How It Works</a>
     <a href="#footer" class="mobile-link">Contact</a>
     <div style="display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:260px">
+      <a href="{{ route('super.register') }}" class="btn-super-admin" style="width:100%;text-align:center;padding:13px 36px;font-size:15px;"><i class="fas fa-crown"></i> Super Admin Register</a>
       <a href="{{ route('login') }}" class="btn-login" style="width:100%;text-align:center;padding:13px 36px;font-size:15px;">Log In</a>
       <a href="#pricing" class="btn-primary" style="width:100%;text-align:center;font-size:16px;padding:14px 36px;">Get Started</a>
     </div>

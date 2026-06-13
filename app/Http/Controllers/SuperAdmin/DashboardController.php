@@ -4,7 +4,7 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SuperAdmin;
-use App\Models\Tenant;
+use App\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,10 +18,10 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $totalActive  = Tenant::where('status', 'active')->count();
-        $totalPending = Tenant::where('status', 'pending')->count();
-        $totalReject  = Tenant::where('status', 'rejected')->count();
-        $totalAll     = Tenant::count();
+        $totalAll     = Store::count();
+        $totalActive  = $totalAll; // All registered stores are considered active
+        $totalPending = 0;
+        $totalReject  = 0;
 
         $stats = [
             'total_active_stores' => $totalActive,
@@ -37,7 +37,7 @@ class DashboardController extends Controller
         for ($i = 5; $i >= 0; $i--) {
             $date = now()->subMonths($i);
             $months[]        = $date->format('M Y');
-            $monthlyCounts[] = Tenant::whereYear('created_at', $date->year)
+            $monthlyCounts[] = Store::whereYear('created_at', $date->year)
                 ->whereMonth('created_at', $date->month)
                 ->count();
         }
@@ -53,27 +53,27 @@ class DashboardController extends Controller
             'pending'  => $totalPending,
         ];
 
-        $recentTenants = Tenant::latest()->limit(5)->get();
+        $recentTenants = Store::with('user')->latest()->limit(5)->get();
 
         return view('super_admin.dashboard', compact('stats', 'growthChart', 'statusChart', 'recentTenants'));
     }
 
     public function tenants(Request $request)
     {
-        $query = Tenant::query();
+        $query = Store::with('user');
 
         if ($request->filled('search')) {
             $s = $request->search;
             $query->where(function ($q) use ($s) {
-                $q->where('store_name', 'like', "%{$s}%")
-                  ->orWhere('owner_name', 'like', "%{$s}%")
-                  ->orWhere('owner_email', 'like', "%{$s}%");
+                $q->where('name', 'like', "%{$s}%")
+                  ->orWhereHas('user', function($q2) use ($s) {
+                      $q2->where('name', 'like', "%{$s}%")
+                         ->orWhere('email', 'like', "%{$s}%");
+                  });
             });
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+        // Stores don't have a status column currently, so we skip status filter.
 
         $tenants = $query->latest()->paginate(15);
         return view('super_admin.tenants', compact('tenants'));
@@ -201,7 +201,22 @@ class DashboardController extends Controller
         }
 
         $admins = $query->latest()->paginate(15);
-        return view('super_admin.users', compact('admins'));
+        $pins = \App\Models\SuperAdminPin::latest()->get();
+
+        return view('super_admin.users', compact('admins', 'pins'));
+    }
+
+    public function generatePin(Request $request)
+    {
+        do {
+            $pin = sprintf("%06d", mt_rand(100000, 999999));
+        } while (\App\Models\SuperAdminPin::where('pin', $pin)->whereNull('used_at')->exists());
+
+        \App\Models\SuperAdminPin::create([
+            'pin' => $pin,
+        ]);
+
+        return back()->with('success', "Registration PIN generated successfully: {$pin}");
     }
 
     public function createUser()

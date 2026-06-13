@@ -242,10 +242,16 @@ Route::prefix('super')->group(function () {
     Route::get('/login', [SuperAuthController::class, 'showLoginForm'])->name('super.login');
     Route::post('/login', [SuperAuthController::class, 'login'])->name('super.login.submit');
 
+    // Super Admin Register
+    Route::get('/register', [SuperAuthController::class, 'showRegistrationForm'])->name('super.register');
+    Route::post('/register', [SuperAuthController::class, 'register'])->name('super.register.submit');
+
     // Logout
     Route::post('/logout', [SuperAuthController::class, 'logout'])->name('super.logout');
 
     Route::middleware(['auth:super_admin'])->group(function () {
+        // Dynamic PIN Generation
+        Route::post('/pins/generate', [SuperDashboardController::class, 'generatePin'])->name('super.pins.generate');
         Route::get('/dashboard', [SuperDashboardController::class, 'index'])->name('super.dashboard');
 
         // Store Requests

@@ -121,24 +121,16 @@
                 <div class="px-6 py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors">
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-600 font-bold text-sm flex-shrink-0">
-                            {{ strtoupper(substr($tenant->store_name, 0, 1)) }}
+                            {{ strtoupper(substr($tenant->name, 0, 1)) }}
                         </div>
                         <div>
-                            <p class="text-sm font-semibold text-slate-800">{{ $tenant->store_name }}</p>
-                            <p class="text-xs text-slate-400">{{ $tenant->owner_email }}</p>
+                            <p class="text-sm font-semibold text-slate-800">{{ $tenant->name }}</p>
+                            <p class="text-xs text-slate-400">{{ $tenant->user->email ?? 'N/A' }}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
                         <span class="text-xs text-slate-400">{{ $tenant->created_at->diffForHumans() }}</span>
-                        @if($tenant->status === 'active')
-                            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700 uppercase">Active</span>
-                        @elseif($tenant->status === 'pending')
-                            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-100 text-amber-700 uppercase">Pending</span>
-                        @elseif($tenant->status === 'suspended')
-                            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-slate-600 uppercase">Suspended</span>
-                        @else
-                            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-100 text-rose-700 uppercase">{{ $tenant->status }}</span>
-                        @endif
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700 uppercase">Active</span>
                     </div>
                 </div>
                 @empty
