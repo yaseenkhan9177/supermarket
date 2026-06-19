@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+    .island-item {
+        @apply flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all duration-200 cursor-pointer relative z-10 select-none;
+    }
+
+    .island-label {
+        @apply text-[9px] font-bold uppercase tracking-wider text-slate-500 mt-1 transition-colors duration-200 group-hover:text-indigo-900;
+    }
+
+    .icon-container {
+        @apply flex items-center justify-center w-8 h-8 transition-colors duration-200;
+    }
+
+    .divider {
+        @apply w-px h-8 bg-slate-200/50 mx-1;
+    }
+}

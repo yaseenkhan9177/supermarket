@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Expenses Manager | OwnStore PRO</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Focus Ring */
+        .focus-ring:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+            border-color: #6366f1;
+        }
+
+        /* Mobile Sticky Button Safe Area */
+        .safe-area-bottom {
+            padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 font-sans h-screen flex flex-col" x-data="expenseManager()">
+
+    <!-- Header (Desktop Only) -->
+    <header class="hidden md:flex bg-white border-b border-gray-200 h-16 items-center justify-between px-6 shadow-sm z-20">
+        <div class="flex items-center gap-3">
+            <div class="bg-red-500 text-white p-2 rounded-lg shadow-sm">
+                <i class="fa-solid fa-wallet"></i>
+            </div>
+            <h1 class="font-bold text-lg text-gray-800">Cash Expenses Manager</h1>
+        </div>
+        <div>
+            <a href="/dashboard" class="text-gray-500 hover:text-gray-700 font-medium text-sm transition">
+                <i class="fa-solid fa-arrow-left mr-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </header>
+
+    <!-- Mobile Header -->
+    <header class="md:hidden bg-white border-b border-gray-200 p-4 sticky top-0 z-30 shadow-sm flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <a href="/dashboard" class="text-gray-500"><i class="fa-solid fa-arrow-left"></i></a>
+            <h1 class="font-bold text-gray-800">Expenses</h1>
+        </div>
+        <div class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
+            {{ date('d M, Y') }}
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+
+        <!-- LEFT PANEL: Entry Form & Summary -->
+        <section class="w-full md:w-5/12 lg:w-4/12 flex flex-col border-r border-gray-200 bg-white h-full relative z-10">
+
+            <!-- Live Dashboard Summary -->
+            <div class="grid grid-cols-2 gap-4 p-4 md:p-6 bg-gradient-to-b from-gray-50 to-white border-b border-gray-200">
+                <!-- Current Balance -->
+                <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative overflow-hidden group">
+                    <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i class="fa-solid fa-vault text-4xl text-emerald-500"></i>
+                    </div>
+                    <p class="text-xs text-gray-500 uppercase font-semibold tracking-wider">Available Cash</p>
+                    <p class="text-xl md:text-2xl font-bold mt-1 truncate"
+                        :class="currentBalance < 1000 ? 'text-red-600' : 'text-emerald-600'"
+                        x-text="formatCurrency(currentBalance)">
+                        PKR 0.00
+                    </p>
+                    <p class="text-xs text-gray-400 mt-1 truncate" x-text="selectedAccountName"></p>
+                </div>
+
+                <!-- Session Total -->
+                <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative overflow-hidden group">
+                    <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i class="fa-solid fa-receipt text-4xl text-blue-500"></i>
+                    </div>
+                    <p class="text-xs text-gray-500 uppercase font-semibold tracking-wider">Session Total</p>
+                    <p class="text-xl md:text-2xl font-bold text-gray-800 mt-1 truncate" x-text="formatCurrency(sessionTotal)">
+                        PKR 0.00
+                    </p>
+                    <p class="text-xs text-gray-400 mt-1">Today's Expenses</p>
+                </div>
+            </div>
+
+            <!-- Expense Form -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
+                <form @submit.prevent="saveExpense" class="space-y-4">
+
+                    <!-- Date & Account -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Date</label>
+                            <input type="date" x-model="form.date" class="w-full border-gray-300 rounded-lg text-sm focus-ring bg-gray-50 p-2.5">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Cash Account</label>
+                            <select x-model="form.account_id" @change="updateBalance" class="w-full border-gray-300 rounded-lg text-sm focus-ring bg-white p-2.5">
+                                @foreach($cashAccounts as $account)
+                                <option value="{{ $account['id'] }}" data-balance="{{ $account['balance'] }}">
+                                    {{ $account['name'] }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Category -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Category</label>
+                        <div class="flex gap-2">
+                            <select x-model="form.category" x-ref="category" class="w-full border-gray-300 rounded-lg text-sm focus-ring bg-white p-2.5" required>
+                                <option value="">-- Select Category --</option>
+                                <template x-for="category in categories" :key="category.id">
+                                    <option :value="category.name" x-text="category.name"></option>
+                                </template>
+                            </select>
+                            <button type="button" @click="showCategoryModal = true" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 rounded-lg border border-indigo-200 transition">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Payee -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Payee / Recipient</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-gray-400"><i class="fa-solid fa-user text-xs"></i></span>
+                            <input type="text" x-model="form.payee" x-ref="payee" list="payeeList" class="w-full border-gray-300 rounded-lg pl-9 text-sm focus-ring bg-white p-2.5" placeholder="e.g. Office Depot" required>
+                            <datalist id="payeeList">
+                                @foreach($payeeSuggestions as $suggestion)
+                                <option value="{{ $suggestion }}">
+                                    @endforeach
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <!-- Amount -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Amount</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-gray-400 font-bold">PKR</span>
+                            <input type="number" step="0.01" x-model="form.amount" x-ref="amount"
+                                class="w-full border-gray-300 rounded-lg pl-12 text-lg font-bold text-gray-800 focus-ring bg-white p-2.5"
+                                placeholder="0.00" required min="1">
+                        </div>
+                        <p class="text-xs text-red-500 mt-1" x-show="form.amount > currentBalance" x-cloak>
+                            <i class="fa-solid fa-circle-exclamation"></i> Insufficient balance!
+                        </p>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Notes (Optional)</label>
+                        <textarea x-model="form.notes" rows="2" class="w-full border-gray-300 rounded-lg text-sm focus-ring bg-white p-2.5 resize-none" placeholder="Details..."></textarea>
+                    </div>
+
+                    <!-- Desktop Save Button (Hidden on Mobile) -->
+                    <button type="submit"
+                        class="hidden md:flex w-full bg-gray-900 hover:bg-black text-white font-semibold py-3 rounded-lg shadow-lg justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        :disabled="loading || form.amount <= 0 || form.amount > currentBalance">
+                        <i class="fa-solid fa-check" x-show="!loading"></i>
+                        <i class="fa-solid fa-spinner fa-spin" x-show="loading" x-cloak></i>
+                        <span x-text="loading ? 'Saving...' : 'Save Expense'"></span>
+                    </button>
+
+                </form>
+            </div>
+
+            <!-- Mobile Sticky Save Button -->
+            <div class="md:hidden absolute bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                <button @click="saveExpense"
+                    class="w-full bg-indigo-600 active:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="loading || form.amount <= 0 || form.amount > currentBalance">
+                    <span class="text-lg" x-text="loading ? 'Saving...' : 'Save Expense'"></span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL: Recent Transactions -->
+        <section class="flex-1 bg-gray-100 flex flex-col h-full overflow-hidden">
+
+            <!-- Toolbar -->
+            <div class="bg-white border-b border-gray-200 p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <h2 class="font-semibold text-gray-700 hidden sm:block">Transactions</h2>
+                    <!-- Search -->
+                    <div class="relative flex-1 sm:max-w-xs w-full">
+                        <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                        <input type="text" x-model="filters.search" @input.debounce.500ms="fetchExpenses"
+                            placeholder="Search payee..."
+                            class="w-full pl-8 pr-3 py-2 text-sm border-gray-300 rounded-lg focus-ring">
+                    </div>
+                </div>
+
+                <div class="flex gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                    <select x-model="filters.category" @change="fetchExpenses" class="text-sm border-gray-300 rounded-lg focus-ring py-1.5 px-3">
+                        <option value="">All Categories</option>
+                        <template x-for="category in categories" :key="category.id">
+                            <option :value="category.name" x-text="category.name"></option>
+                        </template>
+                    </select>
+
+                    <button class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap hover:bg-gray-50"
+                        @click="filters.session_only = !filters.session_only; fetchExpenses()"
+                        :class="filters.session_only ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : ''">
+                        <i class="fa-solid" :class="filters.session_only ? 'fa-toggle-on' : 'fa-toggle-off'"></i> Session
+                    </button>
+                </div>
+            </div>
+
+            <!-- Transaction List (Scrollable) -->
+            <div class="flex-1 overflow-y-auto p-4 safe-area-bottom">
+
+                <!-- Desktop Table -->
+                <div class="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-50 text-gray-500 font-semibold uppercase text-xs border-b border-gray-100">
+                            <tr>
+                                <th class="p-4">Time</th>
+                                <th class="p-4">Category</th>
+                                <th class="p-4">Payee</th>
+                                <th class="p-4 text-right">Amount</th>
+                                <th class="p-4 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <template x-for="expense in expenses" :key="expense.id">
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="p-4 text-gray-500 font-mono text-xs" x-text="formatTime(expense.created_at)"></td>
+                                    <td class="p-4 font-medium text-gray-700"><span x-text="expense.expense_type"></span></td>
+                                    <td class="p-4 text-gray-600" x-text="expense.payee"></td>
+                                    <td class="p-4 text-right font-bold text-gray-800" x-text="formatCurrency(expense.amount)"></td>
+                                    <td class="p-4 text-center">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            Recorded
+                                        </span>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="expenses.length === 0">
+                                <td colspan="5" class="p-8 text-center text-gray-400">No expenses found for this session.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Cards -->
+                <div class="md:hidden space-y-3">
+                    <template x-for="expense in expenses" :key="expense.id">
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex justify-between items-center">
+                            <div>
+                                <p class="text-xs text-gray-400 mb-1" x-text="formatTime(expense.created_at)"></p>
+                                <p class="font-bold text-gray-800 text-sm" x-text="expense.payee"></p>
+                                <p class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded inline-block mt-1" x-text="expense.expense_type"></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-gray-900" x-text="formatCurrency(expense.amount)"></p>
+                                <div class="mt-1 text-xs text-green-600 flex items-center justify-end gap-1">
+                                    <i class="fa-solid fa-check-circle"></i> Saved
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    <div x-show="expenses.length === 0" class="text-center p-8 text-gray-400">
+                        <i class="fa-regular fa-folder-open text-3xl mb-2 opacity-50"></i>
+                        <p class="text-sm">No expenses yet.</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- Add Category Modal -->
+    <div x-show="showCategoryModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm mx-4 transform transition-all" @click.away="showCategoryModal = false">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Add New Category</h3>
+            <input type="text" x-model="newCategoryName" @keydown.enter="saveCategory" class="w-full border-gray-300 rounded-lg p-3 text-sm focus-ring mb-4" placeholder="e.g. Travel, maintenance..." autofocus>
+            <div class="flex gap-2">
+                <button @click="showCategoryModal = false" class="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-200">Cancel</button>
+                <button @click="saveCategory" :disabled="!newCategoryName" class="flex-1 bg-indigo-600 text-white py-2.5 rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-50">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div x-show="toast.visible" x-cloak
+        x-transition
+        class="fixed top-4 right-4 z-50 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3">
+        <i class="fa-solid fa-check-circle text-green-400"></i>
+        <span x-text="toast.message" class="text-sm font-medium"></span>
+    </div>
+
+    <script>
+        function expenseManager() {
+            return {
+                currentBalance: 0,
+                selectedAccountName: '',
+                sessionTotal: {
+                    {
+                        $sessionTotal
+                    }
+                },
+                loading: false,
+                expenses: @json($sessionExpenses),
+                categories: @json(collect($expenseTypes) - > map(fn($name, $id) => ['id' => $id, 'name' => $name]) - > values()),
+
+                showCategoryModal: false,
+                newCategoryName: '',
+
+                form: {
+                    date: '{{ date("Y-m-d") }}',
+                    account_id: '{{ $cashAccounts->first()['
+                    id '] ?? '
+                    ' }}',
+                    category: '',
+                    payee: '',
+                    amount: '',
+                    notes: ''
+                },
+
+                filters: {
+                    search: '',
+                    category: '',
+                    session_only: true,
+                    date: ''
+                },
+
+                toast: {
+                    visible: false,
+                    message: ''
+                },
+
+                init() {
+                    this.updateBalance();
+
+                    // Keyboard Shortcuts
+                    document.addEventListener('keydown', (e) => {
+                        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                            e.preventDefault();
+                            this.saveExpense();
+                        }
+                    });
+                },
+
+                async saveCategory() {
+                    if (!this.newCategoryName) return;
+
+                    try {
+                        let res = await fetch('/accounts/quick-store', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                name: this.newCategoryName
+                            })
+                        });
+
+                        let data = await res.json();
+
+                        if (data.success) {
+                            this.categories.push(data.category);
+                            this.form.category = data.category.name; // Auto-select
+                            this.showCategoryModal = false;
+                            this.newCategoryName = '';
+                            this.showToast("Category added successfully!");
+                        } else {
+                            alert(data.message || "Failed to add category");
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert("Error adding category");
+                    }
+                },
+
+                updateBalance() {
+                    const select = document.querySelector('select[x-model="form.account_id"]');
+                    const option = select.selectedOptions[0];
+                    if (option) {
+                        this.currentBalance = parseFloat(option.dataset.balance);
+                        this.selectedAccountName = option.text.trim();
+                    }
+                },
+
+                async fetchExpenses() {
+                    let params = new URLSearchParams({
+                        search: this.filters.search,
+                        category: this.filters.category,
+                        session_only: this.filters.session_only,
+                        date: this.filters.date
+                    });
+
+                    try {
+                        let res = await fetch(`/payments/get-expenses?${params.toString()}`);
+                        let data = await res.json();
+                        this.expenses = data.expenses;
+                    } catch (e) {
+                        console.error("Filter error:", e);
+                    }
+                },
+
+                async saveExpense() {
+                    if (this.loading || this.form.amount <= 0 || this.form.amount > this.currentBalance) return;
+
+                    this.loading = true;
+
+                    // Prepare payload
+                    let formData = new FormData();
+                    formData.append('payment_no', 'EXP-' + Date.now()); // Temp ID, backend handles real ID
+                    formData.append('payment_date', this.form.date);
+                    formData.append('payment_method', 'Cash');
+                    formData.append('cash_account_id', this.form.account_id);
+                    formData.append('expense_type', this.form.category);
+                    formData.append('paid_to_account', this.form.payee);
+                    formData.append('memo', this.form.notes);
+
+                    // Add single item
+                    formData.append('items[0][expense_head]', this.form.category);
+                    formData.append('items[0][amount]', this.form.amount);
+                    formData.append('items[0][note]', this.form.notes);
+
+                    try {
+                        let res = await fetch('/payments/store', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json'
+                            },
+                            body: formData
+                        });
+
+                        let data = await res.json();
+
+                        if (data.success) {
+                            this.showToast("Expense saved successfully!");
+                            this.resetForm();
+
+                            // Update values dynamically from response
+                            this.currentBalance = parseFloat(data.payment.new_balance);
+                            this.sessionTotal = parseFloat(data.payment.new_session_total);
+
+                            // Immediately fetch updated list
+                            this.fetchExpenses();
+
+                            // Update option attribute for local consistency
+                            const select = document.querySelector('select[x-model="form.account_id"]');
+                            const option = select.querySelector(`option[value="${this.form.account_id}"]`);
+                            if (option) option.dataset.balance = this.currentBalance;
+
+                        } else {
+                            alert(data.message || "Failed to save.");
+                        }
+
+                    } catch (error) {
+                        alert("System error. Please checkout console.");
+                        console.error(error);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                resetForm() {
+                    this.form.category = '';
+                    this.form.payee = '';
+                    this.form.amount = '';
+                    this.form.notes = '';
+                    // Keep Date and Account same as last used
+                    this.$refs.category.focus();
+                },
+
+                showToast(msg) {
+                    this.toast.message = msg;
+                    this.toast.visible = true;
+                    setTimeout(() => this.toast.visible = false, 3000);
+                },
+
+                formatCurrency(amount) {
+                    return 'PKR ' + parseFloat(amount).toLocaleString('en-US', {
+                        minimumFractionDigits: 2
+                    });
+                },
+
+                formatTime(dateString) {
+                    return new Date(dateString).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
