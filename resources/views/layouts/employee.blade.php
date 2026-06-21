@@ -88,6 +88,18 @@
                     <span class="ml-3 font-medium transition-all" :class="sidebarCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100'">Profile</span>
                 </a>
 
+                <a href="{{ route('godams.index') }}" class="group flex items-center px-3 py-3 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+                   :class="request()->routeIs('godams.*') ? 'bg-primary text-white' : ''">
+                    <i class="fas fa-warehouse w-6 text-center text-lg group-hover:text-white"></i>
+                    <span class="ml-3 font-medium transition-all" :class="sidebarCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100'">Godams</span>
+                </a>
+
+                <a href="{{ route('stock-transfers.index') }}" class="group flex items-center px-3 py-3 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+                   :class="request()->routeIs('stock-transfers.*') ? 'bg-primary text-white' : ''">
+                    <i class="fas fa-exchange-alt w-6 text-center text-lg group-hover:text-white"></i>
+                    <span class="ml-3 font-medium transition-all" :class="sidebarCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100'">Transfers</span>
+                </a>
+
             </nav>
 
             <!-- Logout -->

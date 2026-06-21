@@ -31,7 +31,9 @@ class PurchaseController extends Controller
             $prefilledItem = Item::find(request('item_id'));
         }
         
-        return view('purchases.create', compact('suppliers', 'accounts', 'chargeTypes', 'prefilledItem'));
+        $godams = \App\Models\Godam::where('is_active', true)->orderBy('name')->get();
+        
+        return view('purchases.create', compact('suppliers', 'accounts', 'chargeTypes', 'prefilledItem', 'godams'));
     }
 
     public function createCredit()
@@ -154,6 +156,8 @@ class PurchaseController extends Controller
                         ? $row['batch_no']
                         : 'B-' . date('Ymd') . '-' . mt_rand(1000, 9999);
 
+                    $godamId = !empty($row['godam_id']) ? intval($row['godam_id']) : null;
+
                     PurchaseItem::create([
                         'purchase_id' => $purchase->id,
                         'item_id'     => $itemId,
@@ -162,31 +166,45 @@ class PurchaseController extends Controller
                         'qty'         => $row['qty'],
                         'cost_rate'   => $row['rate'],
                         'total'       => $lineTotal,
+                        'godam_id'    => $godamId,
                     ]);
 
-                    $item->increment('on_hand', $row['qty']);
-if ($item->on_hand < ($item->min_stock_level ?? 0)) {
-    session()->flash('warning', "Note: {$item->name} is below minimum stock level after this purchase (Current: {$item->on_hand}, Minimum: {$item->min_stock_level}).");
-}
+                    if ($godamId) {
+                        // Godam selected: upsert into godam_stock, do not touch on_hand or create Batch
+                        $godamStock = \App\Models\GodamStock::firstOrNew([
+                            'godam_id' => $godamId,
+                            'item_id'  => $itemId,
+                        ]);
+                        $godamStock->quantity += $row['qty'];
+                        $godamStock->last_received_at = now();
+                        $godamStock->save();
+                    } else {
+                        // Shop Floor (null/0): increment on_hand and create FIFO Batch
+                        $item->increment('on_hand', $row['qty']);
+                        if ($item->on_hand < ($item->min_stock_level ?? 0)) {
+                            session()->flash('warning', "Note: {$item->name} is below minimum stock level after this purchase (Current: {$item->on_hand}, Minimum: {$item->min_stock_level}).");
+                        }
+
+                        // FIFO Batch record
+                        $expiresAt = null;
+                        if (!empty($row['expiry_date'])) {
+                            try { $expiresAt = Carbon::parse($row['expiry_date']); } catch (\Exception $e) {}
+                        }
+
+                        Batch::create([
+                            'item_id'            => $itemId,
+                            'batch_no'           => $batchNo,
+                            'quantity_available' => $row['qty'],
+                            'sale_price'         => $item->sale_rate ?? 0,
+                            'cost_price'         => $row['rate'],
+                            'received_at'        => Carbon::parse($invoiceDate),
+                            'expires_at'         => $expiresAt,
+                        ]);
+                    }
+
                     if ($row['rate'] > 0) {
                         $item->update(['cost_rate' => $row['rate']]);
                     }
-
-                    // FIFO Batch record
-                    $expiresAt = null;
-                    if (!empty($row['expiry_date'])) {
-                        try { $expiresAt = Carbon::parse($row['expiry_date']); } catch (\Exception $e) {}
-                    }
-
-                    Batch::create([
-                        'item_id'            => $itemId,
-                        'batch_no'           => $batchNo,
-                        'quantity_available' => $row['qty'],
-                        'sale_price'         => $item->sale_rate ?? 0,
-                        'cost_price'         => $row['rate'],
-                        'received_at'        => Carbon::parse($invoiceDate),
-                        'expires_at'         => $expiresAt,
-                    ]);
                 }
 
                 // ── 6. Save Payment Splits & Debit Accounts ───────────────────────

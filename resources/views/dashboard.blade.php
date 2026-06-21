@@ -76,7 +76,7 @@
 </div>
 
 <!-- Quick Access Shortcuts -->
-<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-9 gap-3 mb-8">
 
     <a href="{{ route('reports.index') }}"
        id="shortcut-reports"
@@ -161,19 +161,48 @@
         </div>
         <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Customers</span>
     </a>
-        <a href="{{ route('stock.low-stock') }}"
-           id="shortcut-low-stock"
-           class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
-                  border border-red-100 dark:border-red-900 rounded-xl p-4 shadow-sm
-                  hover:shadow-md hover:border-red-400 dark:hover:border-red-500
-                  hover:-translate-y-0.5 transition-all duration-200">
-            <div class="w-10 h-10 rounded-lg bg-red-600 flex items-center justify-center
-                        shadow-md shadow-red-200 dark:shadow-red-900
-                        group-hover:scale-110 transition-transform">
-                <i class="fas fa-exclamation-triangle text-white text-base"></i>
-            </div>
-            <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Low Stock</span>
-        </a>
+
+    <a href="{{ route('stock.low-stock') }}"
+       id="shortcut-low-stock"
+       class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
+              border border-red-100 dark:border-red-900 rounded-xl p-4 shadow-sm
+              hover:shadow-md hover:border-red-400 dark:hover:border-red-500
+              hover:-translate-y-0.5 transition-all duration-200">
+        <div class="w-10 h-10 rounded-lg bg-red-600 flex items-center justify-center
+                    shadow-md shadow-red-200 dark:shadow-red-900
+                    group-hover:scale-110 transition-transform">
+            <i class="fas fa-exclamation-triangle text-white text-base"></i>
+        </div>
+        <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Low Stock</span>
+    </a>
+
+    <a href="{{ route('godams.index') }}"
+       id="shortcut-godams"
+       class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
+              border border-pink-100 dark:border-pink-900 rounded-xl p-4 shadow-sm
+              hover:shadow-md hover:border-pink-400 dark:hover:border-pink-500
+              hover:-translate-y-0.5 transition-all duration-200">
+        <div class="w-10 h-10 rounded-lg bg-pink-600 flex items-center justify-center
+                    shadow-md shadow-pink-200 dark:shadow-pink-900
+                    group-hover:scale-110 transition-transform">
+            <i class="fas fa-warehouse text-white text-base"></i>
+        </div>
+        <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Godams</span>
+    </a>
+
+    <a href="{{ route('stock-transfers.index') }}"
+       id="shortcut-transfers"
+       class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
+              border border-sky-100 dark:border-sky-900 rounded-xl p-4 shadow-sm
+              hover:shadow-md hover:border-sky-400 dark:hover:border-sky-500
+              hover:-translate-y-0.5 transition-all duration-200">
+        <div class="w-10 h-10 rounded-lg bg-sky-500 flex items-center justify-center
+                    shadow-md shadow-sky-200 dark:shadow-sky-900
+                    group-hover:scale-110 transition-transform">
+            <i class="fas fa-exchange-alt text-white text-base"></i>
+        </div>
+        <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Transfers</span>
+    </a>
 
 </div>
 

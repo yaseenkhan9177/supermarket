@@ -264,7 +264,26 @@ Route::middleware(['auth:web,employee'])->group(function () {
 
     // Stock Alerts Route (Moved inside the auth middleware group)
     Route::get('/stock/low-stock', [App\Http\Controllers\StockController::class, 'lowStock'])->name('stock.low-stock');
+
+    // Godam Management
+    Route::get('/godams', [\App\Http\Controllers\GodamController::class, 'index'])->name('godams.index');
+    Route::post('/godams', [\App\Http\Controllers\GodamController::class, 'store'])->name('godams.store');
+    Route::get('/godams/create', [\App\Http\Controllers\GodamController::class, 'create'])->name('godams.create');
+    Route::get('/godams/{id}', [\App\Http\Controllers\GodamController::class, 'show'])->name('godams.show');
+    Route::put('/godams/{id}', [\App\Http\Controllers\GodamController::class, 'update'])->name('godams.update');
+    Route::delete('/godams/{id}', [\App\Http\Controllers\GodamController::class, 'destroy'])->name('godams.destroy');
+    Route::get('/godams/{id}/inventory', [\App\Http\Controllers\GodamController::class, 'inventory'])->name('godams.inventory');
+
+    // Stock Transfers
+    Route::get('/stock-transfers', [\App\Http\Controllers\StockTransferController::class, 'index'])->name('stock-transfers.index');
+    Route::post('/stock-transfers', [\App\Http\Controllers\StockTransferController::class, 'store'])->name('stock-transfers.store');
+    Route::get('/stock-transfers/create', [\App\Http\Controllers\StockTransferController::class, 'create'])->name('stock-transfers.create');
+    Route::get('/stock-transfers/{id}', [\App\Http\Controllers\StockTransferController::class, 'show'])->name('stock-transfers.show');
+
+    // API Stock Check
+    Route::get('/api/stock-check', [\App\Http\Controllers\StockTransferController::class, 'stockCheck'])->name('api.stock-check');
 });
+
 
 
 use App\Http\Controllers\SuperAdmin\AuthController as SuperAuthController;

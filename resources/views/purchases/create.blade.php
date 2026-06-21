@@ -152,6 +152,7 @@
                                 <th class="p-3 min-w-[200px]">Description</th>
                                 <th class="p-3 w-24">Batch</th>
                                 <th class="p-3 w-32">Expiry <span class="text-red-500">*</span></th>
+                                <th class="p-3 w-32">Store To</th>
                                 <th class="p-3 w-20 text-center">Qty</th>
                                 <th class="p-3 w-24 text-right">Cost</th>
                                 <th class="p-3 w-20 text-center">Stock</th>
@@ -186,6 +187,15 @@
                                                class="w-full p-1.5 border rounded text-xs focus:ring-1 focus:ring-indigo-400 outline-none">
                                     </td>
                                     <td class="p-3">
+                                        <select :name="`items[${index}][godam_id]`" x-model="row.godam_id"
+                                                class="w-full p-1.5 border rounded text-xs text-gray-900 focus:ring-1 focus:ring-indigo-400 outline-none">
+                                            <option value="">— Shop Floor —</option>
+                                            @foreach($godams as $g)
+                                                <option value="{{ $g->id }}">{{ $g->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td class="p-3">
                                         <input type="number" x-model="row.qty" :name="`items[${index}][qty]`" min="1"
                                                class="w-full p-1.5 border rounded text-center text-sm font-bold text-indigo-700 focus:ring-1 focus:ring-indigo-400 outline-none">
                                     </td>
@@ -212,7 +222,7 @@
                             <!-- Live Search Row -->
                             <tr class="bg-indigo-50/50 border-t-2 border-indigo-200">
                                 <td class="p-3 text-center"><i class="fas fa-search text-indigo-500"></i></td>
-                                <td class="p-3 relative" colspan="8">
+                                <td class="p-3 relative" colspan="9">
                                     <input type="text" x-model="searchQuery"
                                            @input.debounce.200ms="performSearch()"
                                            @keydown.enter.prevent="selectFirstResult()"
@@ -524,16 +534,18 @@
                         name: '{{ addslashes($prefilledItem->description) }}',
                         batch_no: '',
                         expiry_date: '',
+                        godam_id: '',
                         qty: 1,
                         rate: {{ $prefilledItem->cost_rate ?? 0 }},
                         stock: {{ $prefilledItem->on_hand ?? 0 }}
                     }
                     @else
                     {
-                        item_id: '', code: '', name: '', batch_no: '', expiry_date: '', qty: 1, rate: 0, stock: null
+                        item_id: '', code: '', name: '', batch_no: '', expiry_date: '', godam_id: '', qty: 1, rate: 0, stock: null
                     }
                     @endif
                 ],
+                godams: @json($godams),
                 payments: [{
                     method: 'Cash Drawer', account_id: '', amount: 0, reference_no: ''
                 }],
@@ -584,7 +596,7 @@
 
                 // ── Methods ───────────────────────────────────────────────────────
                 addRow() {
-                    this.rows.push({ item_id: '', code: '', name: '', batch_no: '', expiry_date: '', qty: 1, rate: 0, stock: null });
+                    this.rows.push({ item_id: '', code: '', name: '', batch_no: '', expiry_date: '', godam_id: '', qty: 1, rate: 0, stock: null });
                 },
                 removeRow(index) {
                     if (this.rows.length > 1) this.rows.splice(index, 1);
@@ -646,7 +658,7 @@
                         existing.qty++;
                     } else {
                         let emptyIdx = this.rows.findIndex(r => !r.item_id && !r.code);
-                        const newRow = { item_id: item.id, code: item.code, name: item.name, batch_no: '', expiry_date: '', qty: 1, rate: item.cost_price || 0, stock: item.stock_qty ?? 0 };
+                        const newRow = { item_id: item.id, code: item.code, name: item.name, batch_no: '', expiry_date: '', godam_id: '', qty: 1, rate: item.cost_price || 0, stock: item.stock_qty ?? 0 };
                         if (emptyIdx !== -1) { this.rows[emptyIdx] = newRow; } else { this.rows.push(newRow); }
                     }
                     this.searchQuery = '';
@@ -669,6 +681,7 @@
                             this.rows[index].name    = item.name;
                             this.rows[index].rate    = item.cost_price || item.price || 0;
                             this.rows[index].stock   = item.stock_qty ?? 0;
+                            this.rows[index].godam_id = '';
                             if (index === this.rows.length - 1) this.addRow();
                         }
                     } catch(e) { console.error('Search failed'); }

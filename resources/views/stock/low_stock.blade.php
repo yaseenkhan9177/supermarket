@@ -71,6 +71,7 @@
                             <th class="p-4 text-center">Min Level</th>
                             <th class="p-4 text-right">Shortage</th>
                             <th class="p-4 text-right">Shortage %</th>
+                            <th class="p-4 text-center">Available in Godam</th>
                             <th class="p-4">Preferred Supplier</th>
                             <th class="p-4 text-center">Last Purchase</th>
                             <th class="p-4 text-center no-print">Action</th>
@@ -104,6 +105,24 @@
                                 </td>
                                 <td class="p-4 text-right font-bold font-mono">
                                     {{ $shortagePercent }}%
+                                </td>
+                                <td class="p-4 text-center font-bold font-mono">
+                                    @php
+                                        $godamQty = $item->totalWarehouseStock();
+                                    @endphp
+                                    @if($godamQty > 0)
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-800 dark:bg-green-950/20 dark:text-green-400">
+                                            {{ (float)$godamQty }}
+                                        </span>
+                                        <a href="{{ route('stock-transfers.create', ['item_id' => $item->id]) }}" 
+                                           class="ml-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2 py-1 rounded text-[10px] transition inline-flex items-center gap-0.5 shadow-sm">
+                                            <i class="fas fa-exchange-alt"></i> Transfer
+                                        </a>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800 dark:bg-red-950/20 dark:text-red-400">
+                                            None
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="p-4">
                                     @if($item->preferredSupplier)

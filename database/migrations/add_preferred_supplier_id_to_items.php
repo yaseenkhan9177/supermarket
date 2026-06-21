@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('items', function (Blueprint $table) {
-            $table->unsignedBigInteger('preferred_supplier_id')->nullable()->after('min_stock_level');
-            $table->foreign('preferred_supplier_id')->references('id')->on('suppliers')->onDelete('set null');
-        });
+        if (!Schema::hasColumn('items', 'preferred_supplier_id')) {
+            Schema::table('items', function (Blueprint $table) {
+                $table->unsignedBigInteger('preferred_supplier_id')->nullable()->after('min_stock_level');
+                $table->foreign('preferred_supplier_id')->references('id')->on('suppliers')->onDelete('set null');
+            });
+        }
     }
 
     /**
@@ -22,9 +24,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('items', function (Blueprint $table) {
-            $table->dropForeign(['preferred_supplier_id']);
-            $table->dropColumn('preferred_supplier_id');
-        });
+        if (Schema::hasColumn('items', 'preferred_supplier_id')) {
+            Schema::table('items', function (Blueprint $table) {
+                $table->dropForeign(['preferred_supplier_id']);
+                $table->dropColumn('preferred_supplier_id');
+            });
+        }
     }
 };

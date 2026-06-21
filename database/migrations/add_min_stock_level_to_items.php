@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('items', function (Blueprint $table) {
-            $table->integer('min_stock_level')->default(0)->after('min_stock');
-        });
+        if (!Schema::hasColumn('items', 'min_stock_level')) {
+            Schema::table('items', function (Blueprint $table) {
+                $table->integer('min_stock_level')->default(0)->after('min_stock');
+            });
+        }
     }
 
     /**
@@ -21,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('items', function (Blueprint $table) {
-            $table->dropColumn('min_stock_level');
-        });
+        if (Schema::hasColumn('items', 'min_stock_level')) {
+            Schema::table('items', function (Blueprint $table) {
+                $table->dropColumn('min_stock_level');
+            });
+        }
     }
 };

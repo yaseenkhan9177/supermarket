@@ -105,4 +105,15 @@ class Item extends Model
         }
         return $this->batches()->sum('quantity_available') >= $requestedQty;
     }
+
+    public function godamStocks(): HasMany
+    {
+        return $this->hasMany(GodamStock::class, 'item_id');
+    }
+
+    public function totalWarehouseStock(): float
+    {
+        return (float) $this->godamStocks()->sum('quantity');
+    }
 }
+
