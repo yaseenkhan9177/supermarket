@@ -6,9 +6,14 @@
 <div class="max-w-7xl mx-auto">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Product Catalog</h1>
-        <a href="/items/create" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold">
-            <i class="fas fa-plus"></i> Add Product
-        </a>
+        <div class="flex gap-2">
+            <a href="/items/import-preview" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-bold flex items-center gap-2">
+                <i class="fas fa-file-excel"></i> Import with Preview
+            </a>
+            <a href="/items/create" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold">
+                <i class="fas fa-plus"></i> Add Product
+            </a>
+        </div>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">

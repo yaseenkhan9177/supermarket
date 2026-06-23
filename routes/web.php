@@ -253,6 +253,10 @@ Route::middleware(['auth:web,employee'])->group(function () {
     Route::get('/items/create', [\App\Http\Controllers\ItemController::class, 'create'])->name('items.create');
     Route::post('/items/store', [\App\Http\Controllers\ItemController::class, 'store'])->name('items.store');
     Route::post('/items/import', [\App\Http\Controllers\ItemController::class, 'import'])->name('items.import');
+    Route::get('/items/import-preview', [\App\Http\Controllers\ItemController::class, 'importPreview'])->name('items.import-preview');
+    Route::post('/items/upload-preview', [\App\Http\Controllers\ItemController::class, 'uploadPreview'])->name('items.upload-preview');
+    Route::post('/items/import-chunk', [\App\Http\Controllers\ItemController::class, 'importChunk'])->name('items.import-chunk');
+    Route::get('/items/download-sample', [\App\Http\Controllers\ItemController::class, 'downloadSample'])->name('items.download-sample');
     Route::get('/items/{id}/edit', [\App\Http\Controllers\ItemController::class, 'edit'])->name('items.edit');
     Route::post('/items/{id}/update', [\App\Http\Controllers\ItemController::class, 'update'])->name('items.update');
 
