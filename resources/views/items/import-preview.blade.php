@@ -20,54 +20,104 @@
         </div>
     </div>
 
-    <!-- STEP 1: UPLOAD AREA -->
+    <!-- STEP 1: UPLOAD & PASTE AREA -->
     <div x-show="step === 1" class="space-y-6">
         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-8 shadow-xl">
-            <h3 class="text-gray-900 dark:text-white font-bold text-lg mb-6 flex items-center gap-2">
-                <i class="fas fa-file-excel text-emerald-500"></i> Upload Spreadsheet
-            </h3>
-            
-            <div class="border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-xl p-12 text-center hover:border-emerald-500 hover:bg-gray-50 dark:hover:bg-slate-800/30 transition cursor-pointer relative"
-                 @click="$refs.fileInput.click()"
-                 @dragover.prevent="dragOver = true"
-                 @dragleave.prevent="dragOver = false"
-                 @drop.prevent="handleDrop($event)"
-                 :class="dragOver ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20' : ''">
+            <!-- Tab Switcher -->
+            <div class="flex gap-4 mb-6">
+                <button type="button"
+                        @click="activeTab = 'upload'"
+                        :class="activeTab === 'upload' ? 'bg-blue-600 text-white font-bold shadow-md hover:bg-blue-500' : 'bg-transparent border border-gray-300 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'"
+                        class="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm transition focus:outline-none">
+                    📁 Upload File
+                </button>
+                <button type="button"
+                        @click="activeTab = 'paste'"
+                        :class="activeTab === 'paste' ? 'bg-blue-600 text-white font-bold shadow-md hover:bg-blue-500' : 'bg-transparent border border-gray-300 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'"
+                        class="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm transition focus:outline-none">
+                    📋 Paste from Excel
+                </button>
+            </div>
+
+            <!-- Tab 1: Upload File -->
+            <div x-show="activeTab === 'upload'" class="space-y-6">
+                <h3 class="text-gray-900 dark:text-white font-bold text-lg mb-4 flex items-center gap-2">
+                    <i class="fas fa-file-excel text-emerald-500"></i> Upload Spreadsheet
+                </h3>
                 
-                <input type="file" x-ref="fileInput" class="hidden" accept=".xlsx,.xls,.csv" @change="handleFileSelect">
-                
-                <div x-show="!selectedFile" class="space-y-4">
-                    <div class="w-20 h-20 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto text-gray-400 dark:text-slate-300">
-                        <i class="fas fa-cloud-upload-alt text-3xl"></i>
+                <div class="border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-xl p-12 text-center hover:border-emerald-500 hover:bg-gray-50 dark:hover:bg-slate-800/30 transition cursor-pointer relative"
+                     @click="$refs.fileInput.click()"
+                     @dragover.prevent="dragOver = true"
+                     @dragleave.prevent="dragOver = false"
+                     @drop.prevent="handleDrop($event)"
+                     :class="dragOver ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20' : ''">
+                    
+                    <input type="file" x-ref="fileInput" class="hidden" accept=".xlsx,.xls,.csv" @change="handleFileSelect">
+                    
+                    <div x-show="!selectedFile" class="space-y-4">
+                        <div class="w-20 h-20 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto text-gray-400 dark:text-slate-300">
+                            <i class="fas fa-cloud-upload-alt text-3xl"></i>
+                        </div>
+                        <p class="text-gray-700 dark:text-slate-300 font-semibold text-lg">Click or drag & drop file to import</p>
+                        <p class="text-gray-500 dark:text-slate-500 text-xs">Supported Formats: .xlsx, .xls, .csv (Max 64MB)</p>
                     </div>
-                    <p class="text-gray-700 dark:text-slate-300 font-semibold text-lg">Click or drag & drop file to import</p>
-                    <p class="text-gray-500 dark:text-slate-500 text-xs">Supported Formats: .xlsx, .xls, .csv (Max 64MB)</p>
+
+                    <div x-show="selectedFile" class="flex items-center justify-center gap-4 bg-gray-50 dark:bg-slate-900 p-6 rounded-xl border border-gray-200 dark:border-slate-700 max-w-lg mx-auto" @click.stop>
+                        <i class="fas fa-file-excel text-4xl text-emerald-500"></i>
+                        <div class="text-left flex-grow">
+                            <p class="text-gray-800 dark:text-slate-200 font-bold text-sm truncate" x-text="selectedFile ? selectedFile.name : ''"></p>
+                            <p class="text-gray-500 dark:text-slate-500 text-xs" x-text="selectedFile ? (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB' : ''"></p>
+                        </div>
+                        <button type="button" @click="selectedFile = null" class="text-gray-400 hover:text-red-500 transition p-2">
+                            <i class="fas fa-trash-alt text-lg"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <div x-show="selectedFile" class="flex items-center justify-center gap-4 bg-gray-50 dark:bg-slate-900 p-6 rounded-xl border border-gray-200 dark:border-slate-700 max-w-lg mx-auto" @click.stop>
-                    <i class="fas fa-file-excel text-4xl text-emerald-500"></i>
-                    <div class="text-left flex-grow">
-                        <p class="text-gray-800 dark:text-slate-200 font-bold text-sm truncate" x-text="selectedFile ? selectedFile.name : ''"></p>
-                        <p class="text-gray-500 dark:text-slate-500 text-xs" x-text="selectedFile ? (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB' : ''"></p>
-                    </div>
-                    <button type="button" @click="selectedFile = null" class="text-gray-400 hover:text-red-500 transition p-2">
-                        <i class="fas fa-trash-alt text-lg"></i>
+                <!-- Upload Action & Spinner -->
+                <div class="mt-8 flex justify-end">
+                    <button type="button" 
+                            @click="uploadAndPreview" 
+                            :disabled="!selectedFile || loading"
+                            class="px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <template x-if="loading">
+                            <span class="inline-block animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4 mr-2"></span>
+                        </template>
+                        <i class="fas fa-eye" x-show="!loading"></i>
+                        <span x-text="loading ? 'Processing Spreadsheet...' : 'Upload & Preview'"></span>
                     </button>
                 </div>
             </div>
 
-            <!-- Upload Action & Spinner -->
-            <div class="mt-8 flex justify-end">
-                <button type="button" 
-                        @click="uploadAndPreview" 
-                        :disabled="!selectedFile || loading"
-                        class="px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <template x-if="loading">
-                        <span class="inline-block animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4 mr-2"></span>
-                    </template>
-                    <i class="fas fa-eye" x-show="!loading"></i>
-                    <span x-text="loading ? 'Processing Spreadsheet...' : 'Upload & Preview'"></span>
-                </button>
+            <!-- Tab 2: Paste from Excel -->
+            <div x-show="activeTab === 'paste'" class="space-y-6" x-cloak>
+                <h3 class="text-gray-900 dark:text-white font-bold text-lg mb-4 flex items-center gap-2">
+                    <i class="fas fa-paste text-blue-500"></i> Paste Data from Excel / Google Sheets
+                </h3>
+
+                <div class="p-4 bg-blue-50 dark:bg-slate-900/50 border border-blue-200 dark:border-slate-800 rounded-xl text-sm text-blue-800 dark:text-blue-300">
+                    <p class="font-bold flex items-center gap-2 mb-1">
+                        <i class="fas fa-info-circle"></i> Instructions:
+                    </p>
+                    <p>Open your CSV or Excel file &rarr; Select All (Ctrl+A) &rarr; Copy (Ctrl+C) &rarr; Paste in the text area below.</p>
+                </div>
+
+                <div>
+                    <textarea x-model="pastedData"
+                              class="w-full min-h-[300px] p-4 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 rounded-xl border border-gray-300 dark:border-slate-700 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition shadow-inner placeholder-gray-400 dark:placeholder-slate-600"
+                              placeholder="Paste your copied Excel/CSV data here..."></textarea>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4">
+                    <p class="text-xs text-gray-500 dark:text-slate-400 max-w-xl">
+                        💡 <strong>Tip:</strong> If uploading isn't working, use this method instead. Open your file in Excel or Google Sheets, press Ctrl+A to select all, Ctrl+C to copy, then paste here.
+                    </p>
+                    <button type="button" 
+                            @click="parsePastedData" 
+                            class="px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow-lg flex items-center gap-2 whitespace-nowrap">
+                        <i class="fas fa-eye"></i> Preview Data
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -151,10 +201,10 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-slate-700 text-sm">
                         <template x-for="(row, idx) in paginatedRows" :key="row.index">
                             <tr :class="{
-                                    'bg-red-50/40 dark:bg-red-950/10 hover:bg-red-50/60': row.status === 'error',
-                                    'bg-yellow-50/40 dark:bg-yellow-950/10 hover:bg-yellow-50/60': row.status === 'warning',
-                                    'hover:bg-gray-50 dark:hover:bg-slate-750/30': row.status === 'ready'
-                                }" class="transition">
+                                     'bg-red-50/40 dark:bg-red-950/10 hover:bg-red-50/60': row.status === 'error',
+                                     'bg-yellow-50/40 dark:bg-yellow-950/10 hover:bg-yellow-50/60': row.status === 'warning',
+                                     'hover:bg-gray-50 dark:hover:bg-slate-750/30': row.status === 'ready'
+                                 }" class="transition">
                                 <td class="p-4 text-center text-gray-400 font-mono font-bold" x-text="row.index"></td>
                                 <td class="p-4">
                                     <div class="flex flex-col">
@@ -305,6 +355,8 @@
         return {
             step: 1,
             selectedFile: null,
+            pastedData: '',
+            activeTab: 'upload',
             dragOver: false,
             loading: false,
             rows: [],
@@ -394,6 +446,206 @@
                 });
             },
 
+            parseCSV(text) {
+                const lines = text.trim().split(/\r?\n/);
+                return lines.map(line => {
+                    // Handle quoted fields with commas/tabs inside
+                    const result = [];
+                    let current = '';
+                    let inQuotes = false;
+                    for (let i = 0; i < line.length; i++) {
+                        if (line[i] === '"') {
+                            inQuotes = !inQuotes;
+                        } else if (line[i] === ',' && !inQuotes) {
+                            result.push(current.trim());
+                            current = '';
+                        } else if (line[i] === '\t' && !inQuotes) {
+                            // Handle tab-separated (Excel default copy format)
+                            result.push(current.trim());
+                            current = '';
+                        } else {
+                            current += line[i];
+                        }
+                    }
+                    result.push(current.trim());
+                    return result;
+                });
+            },
+
+            parsePastedData() {
+                const text = this.pastedData;
+                if (!text.trim()) {
+                    alert('Please paste your data first.');
+                    return;
+                }
+
+                const parsed = this.parseCSV(text);
+                if (parsed.length < 2) {
+                    alert('No data found. Make sure you copied at least the header row and one data row.');
+                    return;
+                }
+
+                const headers = parsed[0].map(h => String(h).toLowerCase().trim());
+                
+                const findHeader = (options) => {
+                    for (let opt of options) {
+                        const idx = headers.indexOf(opt.toLowerCase().trim());
+                        if (idx !== -1) {
+                            return idx;
+                        }
+                    }
+                    return false;
+                };
+
+                const map = {
+                    name: findHeader(['name', 'description', 'item name', 'item_name', 'title']),
+                    bar_code: findHeader(['bar_code', 'barcode', 'code', 'bar code', 'sku/code', 'sku', 'sku_code']),
+                    type: findHeader(['type', 'item_type', 'item type']),
+                    packing: findHeader(['packing', 'category', 'department', 'dept']),
+                    cost: findHeader(['cost', 'cost_price', 'cost price', 'cost_rate', 'cost rate']),
+                    sale: findHeader(['sale', 'sale_price', 'sale price', 'sale_rate', 'sale rate', 'price']),
+                    trade: findHeader(['trade', 'trade_rate', 'trade rate', 'trade_price', 'trade price']),
+                    h_price: findHeader(['h_price', 'wholesale_price', 'wholesale price', 'wholesale', 'h price']),
+                    stock: findHeader(['stock', 'quantity', 'qty', 'opening stock', 'opening_stock', 'on_hand', 'on hand']),
+                    min: findHeader(['min', 'min_stock', 'min stock', 'minimum', 'min stock level', 'min_stock_level']),
+                    max: findHeader(['max', 'max_stock', 'max stock', 'maximum']),
+                    disc: findHeader(['disc', 'discount', 'discount_percent', 'discount percent']),
+                    openprice: findHeader(['openprice', 'open_price', 'open price']),
+                    taxrate: findHeader(['taxrate', 'taxprate', 'tax_rate', 'tax rate', 'tax']),
+                    itemid: findHeader(['itemid', 'item_id', 'imported_id', 'imported id', 'id']),
+                    unit: findHeader(['unit', 'uom', 'measure']),
+                    description: findHeader(['description', 'desc', 'details', 'item description']),
+                };
+
+                if (map.name === false) {
+                    alert('Required column "Name" or "Description" not found in the pasted data.');
+                    return;
+                }
+
+                const previewRows = [];
+                const summary = { ready: 0, warnings: 0, errors: 0, total: 0 };
+
+                for (let i = 1; i < parsed.length; i++) {
+                    const row = parsed[i];
+                    // Skip empty rows
+                    if (row.length === 0 || (row.length === 1 && !row[0].trim())) {
+                        continue;
+                    }
+
+                    const rowNumber = i + 1;
+
+                    const name = (map.name !== false && row[map.name] !== undefined) ? String(row[map.name]).trim() : '';
+                    const type = (map.type !== false && row[map.type] !== undefined) ? String(row[map.type]).toLowerCase().trim() : 'inventory';
+                    const sku = (map.bar_code !== false && row[map.bar_code] !== undefined) ? String(row[map.bar_code]).trim() : '';
+                    const category = (map.packing !== false && row[map.packing] !== undefined) ? String(row[map.packing]).trim() : '';
+                    const unit = (map.unit !== false && row[map.unit] !== undefined) ? String(row[map.unit]).trim() : '';
+                    
+                    const priceRaw = (map.sale !== false && row[map.sale] !== undefined && row[map.sale] !== '') ? row[map.sale] : 0;
+                    const costRaw = (map.cost !== false && row[map.cost] !== undefined && row[map.cost] !== '') ? row[map.cost] : 0;
+                    const stockRaw = (map.stock !== false && row[map.stock] !== undefined && row[map.stock] !== '') ? row[map.stock] : 0;
+                    const minStockRaw = (map.min !== false && row[map.min] !== undefined && row[map.min] !== '') ? row[map.min] : 0;
+
+                    const tradeRaw = (map.trade !== false && row[map.trade] !== undefined && row[map.trade] !== '') ? row[map.trade] : 0;
+                    const wholesaleRaw = (map.h_price !== false && row[map.h_price] !== undefined && row[map.h_price] !== '') ? row[map.h_price] : 0;
+                    const maxStockRaw = (map.max !== false && row[map.max] !== undefined && row[map.max] !== '') ? row[map.max] : 0;
+                    const discountRaw = (map.disc !== false && row[map.disc] !== undefined && row[map.disc] !== '') ? row[map.disc] : 0;
+                    const openPriceRaw = (map.openprice !== false && row[map.openprice] !== undefined && row[map.openprice] !== '') ? row[map.openprice] : false;
+                    const taxRateRaw = (map.taxrate !== false && row[map.taxrate] !== undefined && row[map.taxrate] !== '') ? row[map.taxrate] : 0;
+                    const importedId = (map.itemid !== false && row[map.itemid] !== undefined && row[map.itemid] !== '') ? row[map.itemid] : null;
+                    const description = (map.description !== false && row[map.description] !== undefined) ? String(row[map.description]).trim() : '';
+
+                    let status = 'ready';
+                    const issues = [];
+
+                    // Required validations
+                    if (!name) {
+                        status = 'error';
+                        issues.push('Item Name is required.');
+                    }
+
+                    const validTypes = ['inventory', 'service', 'package'];
+                    if (!validTypes.includes(type)) {
+                        status = 'error';
+                        issues.push("Invalid type '" + type + "'. Must be one of: inventory, service, package.");
+                    }
+
+                    // Helper to check if a value is numeric
+                    const isNumeric = (val) => {
+                        if (val === undefined || val === null || val === '') return true;
+                        const str = String(val).trim();
+                        if (str === '') return true;
+                        return !isNaN(str) && !isNaN(parseFloat(str));
+                    };
+
+                    // Numeric checks
+                    if (!isNumeric(priceRaw)) {
+                        status = 'error';
+                        issues.push('Price must be numeric.');
+                    }
+                    if (!isNumeric(costRaw)) {
+                        status = 'error';
+                        issues.push('Cost must be numeric.');
+                    }
+                    if (!isNumeric(stockRaw)) {
+                        status = 'error';
+                        issues.push('Stock must be numeric.');
+                    }
+
+                    // Warnings
+                    if (status !== 'error') {
+                        if (!category) {
+                            status = 'warning';
+                            issues.push('Category is empty.');
+                        }
+                    }
+
+                    // Update counts
+                    if (status === 'error') {
+                        summary.errors++;
+                    } else if (status === 'warning') {
+                        summary.warnings++;
+                    } else {
+                        summary.ready++;
+                    }
+                    summary.total++;
+
+                    // Parse open price boolean
+                    let openPrice = false;
+                    if (openPriceRaw) {
+                        const opStr = String(openPriceRaw).toLowerCase().trim();
+                        openPrice = (opStr === 'true' || opStr === '1' || opStr === 'yes' || opStr === 'y');
+                    }
+
+                    previewRows.push({
+                        index: rowNumber,
+                        name: name,
+                        type: type,
+                        sku: sku,
+                        category: category,
+                        unit: unit,
+                        price: isNumeric(priceRaw) ? (parseFloat(priceRaw) || 0) : 0,
+                        cost: isNumeric(costRaw) ? (parseFloat(costRaw) || 0) : 0,
+                        stock: isNumeric(stockRaw) ? (parseFloat(stockRaw) || 0) : 0,
+                        min_stock: isNumeric(minStockRaw) ? (parseFloat(minStockRaw) || 0) : 0,
+                        trade_rate: isNumeric(tradeRaw) ? (parseFloat(tradeRaw) || 0) : 0,
+                        sale_whole: isNumeric(wholesaleRaw) ? (parseFloat(wholesaleRaw) || 0) : 0,
+                        max_stock: isNumeric(maxStockRaw) ? (parseFloat(maxStockRaw) || 0) : 0,
+                        discount_percent: isNumeric(discountRaw) ? (parseFloat(discountRaw) || 0) : 0,
+                        open_price: openPrice,
+                        tax_rate: isNumeric(taxRateRaw) ? (parseFloat(taxRateRaw) || 0) : 0,
+                        imported_id: importedId,
+                        description: description,
+                        status: status,
+                        issues: issues
+                    });
+                }
+
+                this.rows = previewRows;
+                this.summary = summary;
+                this.currentPage = 1;
+                this.step = 2;
+            },
+
             prevPage() {
                 if (this.currentPage > 1) {
                     this.currentPage--;
@@ -408,6 +660,7 @@
 
             resetToUpload() {
                 this.selectedFile = null;
+                this.pastedData = '';
                 this.rows = [];
                 this.summary = { ready: 0, warnings: 0, errors: 0, total: 0 };
                 this.currentPage = 1;
