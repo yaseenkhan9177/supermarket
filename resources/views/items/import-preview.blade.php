@@ -366,7 +366,7 @@
             importing: false,
             processedRows: 0,
             results: { imported: 0, skipped: 0, failed: 0 },
-            csrfToken: document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+           csrfToken: '{{ csrf_token() }}',
 
             get paginatedRows() {
                 const start = (this.currentPage - 1) * this.pageSize;
@@ -417,7 +417,7 @@
                 const formData = new FormData();
                 formData.append('excel_file', this.selectedFile);
 
-                fetch("{{ route('items.upload-preview') }}", {
+               fetch("/items/upload-preview", {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': this.csrfToken
@@ -693,12 +693,13 @@
                 for (let i = 0; i < chunks.length; i++) {
                     const chunk = chunks[i];
                     try {
-                        const response = await fetch("{{ route('items.import-chunk') }}", {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': this.csrfToken
-                            },
+                       const response = await fetch("/items/import-chunk", {
+                         method: 'POST',
+                         headers: {
+                                 'Content-Type': 'application/json',
+                                 'X-CSRF-TOKEN': this.csrfToken,
+                                 'Accept': 'application/json'
+    },
                             body: JSON.stringify({
                                 rows: chunk,
                                 chunk_index: i

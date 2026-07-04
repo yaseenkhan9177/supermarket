@@ -14,5 +14,7 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         'super/logout',
         'logout',
+        'items/upload-preview',
+        'items/import-chunk',
     ];
 }
