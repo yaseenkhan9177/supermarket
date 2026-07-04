@@ -15,10 +15,16 @@
     </button>
 </div>
 
-<!-- KPI Cards -->
+{{-- ============================================================
+     KPI CARDS
+     - cashier: today's sales only
+     - warehouse: low stock, expiry only
+     - manager/owner: all KPIs
+     ============================================================ --}}
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
 
-    <!-- Sales (Green) -->
+    {{-- Today's Net Sales — cashier, manager, owner --}}
+    @hasanyrole('owner|manager|cashier')
     <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 flex justify-between items-center relative overflow-hidden group">
         <div class="relative z-10">
             <p class="text-gray-500 text-xs font-semibold mb-1">Today's Net Sales</p>
@@ -28,8 +34,10 @@
             <i class="fas fa-chart-line text-lg"></i>
         </div>
     </div>
+    @endhasanyrole
 
-    <!-- Cash Hand (Blue) -->
+    {{-- Cash in Hand — manager, owner only --}}
+    @hasanyrole('owner|manager')
     <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 flex justify-between items-center relative overflow-hidden group">
         <div>
             <p class="text-gray-500 text-xs font-semibold mb-1">Cash in Hand</p>
@@ -40,7 +48,7 @@
         </div>
     </div>
 
-    <!-- Receivables (Red) -->
+    {{-- Receivables — manager, owner only --}}
     <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500 flex justify-between items-center relative overflow-hidden group">
         <div>
             <p class="text-gray-500 text-xs font-semibold mb-1">Receivables</p>
@@ -50,19 +58,20 @@
             <i class="fas fa-hand-holding-usd text-lg"></i>
         </div>
     </div>
+    @endhasanyrole
 
-    <!-- Low Stock -->
-<a href="{{ route('stock.low-stock') }}" class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center relative overflow-hidden group hover:shadow-md transition-all duration-150 @if($kpis['low_stock_count'] > 0) border-l-4 border-red-500 @else border-l-4 border-green-500 @endif">
-    <div>
-        <p class="text-gray-500 text-xs font-semibold mb-1">Low Stock Items</p>
-        <h3 class="text-xl font-bold @if($kpis['low_stock_count'] > 0) text-red-600 @else text-gray-800 @endif">{{ $kpis['low_stock_count'] }} Products</h3>
-    </div>
-    <div class="bg-@if($kpis['low_stock_count'] > 0) red @else green @endif-100 p-2 rounded-lg text-@if($kpis['low_stock_count'] > 0) red @else green @endif-600 group-hover:scale-110 transition-transform">
-        <i class="fas fa-exclamation-triangle text-lg"></i>
-    </div>
-</a>
+    {{-- Low Stock — all roles --}}
+    <a href="{{ route('stock.low-stock') }}" class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center relative overflow-hidden group hover:shadow-md transition-all duration-150 @if($kpis['low_stock_count'] > 0) border-l-4 border-red-500 @else border-l-4 border-green-500 @endif">
+        <div>
+            <p class="text-gray-500 text-xs font-semibold mb-1">Low Stock Items</p>
+            <h3 class="text-xl font-bold @if($kpis['low_stock_count'] > 0) text-red-600 @else text-gray-800 @endif">{{ $kpis['low_stock_count'] }} Products</h3>
+        </div>
+        <div class="bg-@if($kpis['low_stock_count'] > 0) red @else green @endif-100 p-2 rounded-lg text-@if($kpis['low_stock_count'] > 0) red @else green @endif-600 group-hover:scale-110 transition-transform">
+            <i class="fas fa-exclamation-triangle text-lg"></i>
+        </div>
+    </a>
 
-    <!-- Near Expiry (Purple) -->
+    {{-- Near Expiry — all roles --}}
     <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500 flex justify-between items-center relative overflow-hidden group">
         <div>
             <p class="text-gray-500 text-xs font-semibold mb-1">Near Expiry</p>
@@ -75,9 +84,13 @@
 
 </div>
 
-<!-- Quick Access Shortcuts -->
+{{-- ============================================================
+     QUICK ACCESS SHORTCUTS — role-filtered
+     ============================================================ --}}
 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-9 gap-3 mb-8">
 
+    {{-- Reports — manager, owner --}}
+    @hasanyrole('owner|manager')
     <a href="{{ route('reports.index') }}"
        id="shortcut-reports"
        class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
@@ -89,9 +102,12 @@
                     group-hover:scale-110 transition-transform">
             <i class="fas fa-chart-pie text-white text-base"></i>
         </div>
-        <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Reportsss</span>
+        <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Reports</span>
     </a>
+    @endhasanyrole
 
+    {{-- POS Sale — cashier, manager, owner --}}
+    @hasanyrole('owner|manager|cashier')
     <a href="{{ route('sales.pos') }}"
        id="shortcut-pos"
        class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
@@ -105,7 +121,10 @@
         </div>
         <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">POS Sale</span>
     </a>
+    @endhasanyrole
 
+    {{-- Purchase — manager, owner --}}
+    @hasanyrole('owner|manager')
     <a href="{{ route('purchases.create') }}"
        id="shortcut-purchase"
        class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
@@ -120,6 +139,7 @@
         <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Purchase</span>
     </a>
 
+    {{-- Accounts — manager, owner --}}
     <a href="{{ route('general-ledger.index') }}"
        id="shortcut-accounts"
        class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
@@ -133,7 +153,9 @@
         </div>
         <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Accounts</span>
     </a>
+    @endhasanyrole
 
+    {{-- Items — all roles --}}
     <a href="{{ route('items.index') }}"
        id="shortcut-items"
        class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
@@ -148,6 +170,8 @@
         <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Items</span>
     </a>
 
+    {{-- Customers — manager, owner --}}
+    @hasanyrole('owner|manager')
     <a href="{{ route('customers.index') }}"
        id="shortcut-customers"
        class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
@@ -161,7 +185,9 @@
         </div>
         <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Customers</span>
     </a>
+    @endhasanyrole
 
+    {{-- Low Stock — all roles --}}
     <a href="{{ route('stock.low-stock') }}"
        id="shortcut-low-stock"
        class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
@@ -176,6 +202,8 @@
         <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Low Stock</span>
     </a>
 
+    {{-- Godams — warehouse, manager, owner --}}
+    @hasanyrole('owner|manager|warehouse')
     <a href="{{ route('godams.index') }}"
        id="shortcut-godams"
        class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
@@ -190,6 +218,7 @@
         <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Godams</span>
     </a>
 
+    {{-- Transfers — warehouse, manager, owner --}}
     <a href="{{ route('stock-transfers.index') }}"
        id="shortcut-transfers"
        class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
@@ -203,10 +232,35 @@
         </div>
         <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Transfers</span>
     </a>
+    @endhasanyrole
+
+    {{-- Staff Management — owner only --}}
+    @role('owner')
+    <a href="{{ route('staff.index') }}"
+       id="shortcut-staff"
+       class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
+              border border-violet-100 dark:border-violet-900 rounded-xl p-4 shadow-sm
+              hover:shadow-md hover:border-violet-400 dark:hover:border-violet-500
+              hover:-translate-y-0.5 transition-all duration-200">
+        <div class="w-10 h-10 rounded-lg bg-violet-600 flex items-center justify-center
+                    shadow-md shadow-violet-200 dark:shadow-violet-900
+                    group-hover:scale-110 transition-transform">
+            <i class="fas fa-users-cog text-white text-base"></i>
+        </div>
+        <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">Staff</span>
+    </a>
+    @endrole
 
 </div>
 
-<!-- Charts & Activity Grid -->
+{{-- ============================================================
+     CHARTS & ACTIVITY GRID
+     - cashier / warehouse: see only a simplified stats panel
+     - manager / owner: full charts
+     ============================================================ --}}
+
+{{-- Full charts — manager and owner only --}}
+@hasanyrole('owner|manager')
 <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
 
     <!-- Charts Column -->
@@ -293,16 +347,77 @@
 
 </div>
 
-<!-- Data Injection -->
+<!-- Data Injection for charts -->
 <div id="new-chart-data" class="hidden"
     data-paid="{{ json_encode($chartData['paid_vs_unpaid']) }}"
     data-debit="{{ json_encode($chartData['daily_debit']) }}"
     data-sales="{{ json_encode($chartData['monthly_sales']) }}"
     data-balance="{{ json_encode($chartData['customer_balance']) }}"
     data-cashflow="{{ json_encode($chartData['cash_flow']) }}"></div>
+@endhasanyrole
+
+{{-- Simplified panel — cashier role --}}
+@role('cashier')
+<div class="bg-white rounded-2xl shadow-sm border border-green-100 p-6">
+    <h3 class="text-gray-700 font-bold mb-4 flex items-center gap-2">
+        <i class="fas fa-cash-register text-green-500"></i> My Sales Today
+    </h3>
+    <div class="grid grid-cols-2 gap-4">
+        <div class="bg-green-50 rounded-xl p-4 text-center">
+            <p class="text-xs text-gray-500 font-semibold mb-1">Net Sales</p>
+            <p class="text-2xl font-extrabold text-green-700">Rs. {{ number_format($kpis['daily_sales']) }}</p>
+        </div>
+        <div class="bg-indigo-50 rounded-xl p-4 text-center">
+            <p class="text-xs text-gray-500 font-semibold mb-1">Low Stock Alerts</p>
+            <p class="text-2xl font-extrabold {{ $kpis['low_stock_count'] > 0 ? 'text-red-600' : 'text-gray-700' }}">
+                {{ $kpis['low_stock_count'] }}
+            </p>
+        </div>
+    </div>
+    <div class="mt-4 text-center">
+        <a href="{{ route('sales.pos') }}"
+           class="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition hover:shadow-lg">
+            <i class="fas fa-cash-register"></i> Open POS Terminal
+        </a>
+    </div>
+</div>
+@endrole
+
+{{-- Simplified panel — warehouse role --}}
+@role('warehouse')
+<div class="bg-white rounded-2xl shadow-sm border border-amber-100 p-6">
+    <h3 class="text-gray-700 font-bold mb-4 flex items-center gap-2">
+        <i class="fas fa-warehouse text-amber-500"></i> Warehouse Overview
+    </h3>
+    <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="bg-amber-50 rounded-xl p-4 text-center">
+            <p class="text-xs text-gray-500 font-semibold mb-1">Low Stock Items</p>
+            <p class="text-2xl font-extrabold {{ $kpis['low_stock_count'] > 0 ? 'text-red-600' : 'text-green-600' }}">
+                {{ $kpis['low_stock_count'] }}
+            </p>
+        </div>
+        <div class="bg-purple-50 rounded-xl p-4 text-center">
+            <p class="text-xs text-gray-500 font-semibold mb-1">Near Expiry</p>
+            <p class="text-2xl font-extrabold text-purple-700">{{ $kpis['expiring_count'] }}</p>
+        </div>
+    </div>
+    <div class="flex gap-3">
+        <a href="{{ route('godams.index') }}"
+           class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-sm transition">
+            <i class="fas fa-warehouse"></i> Godams
+        </a>
+        <a href="{{ route('stock-transfers.index') }}"
+           class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-sm transition">
+            <i class="fas fa-exchange-alt"></i> Transfers
+        </a>
+    </div>
+</div>
+@endrole
+
 @endsection
 
 @section('scripts')
+@hasanyrole('owner|manager')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const dataElement = document.getElementById('new-chart-data');
@@ -322,7 +437,7 @@
             labels: paidData.labels,
             datasets: [{
                 data: paidData.data,
-                backgroundColor: ['#10B981', '#EF4444'], // Green, Red
+                backgroundColor: ['#10B981', '#EF4444'],
                 borderWidth: 0,
                 hoverOffset: 4
             }]
@@ -334,10 +449,7 @@
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: {
-                        usePointStyle: true,
-                        boxWidth: 8
-                    }
+                    labels: { usePointStyle: true, boxWidth: 8 }
                 }
             }
         }
@@ -351,30 +463,18 @@
             datasets: [{
                 label: 'Balance (Rs)',
                 data: balanceData.data,
-                backgroundColor: '#6366F1', // Indigo
+                backgroundColor: '#6366F1',
                 borderRadius: 4
             }]
         },
         options: {
-            indexAxis: 'y', // Horizontal
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
+            plugins: { legend: { display: false } },
             scales: {
-                x: {
-                    grid: {
-                        display: false
-                    }
-                },
-                y: {
-                    grid: {
-                        display: false
-                    }
-                }
+                x: { grid: { display: false } },
+                y: { grid: { display: false } }
             }
         }
     });
@@ -387,7 +487,7 @@
             datasets: [{
                 label: 'Debit',
                 data: debitData.data,
-                borderColor: '#F59E0B', // Orange
+                borderColor: '#F59E0B',
                 backgroundColor: 'rgba(245, 158, 11, 0.1)',
                 fill: true,
                 tension: 0.4,
@@ -397,28 +497,15 @@
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
+            plugins: { legend: { display: false } },
             scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        borderDash: [2, 4]
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    }
-                }
+                y: { beginAtZero: true, grid: { borderDash: [2, 4] } },
+                x: { grid: { display: false } }
             }
         }
     });
 
-    // 4. Cash Flow (Line - Multi-axis/Multi-dataset)
+    // 4. Cash Flow (Multi-dataset Line)
     new Chart(document.getElementById('cashFlowChart'), {
         type: 'line',
         data: {
@@ -426,13 +513,13 @@
             datasets: [{
                 label: 'Inflow',
                 data: cashFlowData.inflow,
-                borderColor: '#10B981', // Green
+                borderColor: '#10B981',
                 tension: 0.3,
                 pointRadius: 0
             }, {
                 label: 'Outflow',
                 data: cashFlowData.outflow,
-                borderColor: '#EF4444', // Red
+                borderColor: '#EF4444',
                 tension: 0.3,
                 pointRadius: 0
             }]
@@ -440,26 +527,10 @@
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        usePointStyle: true,
-                        boxWidth: 6
-                    }
-                }
-            },
+            plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 6 } } },
             scales: {
-                y: {
-                    grid: {
-                        borderDash: [2, 4]
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    }
-                }
+                y: { grid: { borderDash: [2, 4] } },
+                x: { grid: { display: false } }
             }
         }
     });
@@ -472,7 +543,7 @@
             datasets: [{
                 label: 'Sales',
                 data: salesData.data,
-                backgroundColor: '#3B82F6', // Blue
+                backgroundColor: '#3B82F6',
                 borderRadius: 4,
                 barPercentage: 0.5
             }]
@@ -480,25 +551,13 @@
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
+            plugins: { legend: { display: false } },
             scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        borderDash: [2, 4]
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    }
-                }
+                y: { beginAtZero: true, grid: { borderDash: [2, 4] } },
+                x: { grid: { display: false } }
             }
         }
     });
 </script>
+@endhasanyrole
 @endsection

@@ -92,9 +92,9 @@ class Item extends Model
         return $this->belongsTo(Supplier::class, 'preferred_supplier_id');
     }
 
-    public function getNameAttribute()
+    public function getNameAttribute($value)
     {
-        return $this->description;
+        return $value ?? $this->attributes['description'] ?? null;
     }
 
     public function hasSufficientStock($requestedQty)

@@ -30,9 +30,9 @@
                 <i class="fas fa-clock text-2xl mb-1"></i>
                 <span class="text-[10px] font-bold uppercase tracking-wide">Reminder</span>
             </a>
-            <a href="{{ route('settings.employees') }}" class="flex flex-col items-center group min-w-[50px] text-gray-500 hover:text-indigo-600 transition">
-                <i class="fas fa-user-tie text-2xl mb-1"></i>
-                <span class="text-[10px] font-bold uppercase tracking-wide">Employees</span>
+            <a href="{{ route('staff.create') }}" class="flex flex-col items-center group min-w-[50px] text-gray-500 hover:text-indigo-600 transition">
+                <i class="fas fa-users-cog text-2xl mb-1"></i>
+                <span class="text-[10px] font-bold uppercase tracking-wide">Staff</span>
             </a>
             <a href="#" class="flex flex-col items-center group min-w-[50px] text-gray-500 hover:text-indigo-600 transition">
                 <i class="fas fa-save text-2xl mb-1"></i>

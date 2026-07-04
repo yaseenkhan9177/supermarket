@@ -9,7 +9,7 @@
             <h3 class="text-white font-bold mb-4 flex items-center gap-2">
                 <i class="fas fa-user text-red-500"></i> Customer (Required)
             </h3>
-            <select x-model="customer_id" @change="if(customer_id === 'new') showCustomerModal = true" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white mb-3 focus:border-red-500 outline-none">
+            <select id="customer-select" autofocus x-model="customer_id" @change="if(customer_id === 'new') showCustomerModal = true" @keydown.enter.prevent="if (customer_id) { document.getElementById('item-search').focus() }" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white mb-3 focus:border-red-500 outline-none">
                 <option value="">-- Select Customer --</option>
                 <option value="new" class="text-blue-400 font-bold">+ Add New Customer</option>
                 @foreach($customers as $c)
@@ -48,7 +48,7 @@
             <div class="flex gap-2 mb-2">
                 <div class="relative flex-1">
                     <span class="absolute left-3 top-2.5 text-slate-500 font-bold">Paid</span>
-                    <input type="number" x-model="received_amount" placeholder="0" class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-12 pr-3 py-2 text-white font-bold focus:border-red-500 outline-none">
+                    <input type="number" id="received-amount" x-model="received_amount" @keydown.enter.prevent="saveInvoice()" placeholder="0" class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-12 pr-3 py-2 text-white font-bold focus:border-red-500 outline-none">
                 </div>
                 <button @click="received_amount = 0" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg text-xs">
                     Zero
@@ -91,7 +91,7 @@
                                 </div>
                             </td>
                             <td class="p-4">
-                                <input type="number" x-model="row.qty" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-center text-white font-bold focus:border-blue-500 outline-none">
+                                <input type="number" x-model="row.qty" min="1" @keydown.enter.prevent="document.getElementById('item-search').focus()" class="qty-input w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-center text-white font-bold focus:border-blue-500 outline-none">
                             </td>
                             <td class="p-4 text-right">
                                 <input type="number" x-model="row.price" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-right text-white font-mono focus:border-blue-500 outline-none">
@@ -106,10 +106,12 @@
                     <tr class="bg-slate-800/30">
                         <td class="p-3 text-center"><i class="fas fa-search text-red-500"></i></td>
                         <td class="p-3 relative" colspan="2">
+                            <div class="text-[11px] text-slate-400 mb-1"><i class="fas fa-keyboard mr-1"></i> Select customer first. Press Enter to add item, Enter again when done to go to Paid amount</div>
                             <input type="text"
+                                id="item-search"
                                 x-model="searchQuery"
                                 @input.debounce.200ms="performSearch()"
-                                @keydown.enter.prevent="selectFirstResult()"
+                                @keydown.enter.prevent="if ((searchQuery || '').trim() === '') { document.getElementById('received-amount').focus() } else { selectFirstResult() }"
                                 placeholder="Type 1 letter to search..."
                                 class="w-full bg-slate-950 border border-slate-700 rounded-lg py-3 px-4 pl-10 text-white focus:ring-2 focus:ring-red-500 outline-none placeholder-slate-500 shadow-inner text-sm lg:text-base">
 
@@ -256,13 +258,13 @@
             },
 
             async performSearch() {
-                // 1-char search
-                if (this.searchQuery.length < 1) {
+                const query = (this.searchQuery || '').trim();
+                if (query.length < 1) {
                     this.searchResults = [];
                     return;
                 }
                 try {
-                    let response = await fetch(`/debit-sales/search?q=${this.searchQuery}`);
+                    let response = await fetch(`/debit-sales/search?q=${encodeURIComponent(query)}`);
                     this.searchResults = await response.json();
                 } catch (error) {
                     console.error("Search failed");
@@ -293,6 +295,16 @@
                 }
                 this.searchQuery = '';
                 this.searchResults = [];
+                this.$nextTick(() => {
+                    let index = this.rows.findIndex(r => r.id === item.id);
+                    if (index !== -1) {
+                        const qtyInputs = document.querySelectorAll('.qty-input');
+                        if (qtyInputs[index]) {
+                            qtyInputs[index].focus();
+                            qtyInputs[index].select();
+                        }
+                    }
+                });
             },
 
             selectFirstResult() {

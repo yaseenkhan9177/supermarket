@@ -62,13 +62,13 @@
 
     <div class="divider"></div>
 
-    <!-- Employees Group -->
-    <a href="{{ route('settings.employees') }}"
-        class="island-item group {{ request()->routeIs('settings.employees') ? 'active-pill-target' : '' }}">
-        <div class="icon-container {{ request()->routeIs('settings.employees') ? 'text-indigo-600' : 'text-slate-500' }} group-hover:text-indigo-600">
-            <i class="fas fa-user-tie text-2xl group-hover:bounce-gentle"></i>
+    <!-- Staff Group -->
+    <a href="{{ route('staff.create') }}"
+        class="island-item group {{ request()->routeIs('staff.create') ? 'active-pill-target' : '' }}">
+        <div class="icon-container {{ request()->routeIs('staff.create') ? 'text-indigo-600' : 'text-slate-500' }} group-hover:text-indigo-600">
+            <i class="fas fa-users-cog text-2xl group-hover:bounce-gentle"></i>
         </div>
-        <span class="island-label {{ request()->routeIs('settings.employees') ? 'text-indigo-900' : '' }}">Employees</span>
+        <span class="island-label {{ request()->routeIs('staff.create') ? 'text-indigo-900' : '' }}">Staff</span>
     </a>
 
     <div class="divider"></div>

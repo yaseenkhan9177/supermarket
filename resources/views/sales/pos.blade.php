@@ -4,15 +4,17 @@
 
 @section('content')
 
-<div class="h-[calc(100vh-80px)] flex flex-col md:flex-row gap-6" x-data="posSystem()">
+<div class="h-[calc(100vh-80px)] flex flex-col md:flex-row gap-6" x-data="posSystem()" @keydown.f2.window="handleF2($event)">
 
     <div class="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800">
 
         <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex gap-4 bg-slate-50 dark:bg-slate-950">
             <div class="relative flex-1">
                 <i class="fas fa-search absolute left-4 top-3.5 text-slate-400"></i>
-                <input type="text" x-model="search" placeholder="Scan barcode or search product..."
+                <input type="text" x-model="search" id="product-search" autofocus placeholder="Scan barcode or search product..."
+                    @keydown.enter.prevent="selectFirstProduct()"
                     class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition shadow-sm">
+                <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1"><i class="fas fa-keyboard mr-1"></i> F2: Go to checkout</div>
             </div>
             <select x-model="category" class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-bold text-slate-600 dark:text-slate-300">
                 <option value="all">All Categories</option>
@@ -126,7 +128,7 @@
                 </div>
             </div>
 
-            <button @click="openPaymentModal"
+            <button id="checkout-btn" @click="openPaymentModal"
                 :disabled="cart.length === 0"
                 class="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg shadow-green-900/20 transition transform active:scale-95 flex items-center justify-center gap-2">
                 <i class="fas fa-credit-card"></i>
@@ -148,7 +150,7 @@
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Cash Received</label>
                     <div class="relative">
                         <span class="absolute left-4 top-3.5 text-slate-400 font-bold">Rs.</span>
-                        <input type="number" x-model="amountReceived" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-12 pr-4 py-3 text-xl font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
+                        <input type="number" id="cash-received" x-model="amountReceived" @keydown.enter.prevent="completeSale()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-12 pr-4 py-3 text-xl font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
                     </div>
                 </div>
 
@@ -192,9 +194,11 @@
             products: @json($items),
 
             get filteredProducts() {
+                const q = (this.search || '').toLowerCase();
                 return this.products.filter(p => {
-                    const matchesSearch = p.name.toLowerCase().includes(this.search.toLowerCase()) ||
-                        (p.code && p.code.toString().includes(this.search));
+                    const name = (p.name || '').toLowerCase();
+                    const code = (p.code || '').toString();
+                    const matchesSearch = name.includes(q) || code.includes(this.search || '');
                     const matchesCategory = this.category === 'all' || p.category === this.category;
                     return matchesSearch && matchesCategory;
                 });
@@ -225,6 +229,10 @@
                     }
                 }
                 this.search = ''; // Clear search after add (optional, good for scanners)
+                this.$nextTick(() => {
+                    const searchInput = document.getElementById('product-search');
+                    if (searchInput) searchInput.focus();
+                });
             },
 
             updateQty(index, amount) {
@@ -261,9 +269,13 @@
             },
 
             openPaymentModal() {
-                this.amountReceived = '';
-                this.isPaymentOpen = true;
-            },
+                 this.amountReceived = '';
+                 this.isPaymentOpen = true;
+                 this.$nextTick(() => {
+                     const cashInput = document.getElementById('cash-received');
+                     if (cashInput) cashInput.focus();
+                 });
+             },
 
             get change() {
                 const received = parseFloat(this.amountReceived) || 0;
@@ -328,6 +340,20 @@
                 } catch (error) {
                     console.error('Error:', error);
                     alert('System Error: Could not save sale.');
+                }
+            },
+
+            selectFirstProduct() {
+                if (this.filteredProducts.length > 0) {
+                    this.addToCart(this.filteredProducts[0]);
+                }
+            },
+
+            handleF2(e) {
+                if (this.cart.length > 0 && (this.search || '').trim() === '') {
+                    e.preventDefault();
+                    const checkoutBtn = document.getElementById('checkout-btn');
+                    if (checkoutBtn) checkoutBtn.focus();
                 }
             }
         }
