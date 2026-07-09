@@ -1,7 +1,74 @@
 @extends('layouts.admin')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" x-data="{
+    showImportModal: false,
+    excelFile: null,
+    importing: false,
+    importResult: null,
+
+    excelFileSelected(event) {
+        const file = event.target.files[0];
+        if (file) {
+            this.excelFile = file;
+            this.importResult = null;
+        }
+    },
+
+    submitImport() {
+        if (!this.excelFile) return;
+        this.importing = true;
+        this.importResult = null;
+
+        const formData = new FormData();
+        formData.append('excel_file', this.excelFile);
+
+        const csrfToken = document.querySelector('input[name=\'_token\']').value;
+
+        fetch('{{ route('customers.import') }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(async response => {
+            const contentType = response.headers.get('content-type');
+            const isJson = contentType && contentType.includes('application/json');
+
+            if (!response.ok) {
+                if (isJson) {
+                    const err = await response.json();
+                    throw new Error(err.message || 'Import failed with server error.');
+                } else {
+                    throw new Error('Server returned an error (status ' + response.status + ').');
+                }
+            }
+
+            if (isJson) {
+                return response.json();
+            } else {
+                throw new Error('Expected JSON response but received non-JSON.');
+            }
+        })
+        .then(data => {
+            this.importing = false;
+            this.importResult = data;
+            this.excelFile = null;
+            if (this.$refs.excelInput) {
+                this.$refs.excelInput.value = '';
+            }
+            if (data.inserted > 0) {
+                setTimeout(() => window.location.reload(), 1500);
+            }
+        })
+        .catch(error => {
+            this.importing = false;
+            alert(error.message || 'Import failed.');
+        });
+    }
+}">
     {{-- Breadcrumb --}}
     <div class="flex items-center justify-between mb-8">
         <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Customers</h1>
@@ -52,6 +119,7 @@
                         <th class="p-4">Phone</th>
                         <th class="p-4">Address</th>
                         <th class="p-4">Balance</th>
+                        <th class="p-4">Store Credit</th>
                         <th class="p-4 text-center">Actions</th>
                     </tr>
                 </thead>
@@ -61,8 +129,11 @@
                         <td class="p-4 font-medium text-slate-800 dark:text-white">{{ $cust->name }}</td>
                         <td class="p-4 text-slate-600 dark:text-slate-350">{{ $cust->phone ?? '—' }}</td>
                         <td class="p-4 text-slate-600 dark:text-slate-350">{{ $cust->address ?? '—' }}</td>
-                        <td class="p-4 font-bold {{ $cust->balance > 0 ? 'text-emerald-600' : ($cust->balance < 0 ? 'text-red-600' : 'text-slate-500') }}">
+                        <td class="p-4 font-bold {{ $cust->balance > 0 ? 'text-red-600' : ($cust->balance < 0 ? 'text-emerald-600' : 'text-slate-500') }}">
                             Rs. {{ number_format($cust->balance, 2) }}
+                        </td>
+                        <td class="p-4 font-semibold {{ ($cust->store_credit ?? 0) > 0 ? 'text-violet-600 dark:text-violet-400' : 'text-slate-400' }}">
+                            Rs. {{ number_format($cust->store_credit ?? 0, 2) }}
                         </td>
                         <td class="p-4 text-center">
                             <a href="{{ route('customers.show', $cust->id) }}" class="inline-flex items-center gap-1.5 text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg text-xs font-bold transition">
@@ -72,7 +143,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="p-8 text-center text-slate-450 dark:text-slate-500 font-medium">No customers found.</td>
+                        <td colspan="6" class="p-8 text-center text-slate-450 dark:text-slate-500 font-medium">No customers found.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -90,7 +161,7 @@
         <div class="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-lg p-6">
             <h2 class="text-xl font-bold text-slate-800 dark:text-white mb-4">Import Customers</h2>
             <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">Download the sample format <a href="{{ route('customers.sample_excel') }}" class="text-indigo-600 hover:underline">here</a> and upload your filled file.</p>
-            <input type="file" @change="excelFileSelected" class="mb-4 w-full" accept=".xlsx,.xls,.csv,.txt" />
+            <input type="file" x-ref="excelInput" @change="excelFileSelected" class="mb-4 w-full" accept=".xlsx,.xls,.csv,.txt" />
             <div class="flex justify-end gap-2">
                 <button @click="showImportModal = false" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded">Cancel</button>
                 <button @click="submitImport" :disabled="importing" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded">

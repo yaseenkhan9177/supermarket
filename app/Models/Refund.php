@@ -20,4 +20,24 @@ class Refund extends Model
     {
         return $this->belongsTo(Customer::class);
     }
+
+    public function processedBy()
+    {
+        return $this->belongsTo(User::class, 'processed_by');
+    }
+
+    public function authorizedBy()
+    {
+        return $this->belongsTo(Employee::class, 'authorized_by');
+    }
+
+    public function salesman()
+    {
+        return $this->belongsTo(User::class, 'salesman_id');
+    }
+
+    public function wasteLogs()
+    {
+        return $this->hasMany(WasteLog::class);
+    }
 }

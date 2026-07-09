@@ -8,10 +8,18 @@ use Illuminate\Support\Facades\Storage;
 
 class ItemController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $items = Item::latest()->paginate(10);
-        return view('items.index', compact('items'));
+        $search = $request->query('search');
+
+        $items = Item::when($search, fn($q) => $q
+                ->where('description', 'LIKE', "%{$search}%")
+                ->orWhere('code', 'LIKE', "%{$search}%"))
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('items.index', compact('items', 'search'));
     }
 
     public function create()

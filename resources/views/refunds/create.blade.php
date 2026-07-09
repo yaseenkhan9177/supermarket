@@ -2,443 +2,678 @@
 <html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <title>Process Return | OwnStore</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
-    <title>Process Refund</title>
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { DEFAULT: '#DC2626', dark: '#991B1B', light: '#FEE2E2' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+
+        /* Smooth transitions */
+        .bill-card { transition: all 0.2s ease; }
+        .bill-card:hover { transform: translateY(-1px); }
+
+        /* Condition toggle */
+        .condition-btn { transition: all 0.15s ease; }
+        .condition-btn.active-restock { background: #D1FAE5; color: #065F46; border-color: #059669; }
+        .condition-btn.active-damaged { background: #FEE2E2; color: #991B1B; border-color: #DC2626; }
+
+        /* Pulse on add to cart */
+        @keyframes cartPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .cart-pulse { animation: cartPulse 0.3s ease; }
+
+        /* Search spinner */
+        .spinner { border: 2px solid #f3f4f6; border-top: 2px solid #DC2626; border-radius: 50%; width: 16px; height: 16px; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Scrollbar */
+        .thin-scroll::-webkit-scrollbar { width: 4px; }
+        .thin-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+        .thin-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 2px; }
+    </style>
 </head>
 
-<body class="bg-gray-900 font-sans text-gray-200" x-data="refundForm()">
+<body class="bg-slate-100 font-sans text-gray-800" x-data="returnsApp()" x-init="init()">
 
-    <nav class="bg-white border-b border-gray-200 px-6 py-3 shadow-sm sticky top-0 z-50 mb-8">
-        <div class="container mx-auto max-w-[1400px] flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white shadow-md">
-                    <i class="fas fa-undo-alt text-lg"></i>
+    <!-- ====================================================================
+         TOP NAV BAR
+    ================================================================== -->
+    <nav class="bg-white border-b border-gray-200 px-6 py-3 shadow-sm sticky top-0 z-50">
+        <div class="max-w-[1500px] mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-white shadow">
+                    <i class="fas fa-undo-alt text-base"></i>
                 </div>
-                <div class="flex flex-col">
-                    <h1 class="text-xl font-extrabold text-gray-900 leading-none tracking-tight">
-                        OwnStore <span class="text-red-600">PRO</span>
-                    </h1>
-                    <span class="text-xs text-gray-500 font-medium mt-0.5">Cash Refund / Return</span>
+                <div>
+                    <h1 class="text-lg font-extrabold text-gray-900 leading-none">Process Return</h1>
+                    <p class="text-xs text-gray-500 font-medium mt-0.5">Search bills · select items · confirm refund</p>
                 </div>
             </div>
-            <div>
-                <a href="/admin" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-800 hover:bg-black text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
-                    <i class="fas fa-home"></i> Dashboard
+            <div class="flex items-center gap-3">
+                <a href="{{ route('refunds.index') }}"
+                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                    <i class="fas fa-list text-xs"></i> All Returns
+                </a>
+                <a href="{{ url()->previous() }}"
+                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-gray-800 text-white rounded-lg hover:bg-black transition">
+                    <i class="fas fa-arrow-left text-xs"></i> Back
                 </a>
             </div>
         </div>
     </nav>
 
-    <div class="container mx-auto px-6 max-w-[1400px] pb-32">
+    <!-- Flash messages -->
+    @if(session('error'))
+    <div class="max-w-[1500px] mx-auto px-6 pt-4">
+        <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg flex items-center gap-3">
+            <i class="fas fa-exclamation-circle text-red-500"></i>
+            <span>{{ session('error') }}</span>
+        </div>
+    </div>
+    @endif
 
-        <form action="{{ route('refunds.store') }}" method="POST">
-            @csrf
+    <!-- ====================================================================
+         MAIN LAYOUT — Left panel (search) + Right panel (cart)
+    ================================================================== -->
+    <div class="max-w-[1500px] mx-auto px-4 py-5 flex gap-5 h-[calc(100vh-72px)]">
 
-            @if($errors->any())
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded shadow-md" role="alert">
-                <p class="font-bold">Please check the following errors:</p>
-                <ul class="list-disc pl-5 mt-2">
-                    @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-            @endif
+        <!-- ================================================================
+             LEFT PANEL — Search & Bill Selection
+        ================================================================ -->
+        <div class="flex-1 flex flex-col gap-4 min-w-0">
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-
-                <div class="lg:col-span-4 bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-                    <div class="flex items-center gap-2 mb-4 border-b border-gray-700 pb-2">
-                        <i class="fas fa-user-minus text-red-400"></i>
-                        <h3 class="text-white font-bold">Customer Details</h3>
+            <!-- SEARCH BAR -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    <i class="fas fa-search mr-1 text-red-500"></i> Search Bills
+                </label>
+                <div class="relative">
+                    <input
+                        type="text"
+                        x-model="searchQuery"
+                        @input.debounce.300ms="searchBills()"
+                        @keydown.escape="searchQuery = ''; billResults = []"
+                        placeholder="Customer name, phone number, or invoice number…"
+                        class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm placeholder-gray-400 bg-gray-50"
+                        id="bill-search-input"
+                        autocomplete="off"
+                    />
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div x-show="isSearching" class="spinner"></div>
+                        <i x-show="!isSearching && searchQuery.length > 0" @click="searchQuery=''; billResults=[]"
+                           class="fas fa-times text-gray-400 cursor-pointer hover:text-gray-600 transition"></i>
+                        <i x-show="!isSearching && searchQuery.length === 0" class="fas fa-search text-gray-400"></i>
                     </div>
+                </div>
+                <p class="text-xs text-gray-400 mt-2">Searches across Cash Sales, Debit Sales, and POS Sales simultaneously.</p>
+            </div>
 
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Select Customer</label>
-                            <div class="flex gap-2">
-                                <select name="customer_id" x-model="customer_id" @change="if(customer_id === 'new') showCustomerModal = true" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white focus:border-red-500 outline-none">
-                                    <option value="">-- Walk-in / Select --</option>
-                                    <option value="new" class="text-blue-400 font-bold">+ Add New Customer</option>
-                                    @foreach($customers as $cust)
-                                    <option value="{{ $cust->id }}">{{ $cust->name }}</option>
-                                    @endforeach
-                                </select>
+            <!-- BILL RESULTS -->
+            <div class="flex-1 overflow-y-auto thin-scroll space-y-3" x-cloak>
+
+                <!-- Placeholder state -->
+                <div x-show="billResults.length === 0 && !isSearching && searchQuery.length < 2"
+                     class="bg-white rounded-2xl border border-dashed border-gray-200 p-12 text-center">
+                    <div class="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-receipt text-red-400 text-2xl"></i>
+                    </div>
+                    <p class="text-gray-500 font-medium">Type a customer name, phone, or bill number above</p>
+                    <p class="text-xs text-gray-400 mt-1">Minimum 2 characters to search</p>
+                </div>
+
+                <!-- No results -->
+                <div x-show="billResults.length === 0 && !isSearching && searchQuery.length >= 2"
+                     class="bg-white rounded-2xl border border-gray-100 p-10 text-center">
+                    <i class="fas fa-search text-gray-300 text-3xl mb-3"></i>
+                    <p class="text-gray-500 font-medium">No bills found for "<span x-text="searchQuery"></span>"</p>
+                </div>
+
+                <!-- Bill Cards -->
+                <template x-for="bill in billResults" :key="bill.source + '-' + bill.id">
+                    <div class="bill-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <!-- Bill header row -->
+                        <div class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50 transition"
+                             @click="toggleBill(bill)">
+                            <div class="flex items-center gap-4">
+                                <!-- Type badge -->
+                                <span class="text-xs font-bold px-2.5 py-1 rounded-full"
+                                      :class="{
+                                        'bg-green-100 text-green-700': bill.type_color === 'green',
+                                        'bg-orange-100 text-orange-700': bill.type_color === 'orange',
+                                        'bg-blue-100 text-blue-700': bill.type_color === 'blue',
+                                      }"
+                                      x-text="bill.type_label">
+                                </span>
+                                <div>
+                                    <p class="font-bold text-gray-900 text-sm" x-text="bill.invoice_no"></p>
+                                    <p class="text-xs text-gray-500 mt-0.5">
+                                        <i class="fas fa-user mr-1"></i><span x-text="bill.customer_name"></span>
+                                        &nbsp;·&nbsp;
+                                        <i class="fas fa-calendar mr-1"></i><span x-text="bill.date"></span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="text-right">
+                                    <p class="text-xs text-gray-500">Total</p>
+                                    <p class="font-extrabold text-gray-900 text-sm">Rs. <span x-text="bill.grand_total"></span></p>
+                                </div>
+                                <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center transition-transform duration-200"
+                                     :class="expandedBills[bill.source + '-' + bill.id] ? 'rotate-180' : ''">
+                                    <i class="fas fa-chevron-down text-gray-500 text-xs"></i>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <div class="lg:col-span-8 bg-white p-6 rounded-xl text-gray-800 shadow-lg">
-                    <div class="flex items-center gap-2 mb-4 border-b pb-2">
-                        <i class="fas fa-file-invoice-dollar text-red-600"></i>
-                        <h3 class="text-gray-900 font-bold">Refund Transaction Info</h3>
-                    </div>
+                        <!-- Expanded line items -->
+                        <div x-show="expandedBills[bill.source + '-' + bill.id]"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 -translate-y-2"
+                             x-transition:enter-end="opacity-100 translate-y-0"
+                             class="border-t border-gray-100">
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Credit Note #</label>
-                            <input type="text" name="credit_no" value="CR-{{ date('Ymd') }}-{{ rand(100,999) }}" readonly class="w-full bg-red-50 border border-red-100 rounded p-2 text-red-800 font-mono font-bold">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Date</label>
-                            <input type="date" name="refund_date" value="{{ date('Y-m-d') }}" class="w-full border border-gray-300 rounded p-2">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Refund Paid From</label>
-                            <select name="paid_from_account" class="w-full border border-gray-300 rounded p-2">
-                                <option>Cash Drawer</option>
-                                <option>Main Safe</option>
-                                <option>Bank Transfer</option>
-                            </select>
-                        </div>
-                    </div>
+                            <!-- Loading items -->
+                            <div x-show="loadingItems[bill.source + '-' + bill.id]"
+                                 class="px-5 py-4 text-center text-gray-400 text-sm">
+                                <div class="spinner mx-auto mb-2"></div> Loading items…
+                            </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Sales Rep</label>
-                            <select name="salesman_id" class="w-full border border-gray-300 rounded p-2">
-                                <option value="">-- Select Salesman --</option>
-                                @foreach($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Memo / Reason</label>
-                            <input type="text" name="memo" placeholder="e.g. Expired Product" class="w-full border border-gray-300 rounded p-2">
-                        </div>
-                    </div>
-                </div>
-            </div>
+                            <!-- Item rows -->
+                            <template x-for="item in (billItems[bill.source + '-' + bill.id] || [])" :key="item.line_item_id">
+                                <div class="flex items-center gap-3 px-5 py-3 border-b border-gray-50 hover:bg-slate-50 transition">
+                                    <!-- Checkbox -->
+                                    <input type="checkbox"
+                                           :id="'item-' + bill.source + '-' + item.line_item_id"
+                                           class="w-4 h-4 text-red-600 rounded border-gray-300 cursor-pointer"
+                                           :checked="isInCart(item, bill)"
+                                           @change="toggleCartItem($event, item, bill)" />
 
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden text-gray-800 mb-24">
-                <div class="p-4 bg-gray-50 border-b flex justify-between items-center">
-                    <h3 class="font-bold text-gray-900"><i class="fas fa-box-open mr-2 text-gray-400"></i>Returned Items</h3>
-                    <button type="button" @click="addRow()" class="bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded text-sm font-bold transition">
-                        <i class="fas fa-plus mr-1"></i> Add Row
-                    </button>
-                </div>
+                                    <!-- Item details -->
+                                    <label :for="'item-' + bill.source + '-' + item.line_item_id"
+                                           class="flex-1 cursor-pointer">
+                                        <p class="text-sm font-semibold text-gray-800" x-text="item.item_name"></p>
+                                        <p class="text-xs text-gray-500 mt-0.5">
+                                            Qty bought: <span class="font-bold text-gray-700" x-text="item.quantity"></span>
+                                            &nbsp;·&nbsp;
+                                            Rate: Rs. <span x-text="parseFloat(item.rate).toFixed(2)"></span>
+                                        </p>
+                                    </label>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="text-xs font-bold text-gray-500 uppercase bg-gray-50 border-b">
-                                <th class="p-3 w-12 text-center">#</th>
-                                <th class="p-3 w-40">Barcode / ID</th>
-                                <th class="p-3">Description</th>
-                                <th class="p-3 w-24">Qty</th>
-                                <th class="p-3 w-32">Rate</th>
-                                <th class="p-3 w-20">Disc</th>
-                                <th class="p-3 w-32 text-right">Net Amt</th>
-                                <th class="p-3 w-16 text-center">Act</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template x-for="(row, index) in rows" :key="row.uid">
-                                <tr class="border-b hover:bg-red-50 transition group">
-                                    <td class="p-3 text-center text-gray-400" x-text="index + 1"></td>
-
-                                    <td class="p-3">
-                                        <input type="text" x-model="row.barcode" @keydown.enter.prevent="fetchProduct(index)" class="w-full p-1 border rounded bg-gray-50 text-sm focus:ring-2 focus:ring-red-500" placeholder="Scan...">
-                                        <input type="hidden" :name="`rows[${index}][id]`" x-model="row.id">
-                                    </td>
-
-                                    <td class="p-3">
-                                        <input type="text" :name="`rows[${index}][name]`" x-model="row.name" class="w-full p-1 border rounded bg-white text-sm text-gray-950 focus:ring-2 focus:ring-red-500" placeholder="Item description...">
-                                    </td>
-
-                                    <td class="p-3">
-                                        <input type="number" :name="`rows[${index}][qty]`" x-model="row.qty" class="w-full p-1 border rounded text-center text-sm font-bold text-red-600">
-                                    </td>
-
-                                    <td class="p-3">
-                                        <input type="number" step="0.01" :name="`rows[${index}][rate]`" x-model="row.rate" class="w-full p-1 border rounded text-right text-sm">
-                                    </td>
-
-                                    <td class="p-3">
-                                        <input type="number" :name="`rows[${index}][disc]`" x-model="row.disc" class="w-full p-1 border rounded text-center text-sm">
-                                    </td>
-
-                                    <td class="p-3 text-right font-bold text-gray-900">
-                                        <span x-text="calculateLineTotal(row)"></span>
-                                    </td>
-
-                                    <td class="p-3 text-center">
-                                        <button type="button" @click="removeRow(index)" class="text-gray-300 hover:text-red-500 transition">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                        <tfoot class="bg-gray-50 border-t border-gray-200">
-                            <tr>
-                                <td class="p-3 text-center"><i class="fas fa-search text-gray-400"></i></td>
-                                <td class="p-3 relative" colspan="2">
-                                    <input type="text"
-                                        x-model="searchQuery"
-                                        @input.debounce.200ms="performSearch()"
-                                        @keydown.enter.prevent="selectFirstResult()"
-                                        placeholder="Type product name or code to search..."
-                                        class="w-full bg-white border border-gray-300 rounded-lg py-2 px-3 pl-9 text-gray-900 focus:ring-2 focus:ring-red-500 outline-none text-sm shadow-sm">
-                                    <i class="fas fa-barcode absolute left-6 top-5 text-gray-400 text-sm"></i>
-
-                                    <!-- Search Results Dropdown -->
-                                    <div x-show="searchResults.length > 0"
-                                        @click.outside="searchResults = []"
-                                        class="absolute top-12 left-3 w-[95%] bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto"
-                                        style="display: none;">
-                                        <ul class="divide-y divide-gray-100">
-                                            <template x-for="item in searchResults" :key="item.id">
-                                                <li @click="addItem(item)" class="p-3 hover:bg-red-50 cursor-pointer flex justify-between items-center transition">
-                                                    <div class="flex-1 min-w-0 pr-4">
-                                                        <span class="font-bold text-gray-900 block truncate text-sm" x-text="item.name"></span>
-                                                        <span class="text-xs text-gray-500 font-mono" x-text="item.code"></span>
-                                                    </div>
-                                                    <div class="text-right whitespace-nowrap">
-                                                        <span class="block font-bold text-gray-900 text-sm" x-text="'Rs. ' + item.price"></span>
-                                                        <span class="text-[10px] uppercase font-bold text-gray-500">Add to Refund</span>
-                                                    </div>
-                                                </li>
-                                            </template>
-                                        </ul>
+                                    <!-- Return qty input (only shown if in cart) -->
+                                    <div x-show="isInCart(item, bill)" class="flex items-center gap-2" x-cloak>
+                                        <label class="text-xs text-gray-500 font-medium">Return qty:</label>
+                                        <input type="number"
+                                               :value="getCartItem(item, bill)?.return_qty || 1"
+                                               @change="updateCartQty($event, item, bill)"
+                                               min="0.01"
+                                               :max="item.quantity"
+                                               step="1"
+                                               class="w-20 text-center text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-red-500 focus:outline-none" />
                                     </div>
-                                </td>
-                                <td colspan="5" class="p-3 text-xs text-gray-500 italic hidden md:table-cell align-middle">
-                                    Use the search bar to find products quickly by name or code.
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- ================================================================
+             RIGHT PANEL — Return Cart + Refund Method + Submit
+        ================================================================ -->
+        <div class="w-96 flex-shrink-0 flex flex-col gap-4">
+
+            <!-- CART HEADER -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center">
+                        <i class="fas fa-shopping-basket text-red-600 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-gray-900 text-sm">Return Cart</p>
+                        <p class="text-xs text-gray-500" x-text="cart.length + ' item(s) selected'"></p>
+                    </div>
                 </div>
+                <button x-show="cart.length > 0" @click="clearCart()"
+                        class="text-xs text-red-500 hover:text-red-700 font-semibold transition" x-cloak>
+                    <i class="fas fa-trash-alt mr-1"></i> Clear
+                </button>
             </div>
 
-            <div class="fixed bottom-0 left-0 w-full bg-white border-t p-4 shadow-[0_-5px_15px_rgba(0,0,0,0.1)] z-40">
-                <div class="container mx-auto max-w-[1400px] flex justify-between items-center">
+            <!-- CART ITEMS -->
+            <div class="flex-1 overflow-y-auto thin-scroll space-y-3">
 
-                    <div class="flex gap-4">
-                        <button type="button" class="px-4 py-2 border rounded hover:bg-gray-100 text-gray-600 text-sm font-bold hidden sm:block">
-                            <i class="fas fa-print mr-2"></i> Print Last
-                        </button>
+                <!-- Empty cart -->
+                <div x-show="cart.length === 0"
+                     class="bg-white rounded-2xl border border-dashed border-gray-200 p-10 text-center">
+                    <div class="w-14 h-14 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-box-open text-gray-400 text-xl"></i>
                     </div>
+                    <p class="text-sm text-gray-500 font-medium">Cart is empty</p>
+                    <p class="text-xs text-gray-400 mt-1">Check items from bills on the left</p>
+                </div>
 
-                    <div class="flex items-center gap-6">
-                        <div class="text-right">
-                            <span class="block text-[10px] font-bold text-gray-400 uppercase">Total Refund</span>
-                            <span class="block text-2xl font-bold text-red-600" x-text="'Rs. ' + grandTotal"></span>
+                <!-- Cart items -->
+                <template x-for="(cartItem, index) in cart" :key="cartItem.key">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex-1 min-w-0 pr-2">
+                                <p class="text-sm font-bold text-gray-900 truncate" x-text="cartItem.item_name"></p>
+                                <p class="text-xs text-gray-500 mt-0.5">
+                                    <span class="text-xs font-semibold px-1.5 py-0.5 rounded"
+                                          :class="{
+                                            'bg-green-100 text-green-700': cartItem.bill_source === 'cash_sale',
+                                            'bg-orange-100 text-orange-700': cartItem.bill_source === 'debit_sale',
+                                            'bg-blue-100 text-blue-700': cartItem.bill_source === 'pos_sale',
+                                          }"
+                                          x-text="cartItem.bill_invoice"></span>
+                                </p>
+                            </div>
+                            <button @click="removeFromCart(index)"
+                                    class="text-gray-400 hover:text-red-500 transition flex-shrink-0">
+                                <i class="fas fa-times text-sm"></i>
+                            </button>
                         </div>
 
-                        <div class="h-10 w-px bg-gray-300 hidden sm:block"></div>
+                        <!-- Qty and total -->
+                        <div class="flex items-center justify-between text-sm mb-3">
+                            <span class="text-gray-500">
+                                <span x-text="cartItem.return_qty"></span>
+                                × Rs. <span x-text="parseFloat(cartItem.rate).toFixed(2)"></span>
+                            </span>
+                            <span class="font-bold text-gray-900">
+                                Rs. <span x-text="(cartItem.return_qty * cartItem.rate).toFixed(2)"></span>
+                            </span>
+                        </div>
 
-                        <a href="/admin" class="px-6 py-3 bg-gray-200 text-gray-700 font-bold rounded hover:bg-gray-300 hidden sm:block">
-                            Cancel
-                        </a>
-                        <button type="submit" class="px-8 py-3 bg-red-600 text-white font-bold rounded shadow hover:bg-red-700 transition transform hover:-translate-y-1">
-                            <i class="fas fa-save mr-2"></i> Process Refund
-                        </button>
+                        <!-- Condition toggle -->
+                        <div class="flex gap-2">
+                            <button type="button"
+                                    @click="setCondition(index, 'restock')"
+                                    class="condition-btn flex-1 text-xs font-bold py-2 px-3 rounded-lg border-2 transition flex items-center justify-center gap-1.5"
+                                    :class="cartItem.condition === 'restock' ? 'active-restock border-green-500' : 'bg-gray-50 border-gray-200 text-gray-600'">
+                                <i class="fas fa-redo-alt text-xs"></i> Restock
+                            </button>
+                            <button type="button"
+                                    @click="setCondition(index, 'damaged')"
+                                    class="condition-btn flex-1 text-xs font-bold py-2 px-3 rounded-lg border-2 transition flex items-center justify-center gap-1.5"
+                                    :class="cartItem.condition === 'damaged' ? 'active-damaged border-red-500' : 'bg-gray-50 border-gray-200 text-gray-600'">
+                                <i class="fas fa-exclamation-triangle text-xs"></i> Damaged
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- TOTALS + REFUND METHOD + SUBMIT -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
+
+                <!-- Running total -->
+                <div class="flex justify-between items-center pb-3 border-b border-gray-100">
+                    <span class="text-sm font-semibold text-gray-600">Total Refund</span>
+                    <span class="text-xl font-extrabold text-red-600">
+                        Rs. <span x-text="cartTotal.toFixed(2)"></span>
+                    </span>
+                </div>
+
+                <!-- Memo / Notes -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                        Note (optional)
+                    </label>
+                    <textarea x-model="memo" rows="2"
+                              placeholder="Reason for return…"
+                              class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none bg-gray-50"></textarea>
+                </div>
+
+                <!-- REFUND METHOD -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                        Refund Method <span class="text-red-500">*</span>
+                    </label>
+                    <div class="space-y-2">
+                        <!-- Cash Refund -->
+                        <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition"
+                               :class="refundMethod === 'CASH' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'">
+                            <input type="radio" name="refund_method_ui" value="CASH" x-model="refundMethod"
+                                   class="text-green-600 focus:ring-green-500" />
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 rounded-lg bg-green-100 flex items-center justify-center">
+                                    <i class="fas fa-money-bill-wave text-green-600 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-800">Cash Refund</p>
+                                    <p class="text-xs text-gray-500">Give cash back to customer</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Store Credit -->
+                        <label class="flex flex-col p-3 rounded-xl border-2 transition"
+                               :class="hasWalkInItem 
+                                    ? 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed text-gray-400' 
+                                    : 'cursor-pointer ' + (refundMethod === 'STORE_CREDIT' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300')">
+                            <div class="flex items-center gap-3">
+                                <input type="radio" name="refund_method_ui" value="STORE_CREDIT" x-model="refundMethod" :disabled="hasWalkInItem"
+                                       class="text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" />
+                                <div class="flex items-center gap-2">
+                                    <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
+                                        <i class="fas fa-wallet text-blue-600 text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-800">Store Credit</p>
+                                        <p class="text-xs text-gray-500">Add credit to customer's account</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Note when disabled -->
+                            <p x-show="hasWalkInItem" class="text-[11px] text-amber-600 mt-2 font-medium" x-cloak>
+                                <i class="fas fa-exclamation-triangle mr-1"></i> Store credit requires a registered customer.
+                            </p>
+                        </label>
+
+                        <!-- Reduce Debit Balance — only shown if a debit_sale item is in cart -->
+                        <label x-show="hasDebitSaleItem"
+                               class="flex flex-col p-3 rounded-xl border-2 transition"
+                               :class="hasWalkInItem 
+                                    ? 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed text-gray-400' 
+                                    : 'cursor-pointer ' + (refundMethod === 'REDUCE_DEBIT' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300')">
+                            <div class="flex items-center gap-3">
+                                <input type="radio" name="refund_method_ui" value="REDUCE_DEBIT" x-model="refundMethod" :disabled="hasWalkInItem"
+                                       class="text-orange-600 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed" />
+                                <div class="flex items-center gap-2">
+                                    <div class="w-7 h-7 rounded-lg bg-orange-100 flex items-center justify-center">
+                                        <i class="fas fa-minus-circle text-orange-600 text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-800">Reduce Debit Balance</p>
+                                        <p class="text-xs text-gray-500">Deduct from customer's outstanding debt</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Note when disabled -->
+                            <p x-show="hasWalkInItem" class="text-[11px] text-amber-600 mt-2 font-medium" x-cloak>
+                                <i class="fas fa-exclamation-triangle mr-1"></i> Reducing debit balance requires a registered customer.
+                            </p>
+                        </label>
                     </div>
                 </div>
-            </div>
 
-        </form>
-    </div>
+                <!-- PROCESS RETURN BUTTON -->
+                <form id="return-form" action="{{ route('refunds.store') }}" method="POST" @submit.prevent="submitReturn">
+                    @csrf
+                    <!-- Hidden fields injected by JS on submit -->
+                    <div id="hidden-fields"></div>
 
-    <!-- Add Customer Modal -->
-    <div x-show="showCustomerModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" style="display: none;">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-            <h3 class="text-xl font-bold text-gray-900 mb-4">Add New Customer</h3>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Name *</label>
-                    <input type="text" x-model="newCustomer.name" class="w-full border rounded p-2 text-gray-900" placeholder="e.g. John Doe">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Phone</label>
-                    <input type="text" x-model="newCustomer.phone" class="w-full border rounded p-2 text-gray-900" placeholder="e.g. 03001234567">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Address</label>
-                    <input type="text" x-model="newCustomer.address" class="w-full border rounded p-2 text-gray-900">
-                </div>
-            </div>
-            <div class="flex justify-end gap-3 mt-6">
-                <button type="button" @click="showCustomerModal = false; customer_id = ''" class="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100 font-bold">Cancel</button>
-                <button type="button" @click="saveCustomer()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-bold">Save Customer</button>
+                    <button type="submit"
+                            :disabled="cart.length === 0 || !refundMethod || isSubmitting"
+                            class="w-full py-3.5 rounded-xl font-extrabold text-sm transition flex items-center justify-center gap-2"
+                            :class="cart.length === 0 || !refundMethod
+                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                : 'bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-red-200 hover:scale-[1.01]'">
+                        <template x-if="isSubmitting">
+                            <div class="spinner" style="border-top-color: white;"></div>
+                        </template>
+                        <template x-if="!isSubmitting">
+                            <i class="fas fa-check-circle"></i>
+                        </template>
+                        <span x-text="isSubmitting ? 'Processing…' : 'Process Return'"></span>
+                    </button>
+
+                    <p x-show="cart.length === 0" class="text-center text-xs text-gray-400 mt-2">
+                        Add items to cart to enable
+                    </p>
+                    <p x-show="cart.length > 0 && !refundMethod" class="text-center text-xs text-red-400 mt-2">
+                        Select a refund method above
+                    </p>
+                </form>
             </div>
         </div>
     </div>
 
+    <!-- ====================================================================
+         ALPINE.JS APP LOGIC
+    ================================================================== -->
     <script>
-        function refundForm() {
+        function returnsApp() {
             return {
-                customer_id: '',
-                showCustomerModal: false,
-                newCustomer: { name: '', phone: '', address: '' },
+                // Search state
                 searchQuery: '',
-                searchResults: [],
-                rows: [{
-                    uid: Date.now(),
-                    id: '',
-                    barcode: '',
-                    name: '',
-                    qty: 1,
-                    rate: 0,
-                    disc: 0
-                }],
+                isSearching: false,
+                billResults: [],
+                expandedBills: {},
+                loadingItems: {},
+                billItems: {},      // key = source-id, value = array of items
 
-                async performSearch() {
-                    if (this.searchQuery.length < 1) {
-                        this.searchResults = [];
-                        return;
-                    }
-                    try {
-                        let response = await fetch(`/cash-sales/search?q=${this.searchQuery}`);
-                        this.searchResults = await response.json();
-                    } catch (error) {
-                        console.error("Search failed");
-                    }
-                },
+                // Cart state
+                cart: [],
+                memo: '',
+                refundMethod: 'CASH',
+                isSubmitting: false,
 
-                addItem(item) {
-                    // Check if the first row is completely empty (the default blank row)
-                    let firstRow = this.rows[0];
-                    let isEmptyRow = this.rows.length === 1 && !firstRow.id && !firstRow.barcode && !firstRow.name;
-
-                    if (isEmptyRow) {
-                        // Replace the empty row
-                        this.rows[0] = {
-                            uid: Date.now(),
-                            id: item.id,
-                            barcode: item.code,
-                            name: item.name,
-                            qty: 1,
-                            rate: item.price,
-                            disc: 0
-                        };
-                    } else {
-                        // Check if item already exists in the refund list
-                        let existing = this.rows.find(r => r.id === item.id);
-                        if (existing) {
-                            existing.qty++;
-                        } else {
-                            // Add as new row
-                            this.rows.push({
-                                uid: Date.now(),
-                                id: item.id,
-                                barcode: item.code,
-                                name: item.name,
-                                qty: 1,
-                                rate: item.price,
-                                disc: 0
-                            });
-                        }
-                    }
-                    
-                    this.searchQuery = '';
-                    this.searchResults = [];
-                },
-
-                selectFirstResult() {
-                    if (this.searchResults.length > 0) {
-                        this.addItem(this.searchResults[0]);
-                    }
-                },
-
-                async saveCustomer() {
-                    if (!this.newCustomer.name) {
-                        alert('Customer name is required.');
-                        return;
-                    }
-                    try {
-                        let response = await fetch('/customers/quick-store', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            body: JSON.stringify(this.newCustomer)
-                        });
-                        let data = await response.json();
-                        if (data.success) {
-                            let select = document.querySelector('select[name="customer_id"]');
-                            let option = new Option(data.customer.name, data.customer.id);
-                            select.add(option);
-                            this.customer_id = data.customer.id;
-                            this.showCustomerModal = false;
-                            this.newCustomer = { name: '', phone: '', address: '' };
-                        } else {
-                            alert('Failed to save customer.');
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        alert('System error while saving customer.');
-                    }
-                },
-
-                addRow() {
-                    this.rows.push({
-                        uid: Date.now(),
-                        id: '',
-                        barcode: '',
-                        name: '',
-                        qty: 1,
-                        rate: 0,
-                        disc: 0
+                init() {
+                    // Focus the search input on load
+                    this.$nextTick(() => {
+                        document.getElementById('bill-search-input')?.focus();
                     });
                 },
 
-                removeRow(index) {
-                    if (this.rows.length > 1) {
-                        this.rows.splice(index, 1);
+                // ── SEARCH ──────────────────────────────────────────────────
+                async searchBills() {
+                    if (this.searchQuery.length < 1) {
+                        this.billResults = [];
+                        return;
+                    }
+                    this.isSearching = true;
+                    try {
+                        const res = await fetch(
+                            `{{ route('refunds.search-bills') }}?q=${encodeURIComponent(this.searchQuery)}`,
+                            { headers: { 'X-Requested-With': 'XMLHttpRequest' } }
+                        );
+                        this.billResults = await res.json();
+                    } catch (e) {
+                        console.error('Search failed:', e);
+                    } finally {
+                        this.isSearching = false;
                     }
                 },
 
-                fetchProduct(index) {
-                    const barcode = this.rows[index].barcode;
-                    if (!barcode) return;
+                // ── BILL EXPAND / COLLAPSE ───────────────────────────────────
+                async toggleBill(bill) {
+                    const key = bill.source + '-' + bill.id;
+                    this.expandedBills[key] = !this.expandedBills[key];
 
-                    fetch(`/cash-sales/search?q=${barcode}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data && data.length > 0) {
-                                let item = data.find(i => i.code === barcode) || data[0];
-                                this.rows[index].id = item.id;
-                                this.rows[index].name = item.name;
-                                this.rows[index].rate = item.price;
-                                this.rows[index].qty = 1;
-
-                                if (index === this.rows.length - 1) {
-                                    this.addRow();
-                                }
-                            } else {
-                                alert('Product not found!');
-                            }
-                        })
-                        .catch(err => {
-                            console.error('API Error', err);
-                        });
+                    if (this.expandedBills[key] && !this.billItems[key]) {
+                        await this.loadBillItems(bill);
+                    }
                 },
 
-                calculateLineTotal(row) {
-                    let total = row.qty * row.rate;
-                    let discount = row.disc;
-                    return (total - discount).toFixed(2);
+                async loadBillItems(bill) {
+                    const key = bill.source + '-' + bill.id;
+                    this.loadingItems[key] = true;
+                    try {
+                        const res = await fetch(
+                            `{{ route('refunds.bill-items') }}?source=${bill.source}&id=${bill.id}`,
+                            { headers: { 'X-Requested-With': 'XMLHttpRequest' } }
+                        );
+                        this.billItems[key] = await res.json();
+                    } catch (e) {
+                        console.error('Failed to load bill items:', e);
+                        this.billItems[key] = [];
+                    } finally {
+                        this.loadingItems[key] = false;
+                    }
                 },
 
-                get grandTotal() {
-                    let sum = this.rows.reduce((acc, row) => {
-                        return acc + parseFloat(this.calculateLineTotal(row));
+                // ── CART MANAGEMENT ──────────────────────────────────────────
+                cartKey(item, bill) {
+                    // Unique key for a cart item = bill source + line item id
+                    return bill.source + '-' + item.line_item_id;
+                },
+
+                isInCart(item, bill) {
+                    return this.cart.some(c => c.key === this.cartKey(item, bill));
+                },
+
+                getCartItem(item, bill) {
+                    return this.cart.find(c => c.key === this.cartKey(item, bill));
+                },
+
+                toggleCartItem(event, item, bill) {
+                    if (event.target.checked) {
+                        this.addToCart(item, bill);
+                    } else {
+                        const idx = this.cart.findIndex(c => c.key === this.cartKey(item, bill));
+                        if (idx !== -1) this.cart.splice(idx, 1);
+                    }
+                },
+
+                addToCart(item, bill) {
+                    if (this.isInCart(item, bill)) return;
+                    this.cart.push({
+                        key:          this.cartKey(item, bill),
+                        product_id:   item.product_id,
+                        line_item_id: item.line_item_id,
+                        item_name:    item.item_name,
+                        return_qty:   item.quantity,  // default to full qty, cashier can reduce
+                        rate:         item.rate,
+                        condition:    'restock',       // default to restock
+                        bill_id:      bill.id,
+                        bill_source:  bill.source,
+                        bill_invoice: bill.invoice_no,
+                        customer_id:  bill.customer_id,
+                    });
+                    this.checkRefundMethod();
+                },
+
+                removeFromCart(index) {
+                    this.cart.splice(index, 1);
+                    this.checkRefundMethod();
+                },
+
+                clearCart() {
+                    this.cart = [];
+                    this.refundMethod = 'CASH';
+                },
+
+                updateCartQty(event, item, bill) {
+                    const key = this.cartKey(item, bill);
+                    const entry = this.cart.find(c => c.key === key);
+                    if (entry) {
+                        const val = parseFloat(event.target.value) || 1;
+                        entry.return_qty = Math.min(val, item.quantity);
+                    }
+                },
+
+                setCondition(index, condition) {
+                    this.cart[index].condition = condition;
+                },
+
+                checkRefundMethod() {
+                    if (this.hasWalkInItem) {
+                        this.refundMethod = 'CASH';
+                    } else if (this.refundMethod === 'REDUCE_DEBIT' && !this.hasDebitSaleItem) {
+                        this.refundMethod = 'CASH';
+                    }
+                },
+
+                // ── COMPUTED ─────────────────────────────────────────────────
+                get cartTotal() {
+                    return this.cart.reduce((sum, item) => {
+                        return sum + (parseFloat(item.return_qty) * parseFloat(item.rate));
                     }, 0);
-                    return sum.toFixed(2);
-                }
-            }
+                },
+
+                get hasDebitSaleItem() {
+                    return this.cart.some(c => c.bill_source === 'debit_sale');
+                },
+
+                get hasWalkInItem() {
+                    return this.cart.some(c => !c.customer_id);
+                },
+
+                // Determine a single customer_id for the refund header
+                // (prefer the first non-null customer_id found across selected bills)
+                get derivedCustomerId() {
+                    for (const c of this.cart) {
+                        if (c.customer_id) return c.customer_id;
+                    }
+                    return null;
+                },
+
+                // ── SUBMIT ────────────────────────────────────────────────────
+                submitReturn() {
+                    if (this.cart.length === 0) {
+                        alert('Please add at least one item to the return cart.');
+                        return;
+                    }
+                    if (!this.refundMethod) {
+                        alert('Please select a refund method.');
+                        return;
+                    }
+                    if (this.refundMethod === 'REDUCE_DEBIT' && !this.hasDebitSaleItem) {
+                        alert('Reduce Debit Balance is only available when returning Debit Sale items.');
+                        return;
+                    }
+                    if (this.hasWalkInItem && this.refundMethod !== 'CASH') {
+                        alert('Only Cash Refund is allowed for walk-in transactions.');
+                        return;
+                    }
+
+                    this.isSubmitting = true;
+
+                    const container = document.getElementById('hidden-fields');
+                    container.innerHTML = '';
+
+                    const addHidden = (name, value) => {
+                        const el = document.createElement('input');
+                        el.type = 'hidden';
+                        el.name = name;
+                        el.value = value;
+                        container.appendChild(el);
+                    };
+
+                    addHidden('refund_method', this.refundMethod);
+                    addHidden('memo', this.memo);
+                    addHidden('customer_id', this.derivedCustomerId || '');
+
+                    this.cart.forEach((item, idx) => {
+                        addHidden(`items[${idx}][product_id]`,   item.product_id);
+                        addHidden(`items[${idx}][line_item_id]`, item.line_item_id);
+                        addHidden(`items[${idx}][item_name]`,    item.item_name);
+                        addHidden(`items[${idx}][return_qty]`,   item.return_qty);
+                        addHidden(`items[${idx}][rate]`,         item.rate);
+                        addHidden(`items[${idx}][condition]`,    item.condition);
+                        addHidden(`items[${idx}][sale_source]`,  item.bill_source);
+                        addHidden(`items[${idx}][bill_id]`,      item.bill_id);
+                    });
+
+                    document.getElementById('return-form').submit();
+                },
+            };
         }
     </script>
-</body>
 
+</body>
 </html>

@@ -173,6 +173,9 @@ Route::middleware(['auth:web', 'role:owner|manager|cashier'])->group(function ()
     Route::get('/refunds/create', [\App\Http\Controllers\Store\RefundController::class, 'create'])->name('refunds.create');
     Route::post('/refunds/store', [\App\Http\Controllers\Store\RefundController::class, 'store'])->name('refunds.store');
     Route::get('/refunds/{id}/print', [\App\Http\Controllers\Store\RefundController::class, 'print'])->name('refunds.print');
+    // AJAX endpoints for the bill-search returns UI
+    Route::get('/refunds/search-bills', [\App\Http\Controllers\Store\RefundController::class, 'searchBills'])->name('refunds.search-bills');
+    Route::get('/refunds/bill-items', [\App\Http\Controllers\Store\RefundController::class, 'getBillItems'])->name('refunds.bill-items');
     Route::resource('refunds', \App\Http\Controllers\Store\RefundController::class);
 });
 
@@ -204,6 +207,8 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
 Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->group(function () {
 
     // Customers
+    Route::get('/customers/sample-excel', [\App\Http\Controllers\Store\CustomerController::class, 'sampleExcel'])->name('customers.sample_excel');
+    Route::post('/customers/import', [\App\Http\Controllers\Store\CustomerController::class, 'import'])->name('customers.import');
     Route::post('/customers/quick-store', [\App\Http\Controllers\Store\CustomerController::class, 'quickStore'])->name('customers.quick-store');
     Route::resource('customers', \App\Http\Controllers\Store\CustomerController::class);
 

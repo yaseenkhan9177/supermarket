@@ -15,6 +15,7 @@ class Customer extends Model
         'address',
         'credit_limit',
         'balance',
+        'store_credit',
     ];
 
     public function debitSales()
@@ -31,5 +32,11 @@ class Customer extends Model
     public function sales()
     {
         return $this->hasMany(Sale::class);
+    }
+
+    // Returns / Refunds processed against this customer
+    public function refunds()
+    {
+        return $this->hasMany(Refund::class);
     }
 }

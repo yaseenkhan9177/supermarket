@@ -655,23 +655,18 @@ class AppServiceProvider extends ServiceProvider
                         <div class="pos-subnav-inner">
                             {{-- General Submenu --}}
                             <div x-show="activeTab === 'general'" class="pos-subnav-menu">
-                                <a href="#" class="pos-subnav-link">
-                                    <div class="pos-subnav-icon" style="background-color: rgba(55,138,221,0.12); color: var(--pos-blue);">
-                                        <i class="fas fa-palette text-sm"></i>
-                                    </div>
-                                    <span class="pos-subnav-label">Styles</span>
-                                </a>
+                               
                                 <a href="{{ route('settings.users') }}" class="pos-subnav-link">
                                     <div class="pos-subnav-icon" style="background-color: rgba(55,138,221,0.12); color: var(--pos-blue);">
                                         <i class="fas fa-users-cog text-sm"></i>
                                     </div>
                                     <span class="pos-subnav-label">Access</span>
                                 </a>
-                                <a href="{{ route('items.create') }}" class="pos-subnav-link">
+                                <a href="{{ route('customers.index') }}" class="pos-subnav-link">
                                     <div class="pos-subnav-icon" style="background-color: rgba(27,175,122,0.12); color: var(--pos-green);">
                                         <i class="fas fa-plus-circle text-sm"></i>
                                     </div>
-                                    <span class="pos-subnav-label">Add Items</span>
+                                    <span class="pos-subnav-label">customer</span>
                                 </a>
                                 <div class="pos-subnav-sep"></div>
                                 <a href="{{ route('todo') }}" class="pos-subnav-link">

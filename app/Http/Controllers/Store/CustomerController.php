@@ -60,96 +60,72 @@ class CustomerController extends Controller
     }
 
     /**
-     * Customer profile page — KPIs + recent bills.
+     * Customer profile page — KPIs + tabbed transaction histories.
      */
     public function show($id)
     {
         $customer = Customer::findOrFail($id);
 
-        // ── DebitSales (credit invoices) ─────────────────────────
-        $debitSales = $customer->debitSales()->withCount('items')->orderBy('invoice_date', 'desc')->get();
+        // ── DebitSales (credit invoices) ─────────────────────────────────────
+        $debitSales = $customer->debitSales()
+            ->withCount('items')
+            ->orderBy('invoice_date', 'desc')
+            ->get();
 
         $totalDebitCount  = $debitSales->count();
         $totalDebitAmount = $debitSales->sum('net_total');
 
-        // ── CashSales (POS / cash invoices) ──────────────────────
-        $cashSales = $customer->cashSales()->withCount('items')->orderBy('sale_date', 'desc')->get();
+        // ── CashSales (POS / cash invoices) ──────────────────────────────────
+        $cashSales = $customer->cashSales()
+            ->withCount('items')
+            ->orderBy('sale_date', 'desc')
+            ->get();
 
         $totalCashCount  = $cashSales->count();
         $totalCashAmount = $cashSales->sum('grand_total');
 
-        // ── Grand total items sold (qty) ──────────────────────────
-        // From debit sales
+        // ── Refunds (Returns) ─────────────────────────────────────────────────
+        $refunds = $customer->refunds()
+            ->withCount('items')
+            ->orderBy('refund_date', 'desc')
+            ->get();
+
+        $totalRefundCount  = $refunds->count();
+        $totalRefundAmount = $refunds->sum('total_amount');
+
+        // ── Grand total items sold (qty) ──────────────────────────────────────
         $totalItemsFromDebit = DebitSaleItem::whereHas('sale', function ($q) use ($id) {
             $q->where('customer_id', $id);
         })->sum('quantity');
 
-        // From cash sales
         $totalItemsFromCash = CashSaleItem::whereHas('cashSale', function ($q) use ($id) {
             $q->where('customer_id', $id);
         })->sum('qty');
 
         $totalItemsSold = $totalItemsFromDebit + $totalItemsFromCash;
 
-        // ── Outstanding / Due ─────────────────────────────────────
-        // customer->balance stores the current outstanding receivable
+        // ── Outstanding / Due ─────────────────────────────────────────────────
         $outstandingAmount = $customer->balance > 0 ? $customer->balance : 0.0;
 
-        // ── Grand totals ──────────────────────────────────────────
-        $grandTotalSales = $totalDebitAmount + $totalCashAmount;
-
-        // ── Recent bills table (combine debit + cash, paginate in PHP) ─
-        // Collect debit sales
-        $debitRows = $debitSales->map(function ($s) {
-            return (object)[
-                'bill_no'      => $s->invoice_no,
-                'date'         => $s->invoice_date,
-                'items_count'  => $s->items_count,
-                'amount'       => $s->net_total,
-                'type'         => 'Credit',
-                'status'       => $s->status ?? 'issued',
-                'print_route'  => route('debit-sales.show', $s->id),
-            ];
-        });
-
-        // Collect cash sales
-        $cashRows = $cashSales->map(function ($s) {
-            return (object)[
-                'bill_no'      => $s->invoice_no,
-                'date'         => $s->sale_date,
-                'items_count'  => $s->items_count,
-                'amount'       => $s->grand_total,
-                'type'         => 'Cash',
-                'status'       => 'completed',
-                'print_route'  => null,
-            ];
-        });
-
-        $allBills = $debitRows->merge($cashRows)->sortByDesc('date')->values();
-
-        // Manual pagination
-        $page        = request('page', 1);
-        $perPage     = 10;
-        $offset      = ($page - 1) * $perPage;
-        $paginated   = $allBills->slice($offset, $perPage)->values();
-        $bills       = new \Illuminate\Pagination\LengthAwarePaginator(
-            $paginated,
-            $allBills->count(),
-            $perPage,
-            $page,
-            ['path' => request()->url(), 'query' => request()->query()]
-        );
+        // ── Grand totals ──────────────────────────────────────────────────────
+        $grandTotalSales    = $totalDebitAmount + $totalCashAmount;
+        $netLifetimeValue   = max(0, $grandTotalSales - $totalRefundAmount);
 
         return view('store.customers.show', compact(
             'customer',
+            'debitSales',
+            'cashSales',
+            'refunds',
             'totalItemsSold',
             'totalCashCount',
             'totalCashAmount',
             'totalDebitCount',
             'totalDebitAmount',
+            'totalRefundCount',
+            'totalRefundAmount',
             'outstandingAmount',
             'grandTotalSales',
-            'bills'
+            'netLifetimeValue'
         ));
     }
 

@@ -16,6 +16,47 @@
         </div>
     </div>
 
+    {{-- Search Bar --}}
+    <form method="GET" action="{{ route('items.index') }}" class="mb-4">
+        <div class="flex items-center gap-2">
+            <div class="relative flex-1 max-w-md">
+                <span class="absolute inset-y-0 left-3 flex items-center text-gray-400 dark:text-gray-500 pointer-events-none">
+                    <i class="fas fa-search text-sm"></i>
+                </span>
+                <input
+                    type="text"
+                    name="search"
+                    id="items-search"
+                    value="{{ $search ?? '' }}"
+                    placeholder="Search by name or code…"
+                    autocomplete="off"
+                    class="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600
+                           bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100
+                           placeholder-gray-400 dark:placeholder-gray-500
+                           focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent
+                           text-sm transition"
+                >
+            </div>
+            <button type="submit"
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition">
+                Search
+            </button>
+            @if($search)
+            <a href="{{ route('items.index') }}"
+               class="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600
+                      text-gray-600 dark:text-gray-300 text-sm font-bold rounded-lg transition flex items-center gap-1">
+                <i class="fas fa-times text-xs"></i> Clear
+            </a>
+            @endif
+        </div>
+        @if($search)
+        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            Showing results for <span class="font-semibold text-gray-700 dark:text-gray-200">"{{ $search }}"</span>
+            — {{ $items->total() }} {{ Str::plural('item', $items->total()) }} found
+        </p>
+        @endif
+    </form>
+
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
         <table class="w-full text-left border-collapse">
             <thead class="bg-gray-50 dark:bg-gray-700">
@@ -57,7 +98,13 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="p-8 text-center text-gray-500">No items found.</td>
+                    <td colspan="6" class="p-8 text-center text-gray-500">
+                        @if($search)
+                            No items found matching <span class="font-semibold">"{{ $search }}"</span>.
+                        @else
+                            No items found.
+                        @endif
+                    </td>
                 </tr>
                 @endforelse
             </tbody>

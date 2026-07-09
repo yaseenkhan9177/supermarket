@@ -15,4 +15,13 @@ class RefundItem extends Model
     {
         return $this->belongsTo(Refund::class);
     }
+
+    /**
+     * The sellable item (product) being returned.
+     * RefundItem stores the product as product_id referencing items.id.
+     */
+    public function item()
+    {
+        return $this->belongsTo(Item::class, 'product_id');
+    }
 }

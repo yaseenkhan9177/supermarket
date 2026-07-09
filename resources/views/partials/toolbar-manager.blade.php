@@ -7,17 +7,13 @@
                 <i class="fas fa-desktop text-2xl mb-1"></i>
                 <span class="text-[10px] font-bold uppercase tracking-wide">General</span>
             </a>
-            <a href="#" class="flex flex-col items-center group min-w-[50px] text-gray-500 hover:text-indigo-600 transition">
-                <i class="fas fa-palette text-2xl mb-1"></i>
-                <span class="text-[10px] font-bold uppercase tracking-wide">Styles</span>
-            </a>
             <a href="{{ route('settings.users') }}" class="flex flex-col items-center group min-w-[50px] text-gray-500 hover:text-indigo-600 transition">
                 <i class="fas fa-users text-2xl mb-1"></i>
                 <span class="text-[10px] font-bold uppercase tracking-wide">Access</span>
             </a>
-            <a href="#" class="flex flex-col items-center group min-w-[50px] text-gray-500 hover:text-indigo-600 transition">
-                <i class="fas fa-user-plus text-2xl mb-1"></i>
-                <span class="text-[10px] font-bold uppercase tracking-wide">Add/Edit</span>
+            <a href="{{ route('customers.index') }}" class="flex flex-col items-center group min-w-[50px] {{ request()->routeIs('customers.*') ? 'text-indigo-600' : 'text-gray-500' }} hover:text-indigo-600 transition">
+                <i class="fas fa-address-book text-2xl mb-1"></i>
+                <span class="text-[10px] font-bold uppercase tracking-wide">Customer</span>
             </a>
 
             <div class="w-px h-8 bg-gray-200"></div>

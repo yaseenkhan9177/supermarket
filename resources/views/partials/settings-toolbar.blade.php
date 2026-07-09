@@ -10,15 +10,16 @@
         <span class="island-label {{ request()->routeIs('settings.general') ? 'text-indigo-900' : '' }}">General</span>
     </a>
 
-    <!-- Styles -->
-    <a href="#" class="island-item group">
-        <div class="icon-container text-slate-500 group-hover:text-indigo-600">
-            <i class="fas fa-palette text-2xl group-hover:scale-110 transition-transform duration-200"></i>
+    <!-- Customers -->
+    <a href="{{ route('customers.index') }}"
+        class="island-item group {{ request()->routeIs('customers.*') ? 'active-pill-target' : '' }}">
+        <div class="icon-container {{ request()->routeIs('customers.*') ? 'text-indigo-600' : 'text-slate-500' }} group-hover:text-indigo-600">
+            <i class="fas fa-address-book text-2xl group-hover:-translate-y-1 transition-transform"></i>
         </div>
-        <span class="island-label">Styles</span>
+        <span class="island-label {{ request()->routeIs('customers.*') ? 'text-indigo-900' : '' }}">Customers</span>
     </a>
 
-    <div class="divider"></div>
+
 
     <!-- User Settings Group -->
     <!-- Access -->
@@ -30,14 +31,6 @@
         <span class="island-label {{ request()->routeIs('settings.access') ? 'text-indigo-900' : '' }}">Access</span>
     </a>
 
-    <!-- Add/Edit -->
-    <a href="{{ route('settings.users') }}"
-        class="island-item group {{ request()->routeIs('settings.users') ? 'active-pill-target' : '' }}">
-        <div class="icon-container {{ request()->routeIs('settings.users') ? 'text-indigo-600' : 'text-slate-500' }} group-hover:text-indigo-600">
-            <i class="fas fa-user-plus text-2xl group-hover:scale-110 transition-transform"></i>
-        </div>
-        <span class="island-label {{ request()->routeIs('settings.users') ? 'text-indigo-900' : '' }}">Add/Edit</span>
-    </a>
 
     <div class="divider"></div>
 
@@ -82,14 +75,6 @@
     </a>
 
     <!-- Exit Group (Right aligned roughly by flex) -->
-    <div class="ml-auto flex items-center gap-4">
-        <div class="divider"></div>
-        <a href="{{ route('dashboard') }}" class="island-item group">
-            <div class="icon-container text-red-400 group-hover:text-red-600">
-                <i class="fas fa-power-off text-2xl group-hover:pulse-red"></i>
-            </div>
-            <span class="island-label text-red-400 group-hover:text-red-700">Exit</span>
-        </a>
-    </div>
+  
 
 </div>
