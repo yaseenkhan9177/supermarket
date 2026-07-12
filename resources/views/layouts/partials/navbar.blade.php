@@ -9,7 +9,7 @@
 
             <div class="flex flex-col">
                 <h1 class="text-xl font-extrabold text-gray-900 leading-none tracking-tight">
-                    OwnStore <span class="text-indigo-600">PRO</span>
+                    {{ tenancy()->initialized ? (\App\Models\Store::first()?->name ?? 'OwnStore') : 'OwnStore' }} <span class="text-indigo-600">PRO</span>
                 </h1>
                 <span class="text-xs text-gray-500 font-medium mt-0.5">{{ $pageTitle ?? 'Dashboard' }}</span>
             </div>

@@ -9,6 +9,13 @@ class Role extends Model
 {
     use HasFactory;
 
+    /**
+     * Force central database connection.
+     *
+     * @var string
+     */
+    protected $connection = 'mysql';
+
     protected $fillable = ['name', 'default_permissions'];
 
     protected $casts = [

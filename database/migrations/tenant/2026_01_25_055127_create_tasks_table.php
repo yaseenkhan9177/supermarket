@@ -27,7 +27,7 @@ return new class extends Migration
                 $table->integer('progress_percent')->default(0);
 
                 // Assignments & Dates
-                $table->foreignId('assigned_to')->nullable()->constrained('users'); // Who is "AD"?
+                $table->unsignedBigInteger('assigned_to')->nullable()->index() /* central user ref */; // Who is "AD"?
                 $table->date('due_date')->nullable();
 
                 $table->integer('order')->default(0); // To save the order within the column

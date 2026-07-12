@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('item_id')->constrained('items')->onDelete('cascade');
             $table->decimal('quantity', 12, 2);
             $table->date('transfer_date');
-            $table->foreignId('transferred_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->unsignedBigInteger('transferred_by')->nullable()->index() /* central user ref */;
             $table->text('notes')->nullable();
             $table->timestamps();
         });

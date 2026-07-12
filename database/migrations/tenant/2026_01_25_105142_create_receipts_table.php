@@ -16,7 +16,7 @@ return new class extends Migration
 
                 // Who paid?
                 $table->foreignId('customer_id')->constrained('customers');
-                $table->foreignId('salesman_id')->nullable()->constrained('users'); // Assuming users table for salesman
+                $table->unsignedBigInteger('salesman_id')->nullable()->index() /* central user ref */; // Assuming users table for salesman
 
                 // Money Details
                 $table->decimal('amount_received', 10, 2);

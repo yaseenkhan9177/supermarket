@@ -14,7 +14,7 @@ return new class extends Migration
         // 1. Refunds Table
         Schema::table('refunds', function (Blueprint $table) {
             $table->foreignId('original_sale_id')->nullable()->after('id')->constrained('sales')->nullOnDelete();
-            $table->foreignId('authorized_by')->nullable()->after('salesman_id')->constrained('employees')->nullOnDelete();
+            $table->unsignedBigInteger('authorized_by')->nullable()->after('salesman_id')->index(); // Central employee ref — no FK across DBs
             $table->string('reason')->nullable()->after('memo'); // Global reason if needed
             $table->string('status')->default('completed')->after('total_amount'); // completed, pending, rejected
         });
@@ -26,10 +26,7 @@ return new class extends Migration
             $table->string('condition')->default('sellable')->after('reason'); // sellable, damaged, expired, waste
         });
 
-        // 3. Employees Table (For Manager PIN)
-        Schema::table('employees', function (Blueprint $table) {
-            $table->string('pin')->nullable()->after('password');
-        });
+        // Note: employees.pin is in the central DB — not managed in tenant migrations
     }
 
     /**
@@ -38,8 +35,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('refunds', function (Blueprint $table) {
-            $table->dropForeign(['original_sale_id']);
-            $table->dropForeign(['authorized_by']);
             $table->dropColumn(['original_sale_id', 'authorized_by', 'reason', 'status']);
         });
 

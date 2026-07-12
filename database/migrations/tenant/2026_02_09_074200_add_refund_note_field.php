@@ -21,7 +21,7 @@ return new class extends Migration
         Schema::table('refunds', function (Blueprint $table) {
             // Add processed_by to track who actually processed the refund
             if (!Schema::hasColumn('refunds', 'processed_by')) {
-                $table->foreignId('processed_by')->nullable()->after('salesman_id')->constrained('users')->onDelete('set null');
+                $table->unsignedBigInteger('processed_by')->nullable()->after('salesman_id')->index() /* central user ref */;
             }
 
             // Add approval timestamp

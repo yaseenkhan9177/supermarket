@@ -9,6 +9,13 @@ class UserPermission extends Model
 {
     use HasFactory;
 
+    /**
+     * Force central database connection.
+     *
+     * @var string
+     */
+    protected $connection = 'mysql';
+
     protected $guarded = [];
 
     protected $casts = [

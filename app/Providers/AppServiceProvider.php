@@ -591,7 +591,7 @@ class AppServiceProvider extends ServiceProvider
                                         <i class="fas fa-shopping-basket"></i>
                                     </div>
                                     <span>
-                                        OwnStore <span class="pos-logo-pro">PRO</span>
+                                        {{ $storeName }} <span class="pos-logo-pro">PRO</span>
                                     </span>
                                 </a>
                                 <div class="pos-nav-tabs">
@@ -823,7 +823,7 @@ class AppServiceProvider extends ServiceProvider
                             <h1 class="pos-greeting-title">
                                 Good {{ $greeting }}, <span style="color: var(--pos-blue);">{{ $userName }}</span>!
                             </h1>
-                            <p class="pos-greeting-subtitle">{{ $todayLabel }} &mdash; Live business dashboard overview</p>
+                            <p class="pos-greeting-subtitle">{{ $todayLabel }} &mdash; {{ $storeName }} Live business overview</p>
                         </div>
                         <div class="pos-greeting-badge">
                             <span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--pos-green); display: inline-block; margin-right: 4px;"></span>
@@ -863,7 +863,7 @@ class AppServiceProvider extends ServiceProvider
                                         <span class="pos-trend-badge down"><i class="fas fa-caret-down"></i> {{ number_format(abs($salesTrendPct), 0) }}%</span>
                                     @endif
                                 @else
-                                    <span>—</span>
+                                    <span>â€”</span>
                                 @endif
                             </div>
                         </div>
@@ -1030,7 +1030,7 @@ class AppServiceProvider extends ServiceProvider
                             <div id="salesTrendBadge" class="pos-badge-sample" style="display: none; position: absolute; top: 16px; right: 16px;">Sample data</div>
                             <div class="pos-card-header">
                                 <div class="pos-card-title-group">
-                                    <h3 class="pos-card-title">Sales Trend — Last 30 Days</h3>
+                                    <h3 class="pos-card-title">Sales Trend â€” Last 30 Days</h3>
                                     <p class="pos-card-subtitle">Daily cash vs credit sales</p>
                                 </div>
                                 <div class="pos-chart-legend">
@@ -1417,13 +1417,13 @@ class AppServiceProvider extends ServiceProvider
                     }
 
                     // -----------------------------------------------
-                    // Main chart + nav initializer — called both on
+                    // Main chart + nav initializer â€” called both on
                     // initial DOMContentLoaded and on every Livewire
                     // SPA navigation so charts re-render correctly.
                     // -----------------------------------------------
                     function initPosCharts() {
                         if (typeof Chart === 'undefined') {
-                            // Chart.js not yet loaded (defer race) — retry shortly
+                            // Chart.js not yet loaded (defer race) â€” retry shortly
                             setTimeout(initPosCharts, 200);
                             return;
                         }
@@ -1933,6 +1933,16 @@ class AppServiceProvider extends ServiceProvider
                         return 'there';
                     }
                 })(),
+                'storeName'   => (function() {
+                    try {
+                        if (function_exists('tenancy') && tenancy()->initialized) {
+                            return tenancy()->tenant?->store_name ?? \App\Models\Store::first()?->name ?? 'OwnStore';
+                        }
+                        return \App\Models\Store::first()?->name ?? 'OwnStore';
+                    } catch (\Throwable $e) {
+                        return 'OwnStore';
+                    }
+                })(),
                 'todayLabel'  => now()->format('l, d F Y'),
 
                 // ----------------------------------------------------------------
@@ -2325,6 +2335,7 @@ class AppServiceProvider extends ServiceProvider
                             'data' => $data
                         ]);
                     } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::error("customerDuesChart error: " . $e->getMessage());
                         return json_encode(['labels' => [], 'data' => []]);
                     }
                 })(),

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('stock_audit_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('item_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
+            $table->unsignedBigInteger('user_id')->nullable()->index(); // Central user reference
             $table->string('action'); // 'add', 'deduct', 'adjust'
             $table->decimal('quantity', 10, 2);
             $table->foreignId('batch_id')->nullable()->constrained()->onDelete('set null');

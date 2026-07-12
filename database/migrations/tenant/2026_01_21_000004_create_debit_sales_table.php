@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('invoice_no')->unique();
             $table->foreignId('customer_id')->constrained('customers');
-            $table->foreignId('salesman_id')->nullable()->constrained('employees'); // Salesman might satisfy user_id or be separate
+            $table->unsignedBigInteger('salesman_id')->nullable()->index(); // Central employee ref // Salesman might satisfy user_id or be separate
             $table->date('invoice_date');
             $table->date('due_date');
             $table->string('pricing_type')->default('Retail'); // Retail, Wholesale

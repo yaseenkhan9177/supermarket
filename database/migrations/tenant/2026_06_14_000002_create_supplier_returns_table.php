@@ -32,7 +32,7 @@ return new class extends Migration
                 $table->foreignId('account_id')->nullable()->constrained('accounts')->nullOnDelete();
 
                 $table->text('notes')->nullable();
-                $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+                $table->unsignedBigInteger('user_id')->nullable()->index() /* central user ref */;
                 $table->timestamps();
             });
         }

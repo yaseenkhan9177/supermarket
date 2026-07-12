@@ -28,8 +28,20 @@ Route::get('/', function () {
 
 use App\Http\Controllers\StoreAuthController;
 
-Route::get('/register-store', [StoreAuthController::class, 'showRegistrationForm'])->name('store.register.form');
-Route::post('/register-store', [StoreAuthController::class, 'register'])->name('store.register');
+// Environment-aware registration route: only active when APP_ENV=local
+Route::get('/register-store', function () {
+    if (!app()->environment('local')) {
+        return 'Registration temporarily closed';
+    }
+    return app(StoreAuthController::class)->showRegistrationForm();
+})->name('store.register.form');
+
+Route::post('/register-store', function () {
+    if (!app()->environment('local')) {
+        return 'Registration temporarily closed';
+    }
+    return app(StoreAuthController::class)->register(request());
+})->name('store.register');
 
 Route::get('/login', [StoreAuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [StoreAuthController::class, 'login']);

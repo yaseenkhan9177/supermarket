@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('business_type');
 
             // users.id is unsigned bigint, so we must match it.
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            // user_id references central users table — no FK constraint across databases
+            $table->unsignedBigInteger('user_id')->index();
 
             $table->timestamps();
         });

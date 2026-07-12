@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('database_name')->unique();
             $table->string('subscription_plan'); // basic, premium, enterprise
             $table->date('valid_until')->nullable();
+            $table->json('data')->nullable();
             $table->timestamps();
         });
     }

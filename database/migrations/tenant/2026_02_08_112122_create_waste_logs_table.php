@@ -17,7 +17,7 @@ return new class extends Migration
             $table->decimal('quantity', 10, 2);
             $table->string('reason'); // Refund reason or other waste reason
             $table->foreignId('refund_id')->nullable()->constrained('refunds')->onDelete('set null');
-            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->unsignedBigInteger('user_id')->nullable()->index() /* central user ref */;
             $table->timestamp('logged_at')->useCurrent();
             $table->timestamps();
         });

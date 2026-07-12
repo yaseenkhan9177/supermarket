@@ -11,6 +11,13 @@ class Employee extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    /**
+     * Force the central database connection.
+     *
+     * @var string
+     */
+    protected $connection = 'mysql';
+
     protected $fillable = [
         'full_name',
         'email',

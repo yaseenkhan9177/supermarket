@@ -17,7 +17,7 @@ return new class extends Migration
                 $table->boolean('refund_locked')->default(false)->after('status');
             }
             if (!Schema::hasColumn('sales', 'refund_locked_by')) {
-                $table->foreignId('refund_locked_by')->nullable()->after('refund_locked')->constrained('users')->onDelete('set null');
+                $table->unsignedBigInteger('refund_locked_by')->nullable()->after('refund_locked')->index() /* central user ref */;
             }
             if (!Schema::hasColumn('sales', 'refund_locked_at')) {
                 $table->timestamp('refund_locked_at')->nullable()->after('refund_locked_by');

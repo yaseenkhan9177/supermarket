@@ -9,7 +9,7 @@
            class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white font-semibold transition text-sm">
             <i class="fas fa-arrow-left"></i> Back to Customers
         </a>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-3">
             <span class="px-3 py-1 text-xs font-bold uppercase rounded-full
                 {{ $customer->balance > 0 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
                 : ($customer->balance < 0 ? 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300'
@@ -17,6 +17,18 @@
                 {{ $customer->balance > 0 ? 'Has Debit Balance'
                    : ($customer->balance < 0 ? 'Overpaid' : 'Settled') }}
             </span>
+            <a href="{{ route('customers.edit', $customer->id) }}"
+               class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 hover:dark:bg-indigo-900/60 text-xs font-bold rounded-lg transition">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <form action="{{ route('customers.destroy', $customer->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this customer?');" class="inline">
+                @csrf
+                @method('DELETE')
+                <button type="submit"
+                        class="inline-flex items-center gap-1.5 px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400 hover:dark:bg-red-900/60 text-xs font-bold rounded-lg transition">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </form>
         </div>
     </div>
 

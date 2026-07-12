@@ -20,13 +20,13 @@ return new class extends Migration
             $table->decimal('override_price', 15, 2);
             $table->decimal('discount_percent', 5, 2)->default(0);
             $table->decimal('discount_amount', 15, 2)->default(0);
-            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
+            $table->unsignedBigInteger('user_id')->nullable()->index(); // Central user reference
             $table->string('reason')->nullable();
             $table->timestamp('created_at')->useCurrent();
 
             // Indexes
             $table->index(['sale_id', 'item_id']);
-            $table->index('user_id');
+            // user_id index already created inline above
         });
     }
 

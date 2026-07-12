@@ -29,7 +29,7 @@ return new class extends Migration
                 $table->foreignId('account_id')->nullable()->constrained('accounts');
             }
             if (!Schema::hasColumn('receipts', 'created_by')) {
-                $table->foreignId('created_by')->nullable()->constrained('users');
+                $table->unsignedBigInteger('created_by')->nullable()->index() /* central user ref */;
             }
             if (!Schema::hasColumn('receipts', 'net_amount')) {
                 $table->decimal('net_amount', 15, 2)->default(0)->after('amount_received');

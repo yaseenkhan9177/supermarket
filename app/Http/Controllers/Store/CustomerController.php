@@ -130,6 +130,95 @@ class CustomerController extends Controller
     }
 
     /**
+     * Show the form for creating a new customer.
+     */
+    public function create()
+    {
+        return view('store.customers.create');
+    }
+
+    /**
+     * Store a newly created customer.
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name'         => 'required|string|max:255',
+            'phone'        => 'nullable|string|max:30',
+            'address'      => 'nullable|string|max:500',
+            'credit_limit' => 'nullable|numeric|min:0',
+            'balance'      => 'nullable|numeric',
+        ]);
+
+        Customer::create([
+            'name'         => $request->name,
+            'phone'        => $request->phone,
+            'address'      => $request->address,
+            'credit_limit' => $request->credit_limit ?? 0,
+            'balance'      => $request->balance ?? 0,
+        ]);
+
+        return redirect()->route('customers.index')
+            ->with('success', 'Customer created successfully.');
+    }
+
+    /**
+     * Show the form for editing the given customer.
+     */
+    public function edit($id)
+    {
+        $customer = Customer::findOrFail($id);
+        return view('store.customers.edit', compact('customer'));
+    }
+
+    /**
+     * Update the given customer.
+     */
+    public function update(Request $request, $id)
+    {
+        $customer = Customer::findOrFail($id);
+
+        $request->validate([
+            'name'         => 'required|string|max:255',
+            'phone'        => 'nullable|string|max:30',
+            'address'      => 'nullable|string|max:500',
+            'credit_limit' => 'nullable|numeric|min:0',
+        ]);
+
+        $customer->update([
+            'name'         => $request->name,
+            'phone'        => $request->phone,
+            'address'      => $request->address,
+            'credit_limit' => $request->credit_limit ?? $customer->credit_limit,
+        ]);
+
+        return redirect()->route('customers.show', $customer->id)
+            ->with('success', 'Customer updated successfully.');
+    }
+
+    /**
+     * Delete the given customer (only if they have no linked transactions).
+     */
+    public function destroy($id)
+    {
+        $customer = Customer::findOrFail($id);
+
+        $hasTransactions = $customer->debitSales()->exists()
+            || $customer->cashSales()->exists()
+            || $customer->refunds()->exists();
+
+        if ($hasTransactions) {
+            return redirect()->route('customers.index')
+                ->with('error', 'Cannot delete customer — they have linked transactions.');
+        }
+
+        $customer->delete();
+
+        return redirect()->route('customers.index')
+            ->with('success', 'Customer deleted.');
+    }
+
+    /**
      * Download a sample Excel template for bulk customer import.
      */
     public function sampleExcel()

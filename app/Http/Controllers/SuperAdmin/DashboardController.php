@@ -5,6 +5,8 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\SuperAdmin;
 use App\Models\Store;
+use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,10 +20,10 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $totalAll     = Store::count();
-        $totalActive  = $totalAll; // All registered stores are considered active
-        $totalPending = 0;
-        $totalReject  = 0;
+        $totalAll     = Tenant::count();
+        $totalActive  = Tenant::where('status', 'active')->count();
+        $totalPending = Tenant::where('status', 'pending')->count();
+        $totalReject  = Tenant::where('status', 'rejected')->count();
 
         $stats = [
             'total_active_stores' => $totalActive,
@@ -37,7 +39,7 @@ class DashboardController extends Controller
         for ($i = 5; $i >= 0; $i--) {
             $date = now()->subMonths($i);
             $months[]        = $date->format('M Y');
-            $monthlyCounts[] = Store::whereYear('created_at', $date->year)
+            $monthlyCounts[] = Tenant::whereYear('created_at', $date->year)
                 ->whereMonth('created_at', $date->month)
                 ->count();
         }
@@ -53,19 +55,19 @@ class DashboardController extends Controller
             'pending'  => $totalPending,
         ];
 
-        $recentTenants = Store::with('user')->latest()->limit(5)->get();
+        $recentTenants = Tenant::with('user')->latest()->limit(5)->get();
 
         return view('super_admin.dashboard', compact('stats', 'growthChart', 'statusChart', 'recentTenants'));
     }
 
     public function tenants(Request $request)
     {
-        $query = Store::with('user');
+        $query = Tenant::with('user');
 
         if ($request->filled('search')) {
             $s = $request->search;
             $query->where(function ($q) use ($s) {
-                $q->where('name', 'like', "%{$s}%")
+                $q->where('store_name', 'like', "%{$s}%")
                   ->orWhereHas('user', function($q2) use ($s) {
                       $q2->where('name', 'like', "%{$s}%")
                          ->orWhere('email', 'like', "%{$s}%");
@@ -100,40 +102,38 @@ class DashboardController extends Controller
         }
 
         try {
-            $dbName = 'store_' . strtolower(Str::random(8)) . '_' . substr($tenant->id, 0, 8);
-            $dbName = preg_replace('/[^a-z0-9_]/', '', $dbName);
+            // Check if database needs to be created
+            if (!$tenant->database()->manager()->databaseExists($tenant->database()->getName())) {
+                $tenant->database()->make();
+            }
 
-            DB::statement("CREATE DATABASE IF NOT EXISTS `{$dbName}`");
-
-            $connectionName = 'tenant_deploy_' . Str::random(4);
-            $config = Config::get('database.connections.mysql');
-            $config['database'] = $dbName;
-            Config::set("database.connections.{$connectionName}", $config);
-            DB::purge($connectionName);
-
-            Artisan::call('migrate', [
-                '--database' => $connectionName,
-                '--force'    => true,
-            ]);
-
-            DB::connection($connectionName)->table('users')->insert([
+            // Create central user
+            $user = User::create([
                 'name'       => $tenant->owner_name,
                 'email'      => $tenant->owner_email,
+                'phone'      => $tenant->owner_phone,
+                'role'       => 'owner',
+                'tenant_id'  => $tenant->id,
+                'is_active'  => true,
                 'password'   => bcrypt('password'),
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
-            DB::connection($connectionName)->table('stores')->insert([
+            if (\App\Models\SpatieRole::where('name', 'owner')->exists()) {
+                $user->assignRole('owner');
+            }
+
+            // Initialize tenancy and create Store
+            tenancy()->initialize($tenant);
+
+            Store::create([
                 'name'          => $tenant->store_name,
                 'business_type' => 'Retail',
-                'user_id'       => 1,
-                'created_at'    => now(),
-                'updated_at'    => now(),
+                'user_id'       => $user->id,
             ]);
 
-            $tenant->database_name = $dbName;
-            $tenant->status        = 'active';
+            tenancy()->end();
+
+            $tenant->status = 'active';
             $tenant->save();
 
             Log::info("Store Approved: Email sent to {$tenant->owner_email} with credentials.");

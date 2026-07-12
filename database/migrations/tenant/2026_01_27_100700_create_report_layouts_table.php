@@ -18,7 +18,7 @@ return new class extends Migration
                 $table->string('layout_name'); // e.g., 'My Tax View'
                 $table->json('visible_columns'); // Array of column keys ['date', 'inv_no', 'tax']
                 $table->boolean('is_default')->default(false);
-                $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade'); // Null = System Default
+                $table->unsignedBigInteger('user_id')->nullable()->index(); // Central user reference — Null = System Default
                 $table->timestamps();
             });
         }

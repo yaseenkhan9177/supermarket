@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
+use App\Models\SpatiePermission as Permission;
+use App\Models\SpatieRole as Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RoleSeeder extends Seeder
