@@ -11,6 +11,8 @@ class SuperAdmin extends Authenticatable
 {
     use HasApiTokens, Notifiable, HasFactory;
 
+    protected $connection = 'mysql';
+
     protected $fillable = [
         'name',
         'email',

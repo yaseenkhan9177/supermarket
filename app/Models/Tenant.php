@@ -57,4 +57,17 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     {
         return $this->hasOne(User::class, 'tenant_id')->where('role', 'owner');
     }
+
+    /**
+     * Override internal getter to use our custom database_name column
+     * for the physical database name, instead of the default prefix+uuid.
+     */
+    public function getInternal(string $key)
+    {
+        if ($key === 'db_name') {
+            return $this->getAttribute('database_name');
+        }
+
+        return parent::getInternal($key);
+    }
 }
