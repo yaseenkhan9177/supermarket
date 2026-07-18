@@ -839,7 +839,7 @@ class AppServiceProvider extends ServiceProvider
                     <div class="pos-grid-kpis">
                         
                         {{-- KPI Card 1: Today's Sales --}}
-                        <div class="pos-kpi-card sales">
+                        <a href="{{ route('sales.today') }}" class="pos-kpi-card sales" style="text-decoration: none; display: block; cursor: pointer;">
                             <div class="pos-kpi-header">
                                 <span class="pos-kpi-title">Today's Sales</span>
                                 <div class="pos-kpi-icon-wrap">
@@ -863,10 +863,10 @@ class AppServiceProvider extends ServiceProvider
                                         <span class="pos-trend-badge down"><i class="fas fa-caret-down"></i> {{ number_format(abs($salesTrendPct), 0) }}%</span>
                                     @endif
                                 @else
-                                    <span>â€”</span>
+                                    <span>—</span>
                                 @endif
                             </div>
-                        </div>
+                        </a>
 
                         {{-- KPI Card 2: Outstanding Dues --}}
                         <div class="pos-kpi-card dues">

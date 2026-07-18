@@ -25,15 +25,17 @@
 
     {{-- Today's Net Sales — cashier, manager, owner --}}
     @hasanyrole('owner|manager|cashier')
-    <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 flex justify-between items-center relative overflow-hidden group">
+    <a href="{{ route('sales.today') }}"
+       class="w-full text-left bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 flex justify-between items-center relative overflow-hidden group hover:shadow-md hover:ring-2 hover:ring-green-300 transition-all duration-150">
         <div class="relative z-10">
             <p class="text-gray-500 text-xs font-semibold mb-1">Today's Net Sales</p>
             <h3 class="text-xl font-bold text-gray-800">Rs. {{ number_format($kpis['daily_sales']) }}</h3>
+            <p class="text-[10px] text-green-600 font-semibold mt-0.5">{{ $kpis['daily_transactions'] }} transaction{{ $kpis['daily_transactions'] === 1 ? '' : 's' }} &middot; click to view</p>
         </div>
         <div class="bg-green-100 p-2 rounded-lg text-green-600 group-hover:scale-110 transition-transform">
             <i class="fas fa-chart-line text-lg"></i>
         </div>
-    </div>
+    </a>
     @endhasanyrole
 
     {{-- Cash in Hand — manager, owner only --}}
@@ -415,6 +417,10 @@
 @endrole
 
 @endsection
+
+{{-- ============================================================
+     TODAY'S SALES — now a dedicated page at /sales/today
+     ============================================================ --}}
 
 @section('scripts')
 @hasanyrole('owner|manager')

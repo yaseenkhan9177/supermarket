@@ -78,6 +78,7 @@ Route::middleware(['auth:web,employee'])->group(function () {
 
     // Item viewing — all roles/guards can view items
     Route::get('/items', [\App\Http\Controllers\ItemController::class, 'index'])->name('items.index');
+    Route::get('/items/{id}', [\App\Http\Controllers\ItemController::class, 'show'])->name('items.show')->where('id', '[0-9]+');
 
     // Barcode Generator
     Route::get('/barcodes', [\App\Http\Controllers\BarcodeController::class, 'index'])->name('barcodes.index');
@@ -124,6 +125,7 @@ Route::middleware(['auth:web,employee'])->group(function () {
     // However, since employee guard bypasses Spatie entirely, they can access
     // these directly. Web guard users access through the role-guarded group below.
     Route::get('/sales/pos', [App\Http\Controllers\SalesController::class, 'pos'])->name('sales.pos');
+    Route::get('/sales/today', [App\Http\Controllers\SalesController::class, 'todaysSales'])->name('sales.today');
     Route::get('/sales/history', [App\Http\Controllers\SalesController::class, 'history'])->name('sales.history');
     Route::post('/sales/store', [App\Http\Controllers\SalesController::class, 'store'])->name('sales.store');
     Route::get('/sales/{id}/print', [App\Http\Controllers\SalesController::class, 'print'])->name('sales.print');
@@ -238,6 +240,17 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
     Route::get('/transfers/create', [\App\Http\Controllers\TransferController::class, 'create'])->name('transfers.create');
     Route::post('/transfers/store', [\App\Http\Controllers\TransferController::class, 'store'])->name('transfers.store');
     Route::get('/transfers/{id}/print', [\App\Http\Controllers\TransferController::class, 'print'])->name('transfers.print');
+
+    // ── Unified CSV/Excel Import ───────────────────────────────────────────────
+    Route::get('/import', [\App\Http\Controllers\UnifiedImportController::class, 'showUpload'])->name('import.show');
+    Route::post('/import/preview', [\App\Http\Controllers\UnifiedImportController::class, 'parsePreview'])->name('import.preview');
+    Route::post('/import/commit', [\App\Http\Controllers\UnifiedImportController::class, 'commit'])->name('import.commit');
+    Route::get('/import/sample', [\App\Http\Controllers\UnifiedImportController::class, 'downloadSample'])->name('import.sample');
+
+    // ── Chart of Accounts CSV Import ──────────────────────────────────────────
+    Route::get('/accounts/import',          [\App\Http\Controllers\ChartOfAccountsImportController::class, 'showUpload'])->name('accounts.import.show');
+    Route::post('/accounts/import/preview', [\App\Http\Controllers\ChartOfAccountsImportController::class, 'parsePreview'])->name('accounts.import.preview');
+    Route::post('/accounts/import/commit',  [\App\Http\Controllers\ChartOfAccountsImportController::class, 'commit'])->name('accounts.import.commit');
 
     // General Ledger (Chart of Accounts)
     Route::group(['prefix' => 'general-ledger', 'as' => 'general-ledger.'], function () {

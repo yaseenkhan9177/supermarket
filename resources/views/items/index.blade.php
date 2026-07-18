@@ -91,9 +91,14 @@
                     </td>
                     <td class="p-4 text-sm font-bold text-gray-800 dark:text-white">Rs. {{ number_format($item->sale_rate, 2) }}</td>
                     <td class="p-4 text-sm">
-                        <a href="{{ route('items.edit', $item->id) }}" class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase">
-                            <i class="fas fa-edit mr-1"></i> Edit
-                        </a>
+                        <div class="flex items-center gap-3">
+                            <a href="{{ route('items.show', $item->id) }}" class="text-indigo-600 hover:text-indigo-800 font-bold text-xs uppercase flex items-center gap-1">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <a href="{{ route('items.edit', $item->id) }}" class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase flex items-center gap-1">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 @empty

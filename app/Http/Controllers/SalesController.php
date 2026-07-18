@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\GLEntry;
+use App\Services\FifoStockService;
 use Illuminate\Support\Facades\DB;
 
 class SalesController extends Controller
@@ -52,33 +53,76 @@ class SalesController extends Controller
         ]);
 
         try {
-            return DB::transaction(function () use ($request) {
+            $fifo = new FifoStockService();
 
-                // 1. Calculate Totals Backend-Side (For Security)
-                $calculatedTotal = 0;
-                foreach ($request->cart as $item) {
-                    // Fetch latest price from DB to avoid tampering
-                    $product = Item::find($item['id']);
-                    if ($product) {
-                        $calculatedTotal += ($product->sale_rate * $item['qty']);
+            return DB::transaction(function () use ($request, $fifo) {
+
+                $returnAdj = $request->input('return_adjustment', 0);
+
+                // Placeholder totals — will be recalculated below from actual batch prices
+                $sale = Sale::create([
+                    'invoice_no'        => 'INV-' . time(),
+                    'user_id'           => auth()->id(),
+                    'subtotal'          => 0,
+                    'return_adjustment' => $returnAdj,
+                    'grand_total'       => 0,
+                    'paid_amount'       => $request->amount_received,
+                    'change_amount'     => 0,
+                    'payment_mode'      => 'Cash',
+                    'status'            => 'completed',
+                    'sale_date'         => now(),
+                ]);
+
+                $calculatedSubtotal = 0;
+
+                // Save Items & Deduct Stock via FIFO
+                foreach ($request->cart as $cartItem) {
+                    $product = Item::lockForUpdate()->find($cartItem['id']);
+                    if (!$product) {
+                        continue;
+                    }
+
+                    $qty = (float) $cartItem['qty'];
+
+                    if ($product->item_type === 'Service') {
+                        // Service items: no stock deduction, use item sale_rate
+                        $lineTotal = $qty * $product->sale_rate;
+                        SaleItem::create([
+                            'sale_id'   => $sale->id,
+                            'item_id'   => $product->id,
+                            'item_name' => $product->description,
+                            'batch_id'  => null,
+                            'qty'       => $qty,
+                            'rate'      => $product->sale_rate,
+                            'total'     => $lineTotal,
+                        ]);
+                        $calculatedSubtotal += $lineTotal;
+                    } else {
+                        // Stock item: FIFO deduction — may span multiple batches
+                        $result = $fifo->deductStock($product->id, $qty, $sale->id, auth()->id());
+
+                        foreach ($result['batches_used'] as $batchUsed) {
+                            $lineTotal = $batchUsed['quantity_deducted'] * $batchUsed['sale_price'];
+                            SaleItem::create([
+                                'sale_id'   => $sale->id,
+                                'item_id'   => $product->id,
+                                'item_name' => $product->description,
+                                'batch_id'  => $batchUsed['batch_id'],
+                                'qty'       => $batchUsed['quantity_deducted'],
+                                'rate'      => $batchUsed['sale_price'],
+                                'total'     => $lineTotal,
+                            ]);
+                            $calculatedSubtotal += $lineTotal;
+                        }
                     }
                 }
 
-                $returnAdj = $request->input('return_adjustment', 0);
-                $grandTotal = max(0, $calculatedTotal - $returnAdj);
-
-                // 2. Create the Invoice Record
-                $sale = Sale::create([
-                    'invoice_no' => 'INV-' . time(),
-                    'user_id' => auth()->id(),
-                    'subtotal' => $calculatedTotal,
-                    'return_adjustment' => $returnAdj,
-                    'grand_total' => $grandTotal,
-                    'paid_amount' => $request->amount_received,
-                    'change_amount' => $request->amount_received - $grandTotal,
-                    'payment_mode' => 'Cash',
-                    'status' => 'completed',
-                    'sale_date' => now(), // Ensure date is recorded
+                // Update Sale header with accurate FIFO-based totals
+                $grandTotal = max(0, $calculatedSubtotal - $returnAdj);
+                $sale->update([
+                    'subtotal'     => $calculatedSubtotal,
+                    'grand_total'  => $grandTotal,
+                    'change_amount'=> $request->amount_received - $grandTotal,
                 ]);
 
                 // Adjust Active Wallet Balance
@@ -87,42 +131,11 @@ class SalesController extends Controller
                     $activeWallet->adjustBalance($grandTotal);
                 }
 
-                // 3. Save Items & Deduct Stock
-                foreach ($request->cart as $cartItem) {
-                    $product = Item::lockForUpdate()->find($cartItem['id']);
-
-                    if ($product) {
-                        // Check Stock
-                        if ($product->item_type !== 'Service' && $product->on_hand < $cartItem['qty']) {
-                            throw new \Exception("Insufficient stock for {$product->description}");
-                        }
-
-                        // Save Line Item
-                        SaleItem::create([
-                            'sale_id' => $sale->id,
-                            'item_id' => $product->id,
-                            'qty' => $cartItem['qty'],
-                            'rate' => $product->sale_rate,
-                            'total' => $cartItem['qty'] * $product->sale_rate,
-                            'item_name' => $product->description,
-                        ]);
-
-                        // 🔥 CRITICAL: Deduct Stock Here
-                        // Using 'on_hand' as per your DB schema
-                        if ($product->item_type !== 'Service') {
-                            $product->decrement('on_hand', $cartItem['qty']);
-                        }
-                    }
-                }
-
-                // 4. Post Accounting (Optional, keeping if you want it)
-                // $this->postAccountingEntries($sale);
-
                 return response()->json([
-                    'success' => true,
-                    'message' => 'Sale Recorded!',
+                    'success'    => true,
+                    'message'    => 'Sale Recorded!',
                     'invoice_no' => $sale->invoice_no,
-                    'print_url' => route('sales.print', $sale->id) // For Receipt Popup
+                    'print_url'  => route('sales.print', $sale->id),
                 ]);
             });
         } catch (\Exception $e) {
@@ -212,5 +225,18 @@ class SalesController extends Controller
         $sales = $query->paginate(15);
 
         return view('sales.history', compact('sales', 'stats'));
+    }
+
+    public function todaysSales()
+    {
+        $todaySales = Sale::whereDate('sale_date', today())
+            ->with('customer:id,name')
+            ->withCount('items')
+            ->latest('sale_date')
+            ->get();
+
+        $totalRevenue = $todaySales->sum('grand_total');
+
+        return view('sales.today', compact('todaySales', 'totalRevenue'));
     }
 }

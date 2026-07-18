@@ -3,11 +3,15 @@
 @section('content')
 <div class="max-w-7xl mx-auto" x-data="debitSaleInvoice()">
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mb-8">
 
-        <div class="bg-slate-900 rounded-xl p-4 lg:p-5 border border-red-900/50 shadow-lg shadow-red-900/10">
-            <h3 class="text-white font-bold mb-4 flex items-center gap-2">
-                <i class="fas fa-user text-red-500"></i> Customer (Required)
+        <div class="bg-slate-900 rounded-2xl shadow-xl border border-red-900/50 shadow-red-900/10 p-6 relative overflow-hidden group">
+            <div class="absolute -right-6 -top-6 w-32 h-32 bg-red-500/10 group-hover:bg-red-500/20 rounded-full blur-2xl transition duration-300"></div>
+            <h3 class="text-white text-lg font-bold mb-5 flex items-center gap-3 relative z-10">
+                <div class="w-8 h-8 rounded-lg bg-red-500/20 text-red-500 border border-red-500/30 flex items-center justify-center shadow-sm">
+                    <i class="fas fa-user text-sm"></i>
+                </div>
+                Customer (Required)
             </h3>
             <select id="customer-select" autofocus x-model="customer_id" @change="if(customer_id === 'new') showCustomerModal = true" @keydown.enter.prevent="if (customer_id) { document.getElementById('item-search').focus() }" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white mb-3 focus:border-red-500 outline-none">
                 <option value="">-- Select Customer --</option>
@@ -19,9 +23,13 @@
             <p x-show="!customer_id" class="text-xs text-red-400 mt-1">* You must select a customer for Debit sales.</p>
         </div>
 
-        <div class="bg-slate-900 rounded-xl p-4 lg:p-5 border border-slate-800">
-            <h3 class="text-white font-bold mb-4">
-                <i class="fas fa-file-invoice text-slate-400"></i> Invoice Details
+        <div class="bg-slate-900 rounded-2xl shadow-xl border border-slate-800 p-6 relative overflow-hidden group">
+            <div class="absolute -right-6 -top-6 w-32 h-32 bg-slate-500/10 group-hover:bg-slate-500/20 rounded-full blur-2xl transition duration-300"></div>
+            <h3 class="text-white text-lg font-bold mb-5 flex items-center gap-3 relative z-10">
+                <div class="w-8 h-8 rounded-lg bg-slate-500/20 text-slate-400 border border-slate-500/30 flex items-center justify-center shadow-sm">
+                    <i class="fas fa-file-invoice text-sm"></i>
+                </div>
+                Invoice Details
             </h3>
             <div class="grid grid-cols-2 gap-3">
                 <div>
@@ -35,14 +43,18 @@
             </div>
         </div>
 
-        <div class="bg-slate-900 rounded-xl p-4 lg:p-5 border border-slate-800 relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-red-500/20 to-transparent rounded-bl-full"></div>
-            <h3 class="text-white font-bold mb-4 relative z-10">
-                <i class="fas fa-hand-holding-usd text-red-500"></i> Payment Status
+        <div class="bg-slate-900 rounded-2xl shadow-xl border border-slate-800 p-6 relative overflow-hidden group">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 to-red-600"></div>
+            <div class="absolute -right-6 -top-6 w-32 h-32 bg-red-500/10 group-hover:bg-red-500/20 rounded-full blur-2xl transition duration-300"></div>
+            <h3 class="text-white text-lg font-bold mb-4 flex items-center gap-3 relative z-10">
+                <div class="w-8 h-8 rounded-lg bg-red-500/20 text-red-500 border border-red-500/30 flex items-center justify-center shadow-sm">
+                    <i class="fas fa-hand-holding-usd text-sm"></i>
+                </div>
+                Payment Status
             </h3>
             <div class="flex justify-between items-end mb-3">
                 <span class="text-sm text-slate-400 font-bold uppercase">Total Bill</span>
-                <span class="text-2xl lg:text-3xl font-extrabold text-white tracking-tight" x-text="'Rs. ' + netTotal"></span>
+                <span class="text-3xl lg:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-rose-300 tracking-tight" x-text="'Rs. ' + netTotal"></span>
             </div>
 
             <div class="flex gap-2 mb-2">
@@ -62,10 +74,59 @@
         </div>
     </div>
 
-    <div class="bg-slate-900 rounded-xl border border-slate-800 shadow-lg mb-24 overflow-hidden">
+    <div class="bg-slate-900 rounded-2xl border border-slate-800 shadow-xl mb-24 overflow-hidden relative">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-slate-700 to-slate-600"></div>
+        <div class="bg-slate-950 px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+             <h3 class="font-bold text-sm text-slate-300 flex items-center gap-2">
+                 <i class="fas fa-shopping-cart text-slate-500"></i> Cart Items
+             </h3>
+        </div>
+        <div class="p-4 lg:px-6 bg-slate-800/30 border-b border-slate-800 flex items-start gap-4 z-20 relative">
+            <div class="pt-3 hidden sm:block">
+                <i class="fas fa-search text-red-500 text-xl"></i>
+            </div>
+            <div class="flex-1 relative">
+                <div class="flex justify-between items-end mb-2">
+                    <span class="text-[11px] text-slate-400"><i class="fas fa-keyboard mr-1"></i> Select customer first. Press Enter to add item, Enter again when done to go to Paid amount</span>
+                    <span class="text-[11px] text-slate-500 italic hidden lg:block">Adding to Debit Invoice.</span>
+                </div>
+                <div class="relative">
+                    <input type="text"
+                        id="item-search"
+                        x-model="searchQuery"
+                        @input.debounce.200ms="performSearch()"
+                        @keydown.enter.prevent="if ((searchQuery || '').trim() === '') { document.getElementById('received-amount').focus() } else { selectFirstResult() }"
+                        placeholder="Search by code or name..."
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl py-3.5 px-4 pl-11 text-white focus:ring-2 focus:ring-red-500 outline-none placeholder-slate-500 shadow-inner min-h-[48px] text-[15px] leading-tight">
+                    <i class="fas fa-barcode absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-base"></i>
+                    
+                    <div x-show="searchResults.length > 0"
+                        @click.outside="searchResults = []"
+                        class="absolute top-[calc(100%+6px)] left-0 w-full bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 max-h-80 overflow-y-auto custom-scrollbar"
+                        style="display: none;">
+                        <ul>
+                            <template x-for="item in searchResults" :key="item.id">
+                                <li @click="addItem(item)" class="px-4 py-3.5 hover:bg-red-900/50 cursor-pointer flex justify-between items-center border-b border-slate-800 last:border-0 group transition">
+                                    <div class="flex-1 min-w-0 pr-6">
+                                        <span class="font-bold text-white block truncate text-[15px]" x-text="item.name"></span>
+                                        <span class="text-xs text-slate-400 font-mono group-hover:text-red-200 mt-0.5 block" x-text="item.code"></span>
+                                    </div>
+                                    <div class="text-right whitespace-nowrap">
+                                        <span class="block font-bold text-white text-base" x-text="'Rs. ' + item.price"></span>
+                                        <span class="text-xs uppercase font-bold px-2 py-0.5 rounded-md bg-slate-800 group-hover:bg-red-500 group-hover:text-white mt-1 inline-block"
+                                            :class="item.stock_qty > 0 ? 'text-yellow-400' : 'text-red-400'"
+                                            x-text="item.stock_qty > 0 ? 'Stock: ' + item.stock_qty : 'Out of Stock'"></span>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-slate-400 min-w-[600px]">
-                <thead class="bg-slate-950 text-slate-300 font-bold uppercase text-xs tracking-wider border-b border-slate-800">
+                <thead class="bg-slate-900 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-800">
                     <tr>
                         <th class="p-4 w-12 text-center">#</th>
                         <th class="p-4 w-32">Code</th>
@@ -78,6 +139,16 @@
                 </thead>
                 <tbody class="divide-y divide-slate-800">
 
+                    
+                    <tr x-show="rows.length === 0">
+                        <td colspan="7" class="px-4 py-12 text-center">
+                            <div class="flex flex-col items-center opacity-50">
+                                <i class="fas fa-shopping-cart text-3xl text-slate-600 mb-3"></i>
+                                <span class="text-slate-500 text-sm font-medium">No items added yet</span>
+                                <span class="text-slate-600 text-[11px] mt-1">Search or scan barcode below to begin</span>
+                            </div>
+                        </td>
+                    </tr>
                     <template x-for="(row, index) in rows" :key="index">
                         <tr class="hover:bg-slate-800/50 transition">
                             <td class="p-4 text-center text-slate-500" x-text="index + 1"></td>
@@ -103,48 +174,6 @@
                         </tr>
                     </template>
 
-                    <tr class="bg-slate-800/30">
-                        <td class="px-3 py-6 text-center align-top pt-8"><i class="fas fa-search text-red-500 text-lg"></i></td>
-                        <td class="px-3 py-4 relative" colspan="2">
-                            <div class="text-[11px] text-slate-400 mb-2"><i class="fas fa-keyboard mr-1"></i> Select customer first. Press Enter to add item, Enter again when done to go to Paid amount</div>
-                            <div class="relative">
-                                <input type="text"
-                                    id="item-search"
-                                    x-model="searchQuery"
-                                    @input.debounce.200ms="performSearch()"
-                                    @keydown.enter.prevent="if ((searchQuery || '').trim() === '') { document.getElementById('received-amount').focus() } else { selectFirstResult() }"
-                                    placeholder="Type 1 letter to search..."
-                                    class="w-full bg-slate-950 border border-slate-700 rounded-xl py-3.5 px-4 pl-11 text-white focus:ring-2 focus:ring-red-500 outline-none placeholder-slate-500 shadow-inner min-h-[48px] text-[15px] leading-tight">
-
-                                <i class="fas fa-barcode absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-base"></i>
-
-                                <div x-show="searchResults.length > 0"
-                                    @click.outside="searchResults = []"
-                                    class="absolute top-[calc(100%+6px)] left-0 w-full bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 max-h-80 overflow-y-auto custom-scrollbar"
-                                    style="display: none;">
-                                    <ul>
-                                        <template x-for="item in searchResults" :key="item.id">
-                                            <li @click="addItem(item)" class="px-4 py-3.5 hover:bg-red-900/50 cursor-pointer flex justify-between items-center border-b border-slate-800 last:border-0 group transition">
-                                                <div class="flex-1 min-w-0 pr-6">
-                                                    <span class="font-bold text-white block truncate text-[15px]" x-text="item.name"></span>
-                                                    <span class="text-xs text-slate-400 font-mono group-hover:text-red-200 mt-0.5 block" x-text="item.code"></span>
-                                                </div>
-                                                <div class="text-right whitespace-nowrap">
-                                                    <span class="block font-bold text-white text-base" x-text="'Rs. ' + item.price"></span>
-                                                    <span class="text-xs uppercase font-bold px-2 py-0.5 rounded-md bg-slate-800 group-hover:bg-red-500 group-hover:text-white mt-1 inline-block"
-                                                        :class="item.stock_qty > 0 ? 'text-yellow-400' : 'text-red-400'"
-                                                        x-text="item.stock_qty > 0 ? 'Stock: ' + item.stock_qty : 'Out of Stock'"></span>
-                                                </div>
-                                            </li>
-                                        </template>
-                                    </ul>
-                                </div>
-                            </div>
-                        </td>
-                        <td colspan="4" class="p-4 text-xs text-slate-500 italic hidden lg:table-cell">
-                            Adding to Debit Invoice.
-                        </td>
-                    </tr>
 
                 </tbody>
             </table>

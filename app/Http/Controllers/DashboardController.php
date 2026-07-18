@@ -16,13 +16,20 @@ class DashboardController extends Controller
         $salesToday = \App\Models\Sale::whereDate('sale_date', today())->sum('grand_total');
         // $salesMonth = \App\Models\Sale::whereMonth('created_at', now()->month)->sum('grand_total'); // Can be used for charts
 
+        $todaySales = \App\Models\Sale::whereDate('sale_date', today())
+            ->with('customer:id,name')
+            ->withCount('items')
+            ->latest('sale_date')
+            ->get();
+
         // Placeholder Data for KPIs (Hydrated with Real Sales)
         $kpis = [
-            'daily_sales' => $salesToday, // Real Data
-            'cash_in_hand' => 32000, // Still static, can link to GL if needed later
-            'receivables' => 18500, // Still static
-            'low_stock_count' => \App\Models\Item::whereNotNull('min_stock_level')->where('min_stock_level', '>', 0)->whereColumn('on_hand', '<', 'min_stock_level')->count(),
-            'expiring_count' => 4, // items
+            'daily_sales'        => $salesToday,          // Real Data
+            'daily_transactions' => $todaySales->count(), // Real Data
+            'cash_in_hand'       => 32000,                // Still static, can link to GL if needed later
+            'receivables'        => 18500,                // Still static
+            'low_stock_count'    => \App\Models\Item::whereNotNull('min_stock_level')->where('min_stock_level', '>', 0)->whereColumn('on_hand', '<', 'min_stock_level')->count(),
+            'expiring_count'     => 4,                    // items
         ];
 
         // Placeholder Data for Charts
@@ -78,6 +85,6 @@ class DashboardController extends Controller
             ['action' => 'Return', 'description' => 'Item returned #REC-009', 'time' => '1 day ago', 'icon' => 'fa-undo', 'color' => 'text-red-600', 'bg' => 'bg-red-100'],
         ];
 
-        return view('dashboard', compact('user', 'store', 'kpis', 'salesData', 'lowStockItems', 'expiringItems', 'chartData', 'recentActivities'));
+        return view('dashboard', compact('user', 'store', 'kpis', 'salesData', 'lowStockItems', 'expiringItems', 'chartData', 'recentActivities', 'todaySales'));
     }
 }

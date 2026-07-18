@@ -22,6 +22,63 @@ class ItemController extends Controller
         return view('items.index', compact('items', 'search'));
     }
 
+    public function show($id)
+    {
+        $item = Item::with('department')->findOrFail($id);
+
+        // Fetch Purchase History (Batches) with Suppliers via purchase_items -> purchases -> suppliers
+        $batches = \App\Models\Batch::where('batches.item_id', $id)
+            ->leftJoin('purchase_items', function($join) {
+                $join->on('batches.batch_no', '=', 'purchase_items.batch_no')
+                     ->on('batches.item_id', '=', 'purchase_items.item_id');
+            })
+            ->leftJoin('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
+            ->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
+            ->select(
+                'batches.*', 
+                'suppliers.name as supplier_name'
+            )
+            ->orderBy('batches.received_at', 'desc')
+            ->get();
+
+        // Calculate average cost (weighted) for active stock
+        $activeBatches = $batches->where('quantity_available', '>', 0);
+        $totalActiveQty = $activeBatches->sum('quantity_available');
+        $totalActiveValue = $activeBatches->sum(function ($batch) {
+            return $batch->quantity_available * $batch->cost_price;
+        });
+        
+        $averageCost = $totalActiveQty > 0 ? $totalActiveValue / $totalActiveQty : $item->cost_rate;
+
+        // Fetch Sales History
+        $salesHistory = \App\Models\SaleItem::with(['sale', 'batch'])
+            ->where('sale_items.item_id', $id)
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->select('sale_items.*', 'sales.sale_date as sale_date', 'sales.invoice_no')
+            ->orderBy('sales.sale_date', 'desc')
+            ->orderBy('sales.id', 'desc')
+            ->get();
+
+        // Calculate totals
+        $totalQtySold = $salesHistory->sum('qty');
+        $totalRevenue = $salesHistory->sum('total');
+        
+        $totalProfit = $salesHistory->sum(function ($saleItem) use ($item) {
+            $cost = $saleItem->batch ? $saleItem->batch->cost_price : $item->cost_rate;
+            return $saleItem->total - ($saleItem->qty * $cost);
+        });
+
+        return view('items.show', compact(
+            'item', 
+            'batches', 
+            'salesHistory', 
+            'averageCost', 
+            'totalQtySold', 
+            'totalRevenue', 
+            'totalProfit'
+        ));
+    }
+
     public function create()
     {
         return view('items.create');
