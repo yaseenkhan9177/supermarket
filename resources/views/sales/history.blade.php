@@ -23,6 +23,9 @@
         </div>
     </div>
 
+    {{-- Date Range Filter --}}
+    @include('partials.date_range_picker')
+
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
         <a href="{{ route('sales.history', ['type' => 'all']) }}"
@@ -105,6 +108,7 @@
                         <th class="px-6 py-4">Invoice #</th>
                         <th class="px-6 py-4">Date</th>
                         <th class="px-6 py-4">Customer</th>
+                        <th class="px-6 py-4">Cashier</th>
                         <th class="px-6 py-4">Type</th>
                         <th class="px-6 py-4 text-right">Amount</th>
                         <th class="px-6 py-4 text-center">Action</th>
@@ -125,6 +129,9 @@
                             @else
                             <span class="text-slate-400 italic">Walk-in Customer</span>
                             @endif
+                        </td>
+                        <td class="px-6 py-4 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            {{ $sale->user->name ?? 'Staff' }}
                         </td>
                         <td class="px-6 py-4">
                             @if($sale->payment_mode === 'Cash')

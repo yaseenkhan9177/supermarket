@@ -16,6 +16,9 @@ class Customer extends Model
         'credit_limit',
         'balance',
         'store_credit',
+        'status',
+        'written_off_at',
+        'written_off_by',
     ];
 
     public function debitSales()
@@ -38,5 +41,15 @@ class Customer extends Model
     public function refunds()
     {
         return $this->hasMany(Refund::class);
+    }
+
+    public function ledgerEntries()
+    {
+        return $this->hasMany(CustomerLedgerEntry::class);
+    }
+
+    public function writtenOffBy()
+    {
+        return $this->belongsTo(User::class, 'written_off_by');
     }
 }

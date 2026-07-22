@@ -7,6 +7,7 @@ use App\Models\Supplier;
 use App\Models\SupplierReturn;
 use App\Models\SupplierReturnItem;
 use App\Models\SupplierLedger;
+use App\Models\SupplierLedgerEntry;
 use App\Models\Account;
 use App\Models\Item;
 use App\Models\Batch;
@@ -181,6 +182,15 @@ class SupplierReturnController extends Controller
                         'balance'        => $supplier->fresh()->current_balance,
                     ]);
 
+                    SupplierLedgerEntry::create([
+                        'supplier_id'   => $supplier->id,
+                        'type'          => 'return_to_supplier',
+                        'amount'        => -$totalValue,
+                        'balance_after' => $supplier->fresh()->current_balance,
+                        'note'          => 'Cash Refund for Return #' . $returnNo . ' → Account: ' . $account->name,
+                        'created_by'    => auth()->id(),
+                    ]);
+
                 } else {
                     // Scenario B: Store Credit → reduce supplier balance (into negative)
                     $supplier->decrement('current_balance', $totalValue);
@@ -195,6 +205,15 @@ class SupplierReturnController extends Controller
                         'debit'          => $totalValue,
                         'credit'         => 0,
                         'balance'        => $supplier->fresh()->current_balance,
+                    ]);
+
+                    SupplierLedgerEntry::create([
+                        'supplier_id'   => $supplier->id,
+                        'type'          => 'return_to_supplier',
+                        'amount'        => -$totalValue,
+                        'balance_after' => $supplier->fresh()->current_balance,
+                        'note'          => 'Store Credit for Return #' . $returnNo . ' (Rs. ' . number_format($totalValue, 2) . ' to be applied on next bill)',
+                        'created_by'    => auth()->id(),
                     ]);
                 }
             });

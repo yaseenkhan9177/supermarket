@@ -12,6 +12,7 @@ use App\Models\Item;
 use App\Models\Supplier;
 use App\Models\Batch;
 use App\Models\SupplierLedger;
+use App\Models\SupplierLedgerEntry;
 use App\Models\Account;
 use App\Models\Wallet;
 use App\Models\CompanySetting;
@@ -255,6 +256,15 @@ class PurchaseController extends Controller
                         'credit'         => 0,
                         'balance'        => $supplier->fresh()->current_balance,
                     ]);
+
+                    SupplierLedgerEntry::create([
+                        'supplier_id'   => $supplier->id,
+                        'type'          => 'return_to_supplier',
+                        'amount'        => -$creditApplied,
+                        'balance_after' => $supplier->fresh()->current_balance,
+                        'note'          => 'Return Credit Applied on Bill #' . $purchase->purchase_no,
+                        'created_by'    => auth()->id(),
+                    ]);
                 }
 
                 // Log the purchase payment in supplier ledger
@@ -268,6 +278,15 @@ class PurchaseController extends Controller
                     'debit'          => 0,
                     'credit'         => $netTotal,
                     'balance'        => $supplier->fresh()->current_balance,
+                ]);
+
+                SupplierLedgerEntry::create([
+                    'supplier_id'   => $supplier->id,
+                    'type'          => 'purchase',
+                    'amount'        => $netTotal,
+                    'balance_after' => $supplier->fresh()->current_balance,
+                    'note'          => 'Purchase Inv: ' . $purchase->purchase_no . ($creditApplied > 0 ? ' (Credit Rs.' . number_format($creditApplied, 2) . ' Applied)' : ''),
+                    'created_by'    => auth()->id(),
                 ]);
 
                 // ── 9. Deduct from active wallet ──────────────────────────────────

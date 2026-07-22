@@ -130,6 +130,8 @@
             </div>
 
             <div class="flex items-center gap-4">
+                @include('partials.global_search')
+
                 @yield('navbar_actions')
 
                 {{-- ======================================================
@@ -158,19 +160,44 @@
                 @endhasanyrole
 
                 {{-- ======================================================
-                     REPORTS — visible to: owner, manager
+                     REPORTS — visible to: owner, manager (dropdown)
                      ====================================================== --}}
                 @hasanyrole('owner|manager')
-                <a href="{{ route('reports.index') }}" id="nav-reports" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
-                    <i class="fas fa-chart-pie"></i>
-                    Reports
-                </a>
+                <div x-data="{ open: false }" @click.away="open = false" class="relative">
+                    <button @click="open = !open" id="nav-reports-btn" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
+                        <i class="fas fa-chart-pie"></i>
+                        Reports <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                    </button>
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute right-0 mt-2 w-52 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                        <div class="py-1" role="menu">
+                            <a href="{{ route('reports.index') }}" id="nav-reports" class="flex items-center gap-2 text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-chart-bar w-4 text-center"></i> All Reports
+                            </a>
+                            <a href="{{ route('reports.profit-loss') }}" id="nav-profit-loss" class="flex items-center gap-2 text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-file-invoice-dollar w-4 text-center"></i> Profit & Loss
+                            </a>
+                            <a href="{{ route('reports.daily-closing') }}" id="nav-daily-closing" class="flex items-center gap-2 text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-cash-register w-4 text-center"></i> Daily Closing
+                            </a>
+                            @role('owner')
+                            <a href="{{ route('reports.audit-log') }}" id="nav-audit-log" class="flex items-center gap-2 text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-shield-alt w-4 text-center"></i> Audit Log
+                            </a>
+                            @endrole
+                        </div>
+                    </div>
+                </div>
                 @endhasanyrole
 
                 {{-- ======================================================
                      GODAMS — visible to: owner, manager, warehouse
                      ====================================================== --}}
                 @hasanyrole('owner|manager|warehouse')
+                <a href="{{ route('purchase-orders.index') }}" id="nav-po" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
+                    <i class="fas fa-file-invoice"></i>
+                    Purchase Orders
+                </a>
+
                 <a href="{{ route('godams.index') }}" id="nav-godams" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
                     <i class="fas fa-warehouse"></i>
                     Godams
@@ -204,6 +231,10 @@
                             </a>
                             <a href="{{ route('godams.index') }}" id="nav-admin-godams" class="flex items-center gap-2 text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
                                 <i class="fas fa-warehouse w-4 text-center"></i> Godams
+                            </a>
+                            <hr class="my-1 border-slate-200 dark:border-slate-600">
+                            <a href="{{ route('settings.backup.download') }}" id="nav-backup" class="flex items-center gap-2 text-base text-orange-500 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-500/10 px-3 py-2 rounded-lg transition-colors font-semibold">
+                                <i class="fas fa-database w-4 text-center"></i> Download Backup
                             </a>
                         </div>
                     </div>
@@ -327,7 +358,7 @@
     @php
         // Resolve all routes safely — fall back to '#' if a route doesn't exist
         try { $rm_pos       = route('sales.pos');               } catch(\Exception $e) { $rm_pos       = '/sales'; }
-        try { $rm_purchase  = route('purchases.create');        } catch(\Exception $e) { $rm_purchase  = '#'; }
+        try { $rm_purchase  = route('purchase-orders.index');   } catch(\Exception $e) { $rm_purchase  = '/purchase-orders'; }
         try { $rm_transfer  = route('stock-transfers.create');  } catch(\Exception $e) { $rm_transfer  = '#'; }
         try { $rm_customer  = route('customers.create');        } catch(\Exception $e) { $rm_customer  = '#'; }
         try { $rm_supplier  = route('suppliers.create');        } catch(\Exception $e) { $rm_supplier  = '#'; }
@@ -573,11 +604,11 @@
             </a>
         </div>
 
-        {{-- 2. New Purchase --}}
+        {{-- 2. Purchase Orders (PO) --}}
         <div class="rm-item" data-idx="1">
-            <a href="{{ $rm_purchase }}" data-label="New Purchase">
+            <a href="{{ $rm_purchase }}" data-label="Purchase Orders (PO)">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-                <span class="rm-item-label">Purchase</span>
+                <span class="rm-item-label">PO Orders</span>
             </a>
         </div>
 

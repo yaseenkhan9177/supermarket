@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Item;
+use App\Models\Supplier;
+use App\Models\SupplierLedgerEntry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ItemController extends Controller
 {
@@ -206,21 +209,24 @@ class ItemController extends Controller
         };
 
         $map = [
-            'name'      => $findHeader(['name', 'description', 'item name', 'item_name', 'title']),
-            'bar_code'  => $findHeader(['bar_code', 'barcode', 'code', 'bar code']),
-            'type'      => $findHeader(['type', 'item_type', 'item type']),
-            'packing'   => $findHeader(['packing', 'category', 'department', 'dept']),
-            'cost'      => $findHeader(['cost', 'cost_price', 'cost price', 'cost_rate', 'cost rate']),
-            'sale'      => $findHeader(['sale', 'sale_price', 'sale price', 'sale_rate', 'sale rate', 'price']),
-            'trade'     => $findHeader(['trade', 'trade_rate', 'trade rate', 'trade_price', 'trade price']),
-            'h_price'   => $findHeader(['h_price', 'wholesale_price', 'wholesale price', 'wholesale', 'h price']),
-            'stock'     => $findHeader(['stock', 'quantity', 'qty', 'opening stock', 'opening_stock', 'on_hand', 'on hand']),
-            'min'       => $findHeader(['min', 'min_stock', 'min stock', 'minimum']),
-            'max'       => $findHeader(['max', 'max_stock', 'max stock', 'maximum']),
-            'disc'      => $findHeader(['disc', 'discount', 'discount_percent', 'discount percent']),
-            'openprice' => $findHeader(['openprice', 'open_price', 'open price']),
-            'taxrate'   => $findHeader(['taxrate', 'taxprate', 'tax_rate', 'tax rate', 'tax']),
-            'itemid'    => $findHeader(['itemid', 'item_id', 'imported_id', 'imported id', 'id']),
+            'name'          => $findHeader(['name', 'description', 'item name', 'item_name', 'title']),
+            'bar_code'      => $findHeader(['bar_code', 'barcode', 'code', 'bar code']),
+            'type'          => $findHeader(['type', 'item_type', 'item type']),
+            'packing'       => $findHeader(['packing', 'category', 'department', 'dept']),
+            'cost'          => $findHeader(['cost', 'cost_price', 'cost price', 'cost_rate', 'cost rate']),
+            'sale'          => $findHeader(['sale', 'sale_price', 'sale price', 'sale_rate', 'sale rate', 'price']),
+            'trade'         => $findHeader(['trade', 'trade_rate', 'trade rate', 'trade_price', 'trade price']),
+            'h_price'       => $findHeader(['h_price', 'wholesale_price', 'wholesale price', 'wholesale', 'h price']),
+            'stock'         => $findHeader(['stock', 'quantity', 'qty', 'opening stock', 'opening_stock', 'on_hand', 'on hand']),
+            'min'           => $findHeader(['min', 'min_stock', 'min stock', 'minimum']),
+            'max'           => $findHeader(['max', 'max_stock', 'max stock', 'maximum']),
+            'disc'          => $findHeader(['disc', 'discount', 'discount_percent', 'discount percent']),
+            'openprice'     => $findHeader(['openprice', 'open_price', 'open price']),
+            'taxrate'       => $findHeader(['taxrate', 'taxprate', 'tax_rate', 'tax rate', 'tax']),
+            'itemid'        => $findHeader(['itemid', 'item_id', 'imported_id', 'imported id', 'id']),
+            'supplier'      => $findHeader(['supplier', 'supplier_name', 'supplier name', 'vendor', 'vendor_name', 'vendor name']),
+            'supplier_code' => $findHeader(['supplier_code', 'supplier code', 'vendor_code', 'vendor code', 'supplier_id', 'supplier id']),
+            'due'           => $findHeader(['due', 'due_amount', 'due amount', 'balance', 'supplier_due', 'supplier due', 'payable']),
         ];
 
         if ($map['name'] === false) {
@@ -370,6 +376,25 @@ class ItemController extends Controller
                         $item->on_hand = \App\Models\Batch::where('item_id', $item->id)->where('quantity_available', '>', 0)->sum('quantity_available');
                         $item->save();
                     }
+
+                    $supplierName = ($map['supplier'] !== false && isset($row[$map['supplier']])) ? trim($row[$map['supplier']]) : '';
+                    $supplierCode = ($map['supplier_code'] !== false && isset($row[$map['supplier_code']])) ? trim($row[$map['supplier_code']]) : '';
+                    $dueVal       = ($map['due'] !== false && isset($row[$map['due']]) && $row[$map['due']] !== '') ? $row[$map['due']] : 0;
+                    $dueAmount    = is_numeric($dueVal) ? floatval($dueVal) : 0;
+
+                    if ($dueAmount > 0 && ($supplierName !== '' || $supplierCode !== '')) {
+                        $stockQtyForNote = isset($stockQty) ? $stockQty : 1;
+                        $this->resolveSupplierAndRecordLedger(
+                            $supplierName,
+                            $supplierCode,
+                            $dueAmount,
+                            $name,
+                            $stockQtyForNote,
+                            $item->cost_rate,
+                            $rowNumber,
+                            $file->getClientOriginalName()
+                        );
+                    }
                 }
                 \Illuminate\Support\Facades\DB::commit();
             } catch (\Exception $e) {
@@ -388,111 +413,179 @@ class ItemController extends Controller
         return view('items.import-preview', compact('categories', 'types'));
     }
     public function uploadPreview(Request $request)
-{
-    @ini_set('max_execution_time', 300);
-    @ini_set('memory_limit', '256M');
+    {
+        @ini_set('max_execution_time', 300);
+        @ini_set('memory_limit', '256M');
 
-    $request->validate([
-        'excel_file' => 'required|file|mimes:csv,txt|max:65536',
-    ]);
+        $request->validate([
+            'excel_file' => 'required|file|mimes:csv,txt|max:65536',
+        ]);
 
-    $file = $request->file('excel_file');
-    $handle = fopen($file->getRealPath(), 'r');
+        $file = $request->file('excel_file');
+        $handle = fopen($file->getRealPath(), 'r');
 
-    if (!$handle) {
-        return response()->json(['message' => 'Could not open file.'], 422);
-    }
-
-    $rows = [];
-    while (($row = fgetcsv($handle, 10000, ',')) !== false) {
-        $rows[] = $row;
-    }
-    fclose($handle);
-
-    if (count($rows) <= 1) {
-        return response()->json(['message' => 'File has no data rows.'], 422);
-    }
-
-    // Map headers
-    $headers = array_map(function($h) { return strtolower(trim((string)$h)); }, $rows[0]);
-
-    $findHeader = function(array $options) use ($headers) {
-        foreach ($options as $opt) {
-            $idx = array_search(strtolower(trim($opt)), $headers);
-            if ($idx !== false) return $idx;
-        }
-        return false;
-    };
-
-    $map = [
-        'name'     => $findHeader(['name', 'description', 'item name', 'item_name', 'title']),
-        'bar_code' => $findHeader(['bar_code', 'barcode', 'code', 'bar code', 'sku/code', 'sku']),
-        'type'     => $findHeader(['type', 'item_type', 'item type']),
-        'packing'  => $findHeader(['packing', 'category', 'department', 'dept']),
-        'cost'     => $findHeader(['cost', 'cost_price', 'cost price', 'cost_rate']),
-        'sale'     => $findHeader(['sale', 'sale_price', 'sale price', 'sale_rate', 'price']),
-        'stock'    => $findHeader(['stock', 'quantity', 'qty', 'opening stock', 'opening_stock', 'on_hand']),
-        'min'      => $findHeader(['min', 'min_stock', 'min stock', 'minimum', 'min stock level']),
-        'unit'     => $findHeader(['unit', 'uom', 'measure']),
-    ];
-
-    if ($map['name'] === false) {
-        return response()->json(['message' => 'Required column "Name" not found. Make sure your CSV has a "Name" column header.'], 422);
-    }
-
-    $previewRows = [];
-    $summary = ['ready' => 0, 'warnings' => 0, 'errors' => 0, 'total' => 0];
-
-    $existingCodes = \App\Models\Item::whereNotNull('code')->pluck('id', 'code')
-        ->mapWithKeys(fn($id, $code) => [strtolower(trim($code)) => $id])->toArray();
-    $existingNames = \App\Models\Item::pluck('id', 'description')
-        ->mapWithKeys(fn($id, $desc) => [strtolower(trim($desc)) => $id])->toArray();
-
-    for ($i = 1; $i < count($rows); $i++) {
-        $row = $rows[$i];
-
-        // Skip completely empty rows
-        if (empty(array_filter($row, fn($v) => trim($v) !== ''))) continue;
-
-        $name     = ($map['name'] !== false && isset($row[$map['name']])) ? trim($row[$map['name']]) : '';
-        $type     = ($map['type'] !== false && isset($row[$map['type']])) ? strtolower(trim($row[$map['type']])) : 'inventory';
-        $sku      = ($map['bar_code'] !== false && isset($row[$map['bar_code']])) ? trim($row[$map['bar_code']]) : '';
-        $category = ($map['packing'] !== false && isset($row[$map['packing']])) ? trim($row[$map['packing']]) : '';
-        $unit     = ($map['unit'] !== false && isset($row[$map['unit']])) ? trim($row[$map['unit']]) : '';
-        $price    = ($map['sale'] !== false && isset($row[$map['sale']]) && $row[$map['sale']] !== '') ? $row[$map['sale']] : 0;
-        $cost     = ($map['cost'] !== false && isset($row[$map['cost']]) && $row[$map['cost']] !== '') ? $row[$map['cost']] : 0;
-        $stock    = ($map['stock'] !== false && isset($row[$map['stock']]) && $row[$map['stock']] !== '') ? $row[$map['stock']] : 0;
-        $minStock = ($map['min'] !== false && isset($row[$map['min']]) && $row[$map['min']] !== '') ? $row[$map['min']] : 0;
-
-        $issues = []; $status = 'ready';
-
-        if (empty($name)) { $status = 'error'; $issues[] = 'Name is required.'; }
-        if (!in_array($type, ['inventory', 'service', 'package'])) { $status = 'error'; $issues[] = "Invalid type '{$type}'. Must be: inventory, service, or package."; }
-        if (!is_numeric($price)) { $status = 'error'; $issues[] = 'Sale Price must be numeric.'; }
-        if (!is_numeric($cost))  { $status = 'error'; $issues[] = 'Cost Price must be numeric.'; }
-        if (!is_numeric($stock)) { $status = 'error'; $issues[] = 'Stock must be numeric.'; }
-
-        if ($status !== 'error') {
-            if (!empty($sku) && isset($existingCodes[strtolower($sku)])) { $status = 'warning'; $issues[] = "SKU '{$sku}' already exists — will update."; }
-            elseif (!empty($name) && isset($existingNames[strtolower($name)])) { $status = 'warning'; $issues[] = "Name '{$name}' already exists."; }
-            if (empty($category)) { $status = 'warning'; $issues[] = 'Category is empty.'; }
+        if (!$handle) {
+            return response()->json(['message' => 'Could not open file.'], 422);
         }
 
-        if ($status === 'error') $summary['errors']++;
-        elseif ($status === 'warning') $summary['warnings']++;
-        else $summary['ready']++;
-        $summary['total']++;
+        $rows = [];
+        while (($row = fgetcsv($handle, 10000, ',')) !== false) {
+            $rows[] = $row;
+        }
+        fclose($handle);
 
-        $previewRows[] = [
-            'index' => $i + 1, 'name' => $name, 'type' => $type, 'sku' => $sku,
-            'category' => $category, 'unit' => $unit, 'price' => floatval($price),
-            'cost' => floatval($cost), 'stock' => floatval($stock), 'min_stock' => floatval($minStock),
-            'status' => $status, 'issues' => $issues,
+        if (count($rows) <= 1) {
+            return response()->json(['message' => 'File has no data rows.'], 422);
+        }
+
+        // Map headers
+        $headers = array_map(function($h) { return strtolower(trim((string)$h)); }, $rows[0]);
+
+        $findHeader = function(array $options) use ($headers) {
+            foreach ($options as $opt) {
+                $idx = array_search(strtolower(trim($opt)), $headers);
+                if ($idx !== false) return $idx;
+            }
+            return false;
+        };
+
+        $map = [
+            'name'          => $findHeader(['name', 'description', 'item name', 'item_name', 'title']),
+            'bar_code'      => $findHeader(['bar_code', 'barcode', 'code', 'bar code', 'sku/code', 'sku']),
+            'type'          => $findHeader(['type', 'item_type', 'item type']),
+            'packing'       => $findHeader(['packing', 'category', 'department', 'dept']),
+            'cost'          => $findHeader(['cost', 'cost_price', 'cost price', 'cost_rate']),
+            'sale'          => $findHeader(['sale', 'sale_price', 'sale price', 'sale_rate', 'price']),
+            'stock'         => $findHeader(['stock', 'quantity', 'qty', 'opening stock', 'opening_stock', 'on_hand']),
+            'min'           => $findHeader(['min', 'min_stock', 'min stock', 'minimum', 'min stock level']),
+            'unit'          => $findHeader(['unit', 'uom', 'measure']),
+            'supplier'      => $findHeader(['supplier', 'supplier_name', 'supplier name', 'vendor', 'vendor_name', 'vendor name']),
+            'supplier_code' => $findHeader(['supplier_code', 'supplier code', 'vendor_code', 'vendor code', 'supplier_id', 'supplier id']),
+            'due'           => $findHeader(['due', 'due_amount', 'due amount', 'balance', 'supplier_due', 'supplier due', 'payable']),
         ];
-    }
 
-    return response()->json(['rows' => $previewRows, 'summary' => $summary]);
-}
+        if ($map['name'] === false) {
+            return response()->json(['message' => 'Required column "Name" not found. Make sure your CSV has a "Name" column header.'], 422);
+        }
+
+        $previewRows = [];
+        $summary = ['ready' => 0, 'warnings' => 0, 'errors' => 0, 'total' => 0];
+
+        $existingCodes = \App\Models\Item::whereNotNull('code')->pluck('id', 'code')
+            ->mapWithKeys(fn($id, $code) => [strtolower(trim($code)) => $id])->toArray();
+        $existingNames = \App\Models\Item::pluck('id', 'description')
+            ->mapWithKeys(fn($id, $desc) => [strtolower(trim($desc)) => $id])->toArray();
+
+        $suppliersByCode = Supplier::whereNotNull('code')->get()
+            ->mapWithKeys(fn($s) => [strtolower(trim($s->code)) => $s])->toArray();
+        $suppliersByName = Supplier::get()
+            ->mapWithKeys(fn($s) => [strtolower(trim($s->name)) => $s])->toArray();
+
+        $supplierGroups = [];
+
+        for ($i = 1; $i < count($rows); $i++) {
+            $row = $rows[$i];
+
+            // Skip completely empty rows
+            if (empty(array_filter($row, fn($v) => trim($v) !== ''))) continue;
+
+            $name         = ($map['name'] !== false && isset($row[$map['name']])) ? trim($row[$map['name']]) : '';
+            $type         = ($map['type'] !== false && isset($row[$map['type']])) ? strtolower(trim($row[$map['type']])) : 'inventory';
+            $sku          = ($map['bar_code'] !== false && isset($row[$map['bar_code']])) ? trim($row[$map['bar_code']]) : '';
+            $category     = ($map['packing'] !== false && isset($row[$map['packing']])) ? trim($row[$map['packing']]) : '';
+            $unit         = ($map['unit'] !== false && isset($row[$map['unit']])) ? trim($row[$map['unit']]) : '';
+            $price        = ($map['sale'] !== false && isset($row[$map['sale']]) && $row[$map['sale']] !== '') ? $row[$map['sale']] : 0;
+            $cost         = ($map['cost'] !== false && isset($row[$map['cost']]) && $row[$map['cost']] !== '') ? $row[$map['cost']] : 0;
+            $stock        = ($map['stock'] !== false && isset($row[$map['stock']]) && $row[$map['stock']] !== '') ? $row[$map['stock']] : 0;
+            $minStock     = ($map['min'] !== false && isset($row[$map['min']]) && $row[$map['min']] !== '') ? $row[$map['min']] : 0;
+
+            $supplierName = ($map['supplier'] !== false && isset($row[$map['supplier']])) ? trim($row[$map['supplier']]) : '';
+            $supplierCode = ($map['supplier_code'] !== false && isset($row[$map['supplier_code']])) ? trim($row[$map['supplier_code']]) : '';
+            $dueAmountVal = ($map['due'] !== false && isset($row[$map['due']]) && $row[$map['due']] !== '') ? $row[$map['due']] : 0;
+
+            $issues = []; $status = 'ready';
+
+            if (empty($name)) { $status = 'error'; $issues[] = 'Name is required.'; }
+            if (!in_array($type, ['inventory', 'service', 'package'])) { $status = 'error'; $issues[] = "Invalid type '{$type}'. Must be: inventory, service, or package."; }
+            if (!is_numeric($price)) { $status = 'error'; $issues[] = 'Sale Price must be numeric.'; }
+            if (!is_numeric($cost))  { $status = 'error'; $issues[] = 'Cost Price must be numeric.'; }
+            if (!is_numeric($stock)) { $status = 'error'; $issues[] = 'Stock must be numeric.'; }
+            if ($dueAmountVal !== '' && !is_numeric($dueAmountVal)) { $status = 'error'; $issues[] = 'Due Amount must be numeric.'; }
+
+            $dueAmount = is_numeric($dueAmountVal) ? floatval($dueAmountVal) : 0;
+
+            if ($status !== 'error') {
+                if (!empty($sku) && isset($existingCodes[strtolower($sku)])) { $status = 'warning'; $issues[] = "SKU '{$sku}' already exists — will update."; }
+                elseif (!empty($name) && isset($existingNames[strtolower($name)])) { $status = 'warning'; $issues[] = "Name '{$name}' already exists."; }
+                if (empty($category)) { $status = 'warning'; $issues[] = 'Category is empty.'; }
+            }
+
+            if ($status === 'error') $summary['errors']++;
+            elseif ($status === 'warning') $summary['warnings']++;
+            else $summary['ready']++;
+            $summary['total']++;
+
+            $previewRows[] = [
+                'index'         => $i + 1,
+                'name'          => $name,
+                'type'          => $type,
+                'sku'           => $sku,
+                'category'      => $category,
+                'unit'          => $unit,
+                'price'         => floatval($price),
+                'cost'          => floatval($cost),
+                'stock'         => floatval($stock),
+                'min_stock'     => floatval($minStock),
+                'supplier_name' => $supplierName,
+                'supplier_code' => $supplierCode,
+                'due'           => $dueAmount,
+                'status'        => $status,
+                'issues'        => $issues,
+            ];
+
+            if ($status !== 'error' && $dueAmount > 0 && ($supplierName !== '' || $supplierCode !== '')) {
+                $groupKey = strtolower($supplierCode !== '' ? $supplierCode : $supplierName);
+                if (!isset($supplierGroups[$groupKey])) {
+                    $supp = null;
+                    if ($supplierCode !== '' && isset($suppliersByCode[strtolower($supplierCode)])) {
+                        $supp = $suppliersByCode[strtolower($supplierCode)];
+                    } elseif ($supplierName !== '' && isset($suppliersByName[strtolower($supplierName)])) {
+                        $supp = $suppliersByName[strtolower($supplierName)];
+                    }
+
+                    $supplierGroups[$groupKey] = [
+                        'name'             => $supp ? $supp->name : ($supplierName ?: $supplierCode),
+                        'code'             => $supp ? $supp->code : ($supplierCode ?: 'Auto-Gen'),
+                        'is_new'           => $supp === null,
+                        'current_balance'  => $supp ? floatval($supp->current_balance) : 0.0,
+                        'due_total'        => 0.0,
+                        'rows'             => [],
+                    ];
+                }
+                $supplierGroups[$groupKey]['due_total'] += $dueAmount;
+                $supplierGroups[$groupKey]['rows'][] = [
+                    'row'  => $i + 1,
+                    'item' => $name,
+                    'due'  => $dueAmount,
+                ];
+            }
+        }
+
+        $supplierDues = [];
+        $totalSupplierDues = 0.0;
+        foreach ($supplierGroups as $group) {
+            $group['projected_balance'] = $group['current_balance'] + $group['due_total'];
+            $supplierDues[] = $group;
+            $totalSupplierDues += $group['due_total'];
+        }
+
+        return response()->json([
+            'rows'                => $previewRows,
+            'summary'             => $summary,
+            'supplier_dues'       => $supplierDues,
+            'total_supplier_dues' => $totalSupplierDues,
+        ]);
+    }
 
     public function importChunk(Request $request)
     {
@@ -501,6 +594,7 @@ class ItemController extends Controller
 
         $rows = $request->input('rows', []);
         $chunkIndex = $request->input('chunk_index', 0);
+        $fileName = $request->input('file_name', 'stock_upload.csv');
         $imported = 0; $skipped = 0; $failed = 0;
 
         $departments = \App\Models\Department::all()->pluck('id', 'name')->mapWithKeys(function ($id, $name) {
@@ -516,7 +610,7 @@ class ItemController extends Controller
         \Illuminate\Support\Facades\DB::beginTransaction();
         try {
             foreach ($rows as $rowData) {
-                if ($rowData['status'] === 'error') { $skipped++; continue; }
+                if (isset($rowData['status']) && $rowData['status'] === 'error') { $skipped++; continue; }
 
                 $sku = isset($rowData['sku']) ? trim($rowData['sku']) : '';
                 $name = isset($rowData['name']) ? trim($rowData['name']) : '';
@@ -598,6 +692,24 @@ class ItemController extends Controller
                     $item->save();
                 }
 
+                $supplierName = isset($rowData['supplier_name']) ? trim($rowData['supplier_name']) : '';
+                $supplierCode = isset($rowData['supplier_code']) ? trim($rowData['supplier_code']) : '';
+                $dueAmount    = isset($rowData['due']) ? floatval($rowData['due']) : 0;
+                $rowNumber    = isset($rowData['index']) ? intval($rowData['index']) : 0;
+
+                if ($dueAmount > 0 && ($supplierName !== '' || $supplierCode !== '')) {
+                    $this->resolveSupplierAndRecordLedger(
+                        $supplierName,
+                        $supplierCode,
+                        $dueAmount,
+                        $name,
+                        $stockQty,
+                        isset($rowData['cost']) ? floatval($rowData['cost']) : ($isUpdate ? $item->cost_rate : 0),
+                        $rowNumber,
+                        $fileName
+                    );
+                }
+
                 $imported++;
             }
             \Illuminate\Support\Facades\DB::commit();
@@ -608,6 +720,70 @@ class ItemController extends Controller
         }
 
         return response()->json(['imported' => $imported, 'skipped' => $skipped, 'failed' => $failed, 'chunk_index' => $chunkIndex]);
+    }
+
+    protected function resolveSupplierAndRecordLedger(
+        ?string $supplierName,
+        ?string $supplierCode,
+        float $dueAmount,
+        string $itemName,
+        float $qty,
+        float $costPrice,
+        int $rowNumber,
+        string $fileName
+    ): void {
+        if ($dueAmount <= 0) {
+            return;
+        }
+
+        $supplierName = trim((string)$supplierName);
+        $supplierCode = trim((string)$supplierCode);
+
+        if ($supplierName === '' && $supplierCode === '') {
+            return;
+        }
+
+        $supplier = null;
+
+        // 1. Match by code first (exact case-insensitive)
+        if ($supplierCode !== '') {
+            $supplier = Supplier::whereRaw('LOWER(code) = ?', [strtolower($supplierCode)])->first();
+        }
+
+        // 2. Fallback to exact name match (exact case-insensitive)
+        if (!$supplier && $supplierName !== '') {
+            $supplier = Supplier::whereRaw('LOWER(name) = ?', [strtolower($supplierName)])->first();
+        }
+
+        // 3. Create new supplier if no match exists
+        if (!$supplier) {
+            $newCode = $supplierCode !== '' ? strtoupper($supplierCode) : ('SUP-' . strtoupper(Str::random(6)));
+            $newName = $supplierName !== '' ? $supplierName : $newCode;
+
+            $supplier = Supplier::create([
+                'name'            => $newName,
+                'code'            => $newCode,
+                'current_balance' => 0,
+                'opening_balance' => 0,
+            ]);
+        }
+
+        // Increase payable balance
+        $supplier->current_balance += $dueAmount;
+        $supplier->save();
+
+        // Create supplier ledger entry with item detail note
+        $formattedCost = number_format($costPrice, 2, '.', '');
+        $note = "Imported via stock upload - {$fileName} - Row #{$rowNumber} ({$itemName} x {$qty} @ Rs.{$formattedCost})";
+
+        SupplierLedgerEntry::create([
+            'supplier_id'   => $supplier->id,
+            'type'          => 'purchase',
+            'amount'        => $dueAmount,
+            'balance_after' => $supplier->current_balance,
+            'note'          => $note,
+            'created_by'    => auth()->id(),
+        ]);
     }
 
     public function downloadSample()
@@ -621,10 +797,10 @@ class ItemController extends Controller
         ];
 
         $rows = [
-            ['Name*', 'Type*', 'SKU/Code', 'Barcode', 'Category', 'Unit', 'Sale Price', 'Cost Price', 'Opening Stock', 'Min Stock Level', 'Description'],
-            ['Sugar 1kg', 'inventory', 'SKU001', '123456789', 'Grocery', 'KG', '150', '120', '100', '20', 'White refined sugar'],
-            ['Delivery Service', 'service', 'SRV001', '', 'Services', '', '500', '0', '0', '0', 'Home delivery service'],
-            ['Family Bundle', 'package', 'PKG001', '', 'Packages', 'PCS', '999', '800', '50', '5', 'Bundle of essential items'],
+            ['Name*', 'Type*', 'SKU/Code', 'Barcode', 'Category', 'Unit', 'Sale Price', 'Cost Price', 'Opening Stock', 'Min Stock Level', 'Supplier Name', 'Supplier Code', 'Due Amount', 'Description'],
+            ['Sugar 1kg', 'inventory', 'SKU001', '123456789', 'Grocery', 'KG', '150', '120', '100', '20', 'ABC Distributors', 'SUP-001', '5000', 'White refined sugar'],
+            ['Delivery Service', 'service', 'SRV001', '', 'Services', '', '500', '0', '0', '0', '', '', '0', 'Home delivery service'],
+            ['Family Bundle', 'package', 'PKG001', '', 'Packages', 'PCS', '999', '800', '50', '5', 'Global Suppliers', 'SUP-002', '12000', 'Bundle of essential items'],
         ];
 
         $callback = function () use ($rows) {

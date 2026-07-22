@@ -1,299 +1,161 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('layouts.admin')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Order | OwnStore PRO</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+@section('title', 'Create Purchase Order')
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- SweetAlert for nice alerts -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</head>
+@section('content')
+<div class="max-w-5xl mx-auto pb-16" x-data="createPoForm()">
 
-<body class="bg-gray-900 font-sans text-gray-200" x-data="poForm(@json(session('success')), @json(session('error')))">
-
-@if(session('success'))
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        Swal.fire({
-            title: 'Success!',
-            text: "{{ session('success') }}",
-            icon: 'success',
-            background: '#1f2937',
-            color: '#fff',
-            confirmButtonColor: '#0284c7'
-        });
-    });
-</script>
-@endif
-
-@if(session('error'))
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        Swal.fire({
-            title: 'Error!',
-            text: "{{ session('error') }}",
-            icon: 'error',
-            background: '#1f2937',
-            color: '#fff',
-            confirmButtonColor: '#0284c7'
-        });
-    });
-</script>
-@endif
-
-    <nav class="bg-white border-b border-gray-200 px-6 py-3 shadow-sm sticky top-0 z-50 mb-8">
-        <div class="container mx-auto max-w-[1400px] flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-full bg-sky-600 flex items-center justify-center text-white shadow-md">
-                    <i class="fas fa-clipboard-list text-lg"></i>
-                </div>
-                <div class="flex flex-col">
-                    <h1 class="text-xl font-extrabold text-gray-900 leading-none tracking-tight">
-                        OwnStore <span class="text-sky-600">PRO</span>
-                    </h1>
-                    <span class="text-xs text-gray-500 font-medium mt-0.5">Purchase Order (Draft / Request)</span>
-                </div>
-            </div>
-            <div>
-                <a href="/dashboard" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-800 hover:bg-black text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
-                    <i class="fas fa-home"></i> Dashboard
+    {{-- Header --}}
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <div class="flex items-center gap-2 text-sm text-slate-400 mb-1">
+                <a href="{{ route('dashboard') }}" class="hover:text-slate-200 flex items-center gap-1">
+                    <i class="fas fa-home text-xs"></i> Dashboard
+                </a>
+                <span>/</span>
+                <a href="{{ route('purchase-orders.index') }}" class="hover:text-slate-200 flex items-center gap-1">
+                    Purchase Orders
                 </a>
             </div>
+            <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Create Purchase Order</h1>
         </div>
-    </nav>
-
-    <div class="container mx-auto px-6 max-w-[1400px] pb-32">
-
-        <form action="/purchase-orders/store" method="POST" @submit.prevent="submitForm">
-            @csrf
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-sky-500"></div>
-                    <div class="flex items-center gap-2 mb-4 border-b border-gray-700 pb-2">
-                        <i class="fas fa-truck text-sky-400"></i>
-                        <h3 class="text-white font-bold">Order To (Vendor)</h3>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Select Supplier</label>
-                            <select x-model="supplierId" name="supplier_id" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm text-white focus:border-sky-500 outline-none">
-                                <option value="">-- Choose Supplier --</option>
-                                @foreach($suppliers as $sup)
-                                <option value="{{ $sup->id }}">{{ $sup->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="bg-sky-900/30 p-3 rounded border border-sky-800 text-xs text-sky-200">
-                            <i class="fas fa-info-circle mr-1"></i> This creates a request only. Inventory will <strong>NOT</strong> increase until you convert this to a Bill.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-lg text-gray-800">
-                    <div class="flex items-center gap-2 mb-4 border-b pb-2">
-                        <i class="fas fa-calendar-check text-sky-600"></i>
-                        <h3 class="font-bold text-gray-900">Order Dates</h3>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">PO Number</label>
-                            <input type="text" name="po_number" value="PO-{{ date('Y') }}-{{ rand(100,999) }}" readonly class="w-full bg-gray-100 border border-gray-300 rounded p-2 text-sm font-mono">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Order Date</label>
-                            <input type="date" name="order_date" value="{{ date('Y-m-d') }}" class="w-full bg-white border border-gray-300 rounded p-2 text-sm">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Expected Delivery</label>
-                        <input type="date" name="delivery_date" class="w-full bg-white border border-gray-300 rounded p-2 text-sm">
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden text-gray-800 mb-6">
-                <div class="p-4 bg-sky-50 border-b border-sky-100 flex justify-between items-center">
-                    <h3 class="font-bold text-sky-900"><i class="fas fa-box mr-2"></i>Items Ordered</h3>
-                    <button type="button" @click="addRow()" class="bg-sky-600 text-white hover:bg-sky-700 px-4 py-2 rounded text-sm font-bold transition shadow">
-                        <i class="fas fa-plus mr-1"></i> Add Item
-                    </button>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="text-xs font-bold text-gray-500 uppercase bg-gray-50 border-b">
-                                <th class="p-3 w-10">#</th>
-                                <th class="p-3 w-32">Barcode</th>
-                                <th class="p-3">Item Description</th>
-                                <th class="p-3 w-24 text-center">Qty</th>
-                                <th class="p-3 w-32 text-right">Est. Cost</th>
-                                <th class="p-3 w-32 text-right">Est. Total</th>
-                                <th class="p-3 w-28 text-center">In Stock</th>
-                                <th class="p-3 w-10"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template x-for="(row, index) in rows" :key="index">
-                                <tr class="border-b hover:bg-sky-50 transition">
-                                    <td class="p-3 text-center text-gray-400" x-text="index + 1"></td>
-
-                                    <td class="p-3">
-                                        <input type="text" :name="`items[${index}][code]`" x-model="row.code" @keydown.enter.prevent="fetchProduct(index)" @blur="fetchProduct(index)" class="w-full p-1 border rounded text-xs text-gray-950" placeholder="Scan...">
-                                    </td>
-
-                                    <td class="p-3">
-                                        <input type="text" :name="`items[${index}][name]`" x-model="row.name" class="w-full p-1 border rounded text-xs bg-white text-gray-950" placeholder="Item description...">
-                                        <span class="text-[10px] text-gray-400">Stock: <span :class="row.stock > 0 ? 'text-green-600 font-bold' : 'text-red-500 font-bold'" x-text="row.stock ?? '—'"></span></span>
-                                        <input type="hidden" :name="`items[${index}][item_id]`" x-model="row.item_id">
-                                    </td>
-
-                                    <td class="p-3">
-                                        <input type="number" x-model="row.qty" :name="`items[${index}][qty]`" class="w-full p-1 border rounded text-center text-sm font-bold text-sky-700">
-                                    </td>
-
-                                    <td class="p-3">
-                                        <input type="number" step="0.01" x-model="row.rate" :name="`items[${index}][rate]`" class="w-full p-1 border rounded text-right text-sm text-gray-950">
-                                    </td>
-
-                                    <td class="p-3 text-right font-bold text-gray-900">
-                                        <span x-text="(row.qty * row.rate).toFixed(2)"></span>
-                                    </td>
-
-                                    <td class="p-3 text-center">
-                                        <span :class="row.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'" class="text-xs font-bold px-2 py-0.5 rounded-full" x-text="row.stock > 0 ? row.stock : 'N/A'"></span>
-                                    </td>
-
-                                    <td class="p-3 text-center">
-                                        <button type="button" @click="removeRow(index)" class="text-gray-300 hover:text-red-500">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="fixed bottom-0 left-0 w-full bg-white border-t p-4 shadow-[0_-5px_15px_rgba(0,0,0,0.1)] z-40">
-                <div class="container mx-auto max-w-[1400px] flex justify-between items-center">
-
-                    <div class="w-1/3">
-                        <input type="text" name="memo" placeholder="Internal Note (e.g. Call before delivery)" class="w-full border-b border-gray-300 focus:border-sky-500 outline-none text-sm py-2">
-                    </div>
-
-                    <div class="flex items-center gap-6">
-                        <div class="text-right">
-                            <span class="block text-[10px] font-bold text-gray-400 uppercase">Estimated Total</span>
-                            <span class="block text-2xl font-bold text-sky-600" x-text="'Rs. ' + subtotal"></span>
-                        </div>
-
-                        <div class="h-10 w-px bg-gray-300"></div>
-
-                        <button type="submit" class="px-8 py-3 bg-sky-600 text-white font-bold rounded shadow hover:bg-sky-700 transition transform hover:-translate-y-1">
-                            <i class="fas fa-paper-plane mr-2"></i> Create Order
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-        </form>
+        <a href="{{ route('dashboard') }}" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-transform hover:scale-105">
+            <i class="fas fa-home"></i> Dashboard
+        </a>
     </div>
 
-    <script>
-        function poForm(sessionSuccess, sessionError) {
-            return {
-                supplierId: '',
-                rows: [{
-                    item_id: '',
-                    code: '',
-                    name: '',
-                    qty: 1,
-                    rate: 0,
-                    stock: null
-                }],
+    <form method="POST" action="{{ route('purchase-orders.store') }}" class="space-y-6">
+        @csrf
 
-                init() {
-                    // Handled at Blade level now for 100% reliability
-                },
+        {{-- Supplier & Order Info Card --}}
+        <div class="bg-white dark:bg-slate-800/90 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-5">
+            {{-- Supplier --}}
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Supplier <span class="text-red-500">*</span></label>
+                <select name="supplier_id" required class="w-full text-sm font-semibold p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white">
+                    <option value="">Select Supplier...</option>
+                    @foreach($suppliers as $sup)
+                    <option value="{{ $sup->id }}">{{ $sup->name }} ({{ $sup->code }})</option>
+                    @endforeach
+                </select>
+            </div>
 
-                async fetchProduct(index) {
-                    const code = this.rows[index].code ? this.rows[index].code.trim() : '';
-                    if (!code) return;
+            {{-- Expected Date --}}
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Expected Delivery Date</label>
+                <input type="date" name="expected_date" class="w-full text-sm font-medium p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white">
+            </div>
 
-                    try {
-                        let response = await fetch(`/cash-sales/search?q=${code}`);
-                        let data = await response.json();
+            {{-- Save Status --}}
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Initial Status</label>
+                <select name="status" class="w-full text-sm font-semibold p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white">
+                    <option value="draft">Draft (Editable)</option>
+                    <option value="sent">Sent to Supplier</option>
+                </select>
+            </div>
 
-                        if (data.length > 0) {
-                            let item = data.find(i => i.code === code) || data[0];
-                            this.rows[index].item_id = item.id;
-                            this.rows[index].name = item.name;
-                            this.rows[index].rate = item.cost_price || item.price || 0;
-                            this.rows[index].stock = item.stock_qty ?? 0;
+            {{-- Note --}}
+            <div class="md:col-span-3">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Notes / Instructions</label>
+                <textarea name="note" rows="2" placeholder="Delivery instructions, reference terms, payment terms..." class="w-full text-sm p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white"></textarea>
+            </div>
+        </div>
 
-                            if (index === this.rows.length - 1) this.addRow();
-                        } else {
-                            Swal.fire({
-                                title: 'New Item!',
-                                text: 'This barcode does not exist yet. You can type the description and cost rate manually!',
-                                icon: 'info',
-                                background: '#0284c7',
-                                color: '#fff',
-                                timer: 3000,
-                                showConfirmButton: false
-                            });
-                            this.rows[index].item_id = 'new';
-                            this.rows[index].name = '';
-                            this.rows[index].rate = 0;
-                            this.rows[index].stock = 0;
-                            if (index === this.rows.length - 1) this.addRow();
-                        }
-                    } catch (error) {
-                        console.error("Search failed");
-                    }
-                },
-                addRow() {
-                    this.rows.push({
-                        item_id: '',
-                        code: '',
-                        name: '',
-                        qty: 1,
-                        rate: 0,
-                        stock: null
-                    });
-                },
-                removeRow(index) {
-                    if (this.rows.length > 1) this.rows.splice(index, 1);
-                },
-                submitForm(e) {
-                    if (!this.supplierId) {
-                        Swal.fire('Error', 'Please select a supplier', 'error');
-                        return;
-                    }
-                    if (parseFloat(this.subtotal) <= 0) {
-                        Swal.fire('Error', 'Order amount cannot be zero', 'error');
-                        return;
-                    }
-                    e.target.submit();
-                },
-                get subtotal() {
-                    return this.rows.reduce((acc, row) => acc + (row.qty * row.rate), 0).toFixed(2);
-                }
+        {{-- Line Items Card --}}
+        <div class="bg-white dark:bg-slate-800/90 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/60 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-800 dark:text-white text-base">Order Line Items</h3>
+                <button type="button" @click="addRow()" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-400 rounded-xl text-xs font-bold transition-colors">
+                    <i class="fas fa-plus mr-1"></i> Add Item Row
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-400 uppercase">
+                            <th class="py-3 px-3">Item / Product</th>
+                            <th class="py-3 px-3 w-32">Qty</th>
+                            <th class="py-3 px-3 w-36">Unit Cost (Rs.)</th>
+                            <th class="py-3 px-3 w-36 text-right">Line Total (Rs.)</th>
+                            <th class="py-3 px-3 w-12 text-center"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+                        <template x-for="(row, index) in rows" :key="index">
+                            <tr>
+                                <td class="py-3 px-3">
+                                    <select :name="'items[' + index + '][item_id]'" x-model="row.item_id" @change="onItemSelect(row)" required class="w-full text-xs font-semibold p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white">
+                                        <option value="">Select Item...</option>
+                                        @foreach($items as $item)
+                                        <option value="{{ $item->id }}" data-cost="{{ $item->cost_rate }}">{{ $item->description ?? $item->name }} ({{ $item->code }}) — Cost: Rs.{{ $item->cost_rate }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td class="py-3 px-3">
+                                    <input type="number" step="0.01" min="0.01" :name="'items[' + index + '][qty]'" x-model.number="row.qty" required class="w-full text-xs font-semibold p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white">
+                                </td>
+                                <td class="py-3 px-3">
+                                    <input type="number" step="0.01" min="0" :name="'items[' + index + '][unit_cost]'" x-model.number="row.unit_cost" required class="w-full text-xs font-semibold p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white">
+                                </td>
+                                <td class="py-3 px-3 text-right font-bold text-slate-800 dark:text-white">
+                                    Rs. <span x-text="(row.qty * row.unit_cost).toFixed(2)"></span>
+                                </td>
+                                <td class="py-3 px-3 text-center">
+                                    <button type="button" @click="removeRow(index)" x-show="rows.length > 1" class="text-red-500 hover:text-red-700 p-1 text-xs">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Subtotal Summary --}}
+            <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-end">
+                <div class="text-right">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Estimated PO Subtotal</span>
+                    <h3 class="text-2xl font-black text-indigo-600 dark:text-indigo-400">Rs. <span x-text="calculateSubtotal().toFixed(2)"></span></h3>
+                </div>
+            </div>
+        </div>
+
+        {{-- Submit Action Bar --}}
+        <div class="flex justify-end gap-3">
+            <a href="{{ route('purchase-orders.index') }}" class="px-5 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl text-sm font-semibold">Cancel</a>
+            <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20">Save Purchase Order</button>
+        </div>
+    </form>
+</div>
+
+<script>
+function createPoForm() {
+    return {
+        rows: [
+            { item_id: '', qty: 1, unit_cost: 0 }
+        ],
+        addRow() {
+            this.rows.push({ item_id: '', qty: 1, unit_cost: 0 });
+        },
+        removeRow(index) {
+            if (this.rows.length > 1) {
+                this.rows.splice(index, 1);
             }
+        },
+        onItemSelect(row) {
+            const selectEl = event.target;
+            const opt = selectEl.options[selectEl.selectedIndex];
+            const cost = opt.getAttribute('data-cost');
+            if (cost) {
+                row.unit_cost = parseFloat(cost) || 0;
+            }
+        },
+        calculateSubtotal() {
+            return this.rows.reduce((sum, r) => sum + (parseFloat(r.qty || 0) * parseFloat(r.unit_cost || 0)), 0);
         }
-    </script>
-</body>
-
-</html>
+    }
+}
+</script>
+@endsection

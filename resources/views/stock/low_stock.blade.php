@@ -12,6 +12,7 @@
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
             </a>
             <h1 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">Low Stock Alerts</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Items that are out of stock or below their minimum threshold</p>
         </div>
         <button onclick="window.print()" class="bg-white text-black border border-gray-300 hover:bg-gray-100 font-bold px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition">
             <i class="fas fa-print"></i> Print Alerts
@@ -26,24 +27,37 @@
     </div>
 
     {{-- Summary Bar --}}
-    <div class="bg-indigo-50 border border-indigo-100 dark:bg-slate-800 dark:border-indigo-900 rounded-xl p-4 mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-md">
-                <i class="fas fa-boxes text-lg"></i>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 no-print">
+        {{-- Out of Stock Count --}}
+        <div class="bg-red-50 border border-red-200 dark:bg-red-950/20 dark:border-red-800 rounded-xl p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-red-600 flex items-center justify-center text-white shadow">
+                <i class="fas fa-times-circle text-base"></i>
             </div>
             <div>
-                <span class="text-xs text-gray-500 dark:text-slate-400 uppercase font-bold tracking-wide">Alert Summary</span>
-                <div class="flex items-center gap-4 mt-0.5 text-sm font-semibold text-gray-700 dark:text-slate-300">
-                    <div>
-                        Total low stock items: 
-                        <span class="text-red-600 font-bold font-mono">{{ $totalLowStockCount }}</span>
-                    </div>
-                    <div class="h-4 w-px bg-gray-300 dark:bg-slate-700"></div>
-                    <div>
-                        Total items configured with min level: 
-                        <span class="text-indigo-600 font-bold font-mono">{{ $totalConfiguredCount }}</span>
-                    </div>
-                </div>
+                <div class="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">Out of Stock</div>
+                <div class="text-2xl font-extrabold text-red-700 dark:text-red-300 font-mono">{{ $outOfStockCount }}</div>
+            </div>
+        </div>
+
+        {{-- Low Stock Count --}}
+        <div class="bg-orange-50 border border-orange-200 dark:bg-orange-950/20 dark:border-orange-800 rounded-xl p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center text-white shadow">
+                <i class="fas fa-exclamation-triangle text-base"></i>
+            </div>
+            <div>
+                <div class="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wide">Low Stock</div>
+                <div class="text-2xl font-extrabold text-orange-700 dark:text-orange-300 font-mono">{{ $lowStockOnlyCount }}</div>
+            </div>
+        </div>
+
+        {{-- Configured Min Level --}}
+        <div class="bg-indigo-50 border border-indigo-100 dark:bg-slate-800 dark:border-indigo-900 rounded-xl p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow">
+                <i class="fas fa-sliders-h text-base"></i>
+            </div>
+            <div>
+                <div class="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">Min Level Configured</div>
+                <div class="text-2xl font-extrabold text-indigo-700 dark:text-indigo-300 font-mono">{{ $totalConfiguredCount }}</div>
             </div>
         </div>
     </div>
@@ -67,6 +81,8 @@
                         <tr class="bg-gray-50 dark:bg-slate-700 border-b border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 uppercase text-xs font-bold">
                             <th class="p-4 w-12 text-center">#</th>
                             <th class="p-4">Item Name</th>
+                            <th class="p-4 text-center">Item Code</th>
+                            <th class="p-4 text-center">Status</th>
                             <th class="p-4 text-center">Current Stock</th>
                             <th class="p-4 text-center">Min Level</th>
                             <th class="p-4 text-right">Shortage</th>
@@ -80,31 +96,60 @@
                     <tbody class="divide-y divide-gray-200 dark:divide-slate-700">
                         @foreach($items as $idx => $item)
                             @php
-                                $shortage = $item->min_stock_level - $item->on_hand;
-                                $shortagePercent = $item->min_stock_level > 0 ? round(($shortage / $item->min_stock_level) * 100, 1) : 0;
-                                $isHighShortage = $shortage > ($item->min_stock_level * 0.5);
-                                
-                                $rowBg = $isHighShortage 
-                                    ? 'bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-900 dark:text-red-200' 
-                                    : 'bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-950/20 dark:hover:bg-yellow-950/30 text-yellow-900 dark:text-yellow-200';
+                                $isOutOfStock   = $item->on_hand <= 0;
+                                $minLevel       = (float)($item->min_stock_level ?? 0);
+                                $shortage       = max(0, $minLevel - (float)$item->on_hand);
+                                $shortagePercent = $minLevel > 0 ? round(($shortage / $minLevel) * 100, 1) : ($isOutOfStock ? 100 : 0);
+
+                                if ($isOutOfStock) {
+                                    $rowBg = 'bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/30';
+                                } else {
+                                    // Low stock — use red vs yellow based on how critical
+                                    $isHighShortage = $minLevel > 0 && $shortage > ($minLevel * 0.5);
+                                    $rowBg = $isHighShortage
+                                        ? 'bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/20 dark:hover:bg-orange-950/30'
+                                        : 'bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-950/20 dark:hover:bg-yellow-950/30';
+                                }
                             @endphp
                             <tr class="{{ $rowBg }} transition-colors duration-150">
-                                <td class="p-4 text-center font-mono font-medium">{{ $idx + 1 }}</td>
-                                <td class="p-4 font-semibold">
-                                    <div class="text-gray-900 dark:text-white font-bold">{{ $item->description }}</div>
+                                <td class="p-4 text-center font-mono font-medium text-gray-500">{{ $idx + 1 }}</td>
+                                <td class="p-4">
+                                    <div class="text-gray-900 dark:text-white font-bold">{{ $item->description ?? '—' }}</div>
                                     <div class="text-gray-500 dark:text-slate-400 font-mono text-xs mt-0.5">Code: {{ $item->code }}</div>
                                 </td>
-                                <td class="p-4 text-center font-bold font-mono">
+                                <td class="p-4 text-center font-mono text-xs text-gray-600 dark:text-slate-300">
+                                    {{ $item->code ?? '—' }}
+                                </td>
+                                <td class="p-4 text-center">
+                                    @if($isOutOfStock)
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-red-600 text-white shadow-sm">
+                                            <i class="fas fa-times-circle text-[10px]"></i> OUT OF STOCK
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-orange-500 text-white shadow-sm">
+                                            <i class="fas fa-exclamation-triangle text-[10px]"></i> LOW STOCK
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="p-4 text-center font-bold font-mono {{ $isOutOfStock ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400' }}">
                                     {{ (float)$item->on_hand }}
                                 </td>
                                 <td class="p-4 text-center font-bold font-mono text-gray-500 dark:text-slate-400">
-                                    {{ (float)$item->min_stock_level }}
+                                    {{ $minLevel > 0 ? $minLevel : '—' }}
                                 </td>
                                 <td class="p-4 text-right font-bold font-mono text-red-600 dark:text-red-400">
-                                    -{{ (float)$shortage }}
+                                    @if($minLevel > 0)
+                                        -{{ (float)$shortage }}
+                                    @else
+                                        —
+                                    @endif
                                 </td>
                                 <td class="p-4 text-right font-bold font-mono">
-                                    {{ $shortagePercent }}%
+                                    @if($minLevel > 0)
+                                        {{ $shortagePercent }}%
+                                    @else
+                                        —
+                                    @endif
                                 </td>
                                 <td class="p-4 text-center font-bold font-mono">
                                     @php
@@ -115,7 +160,7 @@
                                             {{ (float)$godamQty }}
                                         </span>
                                         <a href="{{ route('stock-transfers.create', ['item_id' => $item->id]) }}" 
-                                           class="ml-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2 py-1 rounded text-[10px] transition inline-flex items-center gap-0.5 shadow-sm">
+                                           class="ml-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2 py-1 rounded text-[10px] transition inline-flex items-center gap-0.5 shadow-sm no-print">
                                             <i class="fas fa-exchange-alt"></i> Transfer
                                         </a>
                                     @else
@@ -140,17 +185,10 @@
                                     {{ $item->last_purchase_date ? \Carbon\Carbon::parse($item->last_purchase_date)->format('d M Y') : '—' }}
                                 </td>
                                 <td class="p-4 text-center no-print">
-                                    @if($item->preferredSupplier)
-                                        <a href="{{ route('purchases.create', ['supplier_id' => $item->preferred_supplier_id, 'item_id' => $item->id]) }}" 
-                                           class="bg-white text-black border border-gray-300 hover:bg-gray-100 font-bold px-3 py-1.5 rounded-lg text-xs transition duration-150 inline-flex items-center gap-1 shadow-sm">
-                                            <i class="fas fa-shopping-cart"></i> Reorder
-                                        </a>
-                                    @else
-                                        <a href="{{ route('purchases.create', ['item_id' => $item->id]) }}" 
-                                           class="bg-white text-black border border-gray-300 hover:bg-gray-100 font-bold px-3 py-1.5 rounded-lg text-xs transition duration-150 inline-flex items-center gap-1 shadow-sm">
-                                            <i class="fas fa-shopping-cart"></i> Reorder
-                                        </a>
-                                    @endif
+                                    <a href="{{ route('purchases.create', array_filter(['supplier_id' => $item->preferred_supplier_id, 'item_id' => $item->id])) }}" 
+                                       class="bg-white text-black border border-gray-300 hover:bg-gray-100 font-bold px-3 py-1.5 rounded-lg text-xs transition duration-150 inline-flex items-center gap-1 shadow-sm">
+                                        <i class="fas fa-shopping-cart"></i> Reorder
+                                    </a>
                                 </td>
                             </tr>
                         @endforeach

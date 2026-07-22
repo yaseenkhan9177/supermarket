@@ -21,7 +21,7 @@ class CashSaleItem extends Model
 
     public function sale()
     {
-        return $this->belongsTo(CashSale::class);
+        return $this->belongsTo(CashSale::class, 'cash_sale_id');
     }
 
     // Alias used in customer profile KPI queries

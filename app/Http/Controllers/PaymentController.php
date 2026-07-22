@@ -8,6 +8,31 @@ use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
+    public function index(Request $request)
+    {
+        $query = Payment::with('user')->latest('payment_date');
+
+        if ($request->filled('from_date')) {
+            $query->whereDate('payment_date', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('payment_date', '<=', $request->to_date);
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('payment_no', 'LIKE', "%{$search}%")
+                  ->orWhere('paid_to_account', 'LIKE', "%{$search}%")
+                  ->orWhere('memo', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $totalAmount = (clone $query)->sum('amount_paid');
+        $payments = $query->paginate(20)->withQueryString();
+
+        return view('payments.index', compact('payments', 'totalAmount'));
+    }
+
     public function create()
     {
         $users = \App\Models\User::all();

@@ -100,6 +100,7 @@
                             <th class="py-3 px-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">Invoice</th>
                             <th class="py-3 px-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">Payment</th>
                             <th class="py-3 px-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">Customer</th>
+                            <th class="py-3 px-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">Cashier</th>
                             <th class="py-3 px-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">Time</th>
                             <th class="py-3 px-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700 text-center">Items</th>
                             <th class="py-3 px-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700 text-right">Total</th>
@@ -137,6 +138,14 @@
                                 <span class="text-sm text-slate-700 dark:text-slate-300">
                                     <i class="fas fa-user text-slate-300 dark:text-slate-600 mr-1 text-xs"></i>
                                     {{ $sale->customer->name ?? $sale->customer_name ?? 'Walk-in Customer' }}
+                                </span>
+                            </td>
+
+                            {{-- Cashier --}}
+                            <td class="py-3.5 px-5">
+                                <span class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                    <i class="fas fa-user-tag text-slate-300 dark:text-slate-600 mr-1 text-xs"></i>
+                                    {{ $sale->user->name ?? 'Staff' }}
                                 </span>
                             </td>
 

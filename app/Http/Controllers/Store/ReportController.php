@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\DebitSale;
 use App\Models\Purchase;
 use App\Models\Account;
+use App\Models\CustomerLedgerEntry;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -52,5 +53,43 @@ class ReportController extends Controller
         $totalAssets = $accounts->where('type', 'Asset')->sum('balance'); // Example logic
 
         return view('store.reports.accounts', compact('accounts'));
+    }
+
+    /**
+     * Report page for Written Off Customers & Balances.
+     */
+    public function writtenOffCustomers(Request $request)
+    {
+        $startDate = $request->input('start_date');
+        $endDate   = $request->input('end_date');
+
+        $query = CustomerLedgerEntry::with(['customer', 'creator'])
+            ->where('type', 'write_off');
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+        }
+
+        $writeOffEntries = $query->latest('created_at')->get();
+
+        $totalWrittenOffAmount = abs($writeOffEntries->sum('amount'));
+
+        $breakdown = $writeOffEntries->groupBy(function ($item) {
+            return $item->reason_category ?: 'other';
+        })->map(function ($items, $category) {
+            return [
+                'category' => $category,
+                'count'    => $items->count(),
+                'total'    => abs($items->sum('amount')),
+            ];
+        });
+
+        return view('store.reports.written_off_customers', compact(
+            'writeOffEntries',
+            'startDate',
+            'endDate',
+            'totalWrittenOffAmount',
+            'breakdown'
+        ));
     }
 }

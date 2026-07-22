@@ -22,7 +22,7 @@ class StoreAuthController extends Controller
     {
         $request->validate([
             'owner_name'    => ['required', 'string', 'max:255'],
-            'email'         => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'email'         => ['required', 'string', 'email', 'max:255', 'unique:mysql.users,email'],
             'phone'         => ['required', 'string', 'max:20'],
             'store_name'    => ['required', 'string', 'max:255'],
             'business_type' => ['required', 'string'],

@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\Customer;
 use App\Models\DebitSaleItem;
 use App\Models\CashSaleItem;
+use App\Models\CustomerLedgerEntry;
+use App\Models\Receipt;
+use App\Models\CompanySetting;
+use App\Models\AuditLog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -40,19 +44,27 @@ class CustomerController extends Controller
      */
     public function index()
     {
-        $search    = request('search');
-        $customers = Customer::when($search, function ($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%")
-              ->orWhere('phone', 'like', "%{$search}%");
+        $search          = request('search');
+        $showDeactivated = request('show_deactivated') == '1';
+
+        $customers = Customer::when(!$showDeactivated, function ($q) {
+            $q->where('status', '!=', 'deactivated');
+        })->when($search, function ($q) use ($search) {
+            $q->where(function ($sub) use ($search) {
+                $sub->where('name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
         })->latest()->paginate(15)->withQueryString();
 
-        $totalCustomers    = Customer::count();
-        $totalReceivable   = Customer::where('balance', '>', 0)->sum('balance');
-        $totalCreditLimit  = Customer::sum('credit_limit');
+        $totalCustomers   = Customer::where('status', '!=', 'deactivated')->count();
+        // Exclude written off & deactivated customers from active receivable total
+        $totalReceivable  = Customer::where('status', 'active')->where('balance', '>', 0)->sum('balance');
+        $totalCreditLimit = Customer::where('status', '!=', 'deactivated')->sum('credit_limit');
 
         return view('store.customers.index', compact(
             'customers',
             'search',
+            'showDeactivated',
             'totalCustomers',
             'totalReceivable',
             'totalCreditLimit'
@@ -100,7 +112,7 @@ class CustomerController extends Controller
 
         $totalItemsFromCash = CashSaleItem::whereHas('cashSale', function ($q) use ($id) {
             $q->where('customer_id', $id);
-        })->sum('qty');
+        })->sum('quantity');
 
         $totalItemsSold = $totalItemsFromDebit + $totalItemsFromCash;
 
@@ -111,11 +123,26 @@ class CustomerController extends Controller
         $grandTotalSales    = $totalDebitAmount + $totalCashAmount;
         $netLifetimeValue   = max(0, $grandTotalSales - $totalRefundAmount);
 
+        // ── Ledger Entries ───────────────────────────────────────────────────
+        $ledgerEntries = $customer->ledgerEntries()
+            ->with(['creator', 'reversal', 'receipt'])
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate(15, ['*'], 'ledger_page')
+            ->withQueryString();
+
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        $isAdmin = $user && (in_array($role, ['owner', 'admin', 'store admin', 'super_owner', 'manager'])
+            || (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['owner', 'admin', 'Store Admin', 'Owner', 'manager'])));
+
         return view('store.customers.show', compact(
             'customer',
             'debitSales',
             'cashSales',
             'refunds',
+            'ledgerEntries',
+            'isAdmin',
             'totalItemsSold',
             'totalCashCount',
             'totalCashAmount',
@@ -203,19 +230,22 @@ class CustomerController extends Controller
     {
         $customer = Customer::findOrFail($id);
 
-        $hasTransactions = $customer->debitSales()->exists()
+        $hasHistory = $customer->debitSales()->exists()
             || $customer->cashSales()->exists()
-            || $customer->refunds()->exists();
+            || $customer->refunds()->exists()
+            || $customer->ledgerEntries()->exists();
 
-        if ($hasTransactions) {
+        $hasZeroBalance = ((float) $customer->balance == 0.0) && ((float) ($customer->store_credit ?? 0) == 0.0);
+
+        if ($hasHistory || !$hasZeroBalance) {
             return redirect()->route('customers.index')
-                ->with('error', 'Cannot delete customer — they have linked transactions.');
+                ->with('error', 'Hard deletion is not allowed for customers with transaction history or non-zero balance. Please deactivate or write off instead.');
         }
 
         $customer->delete();
 
         return redirect()->route('customers.index')
-            ->with('success', 'Customer deleted.');
+            ->with('success', 'Customer record deleted permanently.');
     }
 
     /**
@@ -405,4 +435,445 @@ class CustomerController extends Controller
             'skipped'       => $errors,
         ]);
     }
+
+    /**
+     * Helper to verify admin/owner access for financial balance operations.
+     */
+    private function checkAdminPermission()
+    {
+        $user = auth()->user();
+        if (!$user) {
+            abort(401, 'Unauthenticated');
+        }
+
+        $role = strtolower($user->role ?? '');
+        $isAdmin = in_array($role, ['owner', 'admin', 'store admin', 'super_owner', 'manager'])
+            || (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['owner', 'admin', 'Store Admin', 'Owner', 'manager']));
+
+        if (!$isAdmin) {
+            abort(403, 'Unauthorized action. Only admins can modify customer balances.');
+        }
+    }
+
+    /**
+     * Receive payment from customer (Reduces customer debt / balance).
+     */
+    public function receivePayment(Request $request, $id)
+    {
+        $this->checkAdminPermission();
+
+        $request->validate([
+            'amount' => 'required|numeric|gt:0',
+            'method' => 'required|string|in:cash,bank,easypaisa,jazzcash',
+            'date'   => 'nullable|date',
+            'note'   => 'nullable|string|max:1000',
+        ]);
+
+        $amount = (float) $request->amount;
+        $customer = Customer::findOrFail($id);
+
+        DB::transaction(function () use ($customer, $amount, $request) {
+            if ($customer->balance >= $amount) {
+                $customer->balance -= $amount;
+            } else {
+                $excess = $amount - $customer->balance;
+                $customer->balance = 0;
+                $customer->store_credit += $excess;
+            }
+            $customer->save();
+
+            $ledgerEntry = CustomerLedgerEntry::create([
+                'customer_id'   => $customer->id,
+                'type'          => 'payment_received',
+                'amount'        => -$amount, // Negative = customer owes less
+                'balance_after' => $customer->balance,
+                'method'        => $request->method,
+                'note'          => $request->note ?: 'Payment Received (' . ucfirst($request->method) . ')',
+                'created_by'    => auth()->id(),
+                'created_at'    => $request->filled('date') ? $request->date . ' ' . now()->format('H:i:s') : now(),
+            ]);
+
+            $setting = CompanySetting::first();
+            $storeName = $setting->business_name ?? config('app.name', 'Supermarket');
+
+            $receiptNumber = Receipt::generateNextReceiptNumber();
+
+            Receipt::create([
+                'receipt_number'    => $receiptNumber,
+                'customer_id'       => $customer->id,
+                'ledger_entry_id'   => $ledgerEntry->id,
+                'amount'            => $amount,
+                'remaining_balance' => $customer->balance,
+                'payment_method'    => $request->method,
+                'received_by'       => auth()->id(),
+                'store_name'        => $storeName,
+            ]);
+        });
+
+        $customer->refresh();
+
+        return response()->json([
+            'success'      => true,
+            'message'      => 'Payment of Rs. ' . number_format($amount, 2) . ' received successfully.',
+            'balance'      => (float) $customer->balance,
+            'store_credit' => (float) $customer->store_credit,
+            'formatted_balance' => 'Rs. ' . number_format($customer->balance, 2),
+            'formatted_store_credit' => 'Rs. ' . number_format($customer->store_credit, 2),
+        ]);
+    }
+
+    /**
+     * Pay customer (Payout from Store Credit).
+     */
+    public function payCustomer(Request $request, $id)
+    {
+        $this->checkAdminPermission();
+
+        $request->validate([
+            'amount' => 'required|numeric|gt:0',
+            'method' => 'required|string|in:cash,bank,easypaisa,jazzcash',
+            'date'   => 'nullable|date',
+            'note'   => 'nullable|string|max:1000',
+        ]);
+
+        $amount = (float) $request->amount;
+        $customer = Customer::findOrFail($id);
+
+        DB::transaction(function () use ($customer, $amount, $request) {
+            if ($customer->store_credit >= $amount) {
+                $customer->store_credit -= $amount;
+            } else {
+                $excess = $amount - $customer->store_credit;
+                $customer->store_credit = 0;
+                $customer->balance += $excess;
+            }
+            $customer->save();
+
+            CustomerLedgerEntry::create([
+                'customer_id'   => $customer->id,
+                'type'          => 'payment_made',
+                'amount'        => $amount, // Positive = net debt increases / store credit reduces
+                'balance_after' => $customer->balance,
+                'method'        => $request->method,
+                'note'          => $request->note ?: 'Paid Customer Payout (' . ucfirst($request->method) . ')',
+                'created_by'    => auth()->id(),
+                'created_at'    => $request->filled('date') ? $request->date . ' ' . now()->format('H:i:s') : now(),
+            ]);
+        });
+
+        $customer->refresh();
+
+        return response()->json([
+            'success'      => true,
+            'message'      => 'Paid Rs. ' . number_format($amount, 2) . ' to customer successfully.',
+            'balance'      => (float) $customer->balance,
+            'store_credit' => (float) $customer->store_credit,
+            'formatted_balance' => 'Rs. ' . number_format($customer->balance, 2),
+            'formatted_store_credit' => 'Rs. ' . number_format($customer->store_credit, 2),
+        ]);
+    }
+
+    /**
+     * Manual adjustment of customer balance. Note is strictly required.
+     */
+    public function adjustBalance(Request $request, $id)
+    {
+        $this->checkAdminPermission();
+
+        $request->validate([
+            'action' => 'required|in:add_debt,reduce_debt,set_balance',
+            'amount' => 'required|numeric|min:0',
+            'note'   => 'required|string|min:3|max:1000',
+        ]);
+
+        $customer = Customer::findOrFail($id);
+        $amount = (float) $request->amount;
+        $action = $request->action;
+
+        DB::transaction(function () use ($customer, $amount, $action, $request) {
+            $oldBalance = (float) $customer->balance;
+            $delta = 0;
+            $newBalance = $oldBalance;
+
+            if ($action === 'add_debt') {
+                $delta = $amount;
+                $newBalance = $oldBalance + $amount;
+            } elseif ($action === 'reduce_debt') {
+                $delta = -$amount;
+                $newBalance = max(0, $oldBalance - $amount);
+            } elseif ($action === 'set_balance') {
+                $delta = $amount - $oldBalance;
+                $newBalance = $amount;
+            }
+
+            $customer->balance = $newBalance;
+            $customer->save();
+
+            CustomerLedgerEntry::create([
+                'customer_id'   => $customer->id,
+                'type'          => 'manual_adjustment',
+                'amount'        => $delta,
+                'balance_after' => $newBalance,
+                'note'          => $request->note,
+                'created_by'    => auth()->id(),
+            ]);
+
+            AuditLog::record(
+                'customer_adjustment',
+                "Adjusted balance for customer {$customer->name} ({$action}, delta: Rs. " . number_format($delta, 2) . ") — Note: {$request->note}",
+                'Customer',
+                $customer->id,
+                ['action' => $action, 'delta' => $delta, 'new_balance' => $newBalance]
+            );
+        });
+
+        $customer->refresh();
+
+        return response()->json([
+            'success'      => true,
+            'message'      => 'Customer balance adjusted successfully.',
+            'balance'      => (float) $customer->balance,
+            'store_credit' => (float) $customer->store_credit,
+            'formatted_balance' => 'Rs. ' . number_format($customer->balance, 2),
+            'formatted_store_credit' => 'Rs. ' . number_format($customer->store_credit, 2),
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // WRITE OFF
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Write off a customer's outstanding balance.
+     * Sets balance to 0, marks customer as written_off, logs ledger entry.
+     */
+    public function writeOffBalance(Request $request, $id)
+    {
+        $this->checkAdminPermission();
+
+        $request->validate([
+            'reason_category' => 'required|string|in:absconded,deceased,disputed,business_closed,other',
+            'note'            => 'required|string|min:10|max:1000',
+        ]);
+
+        $customer = Customer::findOrFail($id);
+
+        if ($customer->status === 'written_off') {
+            return response()->json(['success' => false, 'message' => 'Customer balance has already been written off.'], 422);
+        }
+
+        if ((float) $customer->balance <= 0) {
+            return response()->json(['success' => false, 'message' => 'Customer has no outstanding balance to write off.'], 422);
+        }
+
+        DB::transaction(function () use ($customer, $request) {
+            $oldBalance = (float) $customer->balance;
+
+            CustomerLedgerEntry::create([
+                'customer_id'     => $customer->id,
+                'type'            => 'write_off',
+                'amount'          => -$oldBalance, // Negative: the debt is forgiven
+                'balance_after'   => 0,
+                'note'            => $request->note,
+                'reason_category' => $request->reason_category,
+                'created_by'      => auth()->id(),
+            ]);
+
+            $customer->balance       = 0;
+            $customer->status        = 'written_off';
+            $customer->written_off_at = now();
+            $customer->written_off_by = auth()->id();
+            $customer->save();
+
+            AuditLog::record(
+                'customer_write_off',
+                "Wrote off balance of Rs. " . number_format($oldBalance, 2) . " for customer {$customer->name} ({$request->reason_category}) — Note: {$request->note}",
+                'Customer',
+                $customer->id,
+                ['amount' => $oldBalance, 'reason' => $request->reason_category]
+            );
+        });
+
+        $customer->refresh();
+
+        return response()->json([
+            'success'  => true,
+            'message'  => 'Customer balance has been written off successfully.',
+            'status'   => $customer->status,
+            'balance'  => (float) $customer->balance,
+            'formatted_balance' => 'Rs. ' . number_format($customer->balance, 2),
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // REINSTATE
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Reinstate a written-off customer to active status.
+     * Clears written_off fields and logs a write_off_reversal ledger entry.
+     */
+    public function reinstateCustomer(Request $request, $id)
+    {
+        $this->checkAdminPermission();
+
+        $request->validate([
+            'note' => 'required|string|min:3|max:1000',
+        ]);
+
+        $customer = Customer::findOrFail($id);
+
+        if ($customer->status !== 'written_off') {
+            return response()->json(['success' => false, 'message' => 'Customer is not in written-off status.'], 422);
+        }
+
+        DB::transaction(function () use ($customer, $request) {
+            CustomerLedgerEntry::create([
+                'customer_id'   => $customer->id,
+                'type'          => 'write_off_reversal',
+                'amount'        => 0, // Reinstatement only; no balance restored automatically
+                'balance_after' => (float) $customer->balance,
+                'note'          => $request->note,
+                'created_by'    => auth()->id(),
+            ]);
+
+            $customer->status         = 'active';
+            $customer->written_off_at = null;
+            $customer->written_off_by = null;
+            $customer->save();
+
+            AuditLog::record(
+                'customer_reinstate',
+                "Reinstated customer {$customer->name} to active status — Note: {$request->note}",
+                'Customer',
+                $customer->id
+            );
+        });
+
+        $customer->refresh();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Customer has been reinstated to active status.',
+            'status'  => $customer->status,
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // REVERSE LEDGER ENTRY
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Reverse a specific payment ledger entry (payment_received / payment_made).
+     * Creates an offsetting payment_reversal entry and adjusts customer balance.
+     */
+    public function reverseLedgerEntry(Request $request, $id, $entryId)
+    {
+        $this->checkAdminPermission();
+
+        $request->validate([
+            'note' => 'required|string|min:3|max:1000',
+        ]);
+
+        $customer = Customer::findOrFail($id);
+        $entry    = CustomerLedgerEntry::where('customer_id', $id)->findOrFail($entryId);
+
+        // Only reversible types
+        if (!in_array($entry->type, ['payment_received', 'payment_made'])) {
+            return response()->json(['success' => false, 'message' => 'Only payment entries can be reversed.'], 422);
+        }
+
+        // Check if already reversed
+        $alreadyReversed = CustomerLedgerEntry::where('reversed_entry_id', $entry->id)->exists();
+        if ($alreadyReversed) {
+            return response()->json(['success' => false, 'message' => 'This entry has already been reversed.'], 422);
+        }
+
+        DB::transaction(function () use ($customer, $entry, $request) {
+            // The reversal amount is the opposite sign of the original entry
+            $reversalAmount = -$entry->amount;
+
+            // Adjust customer balance: reversal un-does the original effect
+            $newBalance = (float) $customer->balance + $reversalAmount;
+            $customer->balance = max(0, $newBalance);
+            $customer->save();
+
+            CustomerLedgerEntry::create([
+                'customer_id'      => $customer->id,
+                'type'             => 'payment_reversal',
+                'amount'           => $reversalAmount,
+                'balance_after'    => $customer->balance,
+                'note'             => $request->note,
+                'reversed_entry_id'=> $entry->id,
+                'method'           => $entry->method,
+                'created_by'       => auth()->id(),
+            ]);
+
+            AuditLog::record(
+                'customer_reversal',
+                "Reversed payment entry #{$entry->id} for customer {$customer->name} (amount: Rs. " . number_format(abs($reversalAmount), 2) . ") — Note: {$request->note}",
+                'Customer',
+                $customer->id,
+                ['entry_id' => $entry->id, 'amount' => $reversalAmount]
+            );
+        });
+
+        $customer->refresh();
+
+        return response()->json([
+            'success'  => true,
+            'message'  => 'Entry reversed successfully.',
+            'balance'  => (float) $customer->balance,
+            'formatted_balance' => 'Rs. ' . number_format($customer->balance, 2),
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // DEACTIVATE / REACTIVATE
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Toggle customer status between active and deactivated.
+     * Cannot deactivate a customer who is currently written_off.
+     */
+    public function deactivateCustomer(Request $request, $id)
+    {
+        $this->checkAdminPermission();
+
+        $customer = Customer::findOrFail($id);
+
+        if ($customer->status === 'written_off') {
+            return redirect()->route('customers.show', $id)
+                ->with('error', 'Cannot deactivate a written-off customer. Reinstate them first.');
+        }
+
+        if ($customer->status === 'deactivated') {
+            $customer->status = 'active';
+            $customer->save();
+
+            AuditLog::record(
+                'customer_status_change',
+                "Reactivated customer {$customer->name}",
+                'Customer',
+                $customer->id
+            );
+
+            return redirect()->route('customers.show', $id)
+                ->with('success', 'Customer has been reactivated.');
+        }
+
+        $customer->status = 'deactivated';
+        $customer->save();
+
+        AuditLog::record(
+            'customer_status_change',
+            "Deactivated customer {$customer->name}",
+            'Customer',
+            $customer->id
+        );
+
+        return redirect()->route('customers.show', $id)
+            ->with('success', 'Customer has been deactivated. They will be hidden from the active customer list.');
+    }
 }
+

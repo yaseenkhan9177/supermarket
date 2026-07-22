@@ -72,6 +72,12 @@
                     ['06','Suppliers',    'supplier', 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'],
                     ['07','Equity',       'gl',       'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'],
                     ['08','Liabilities',  'gl',       'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'],
+                    ['09','Sales Income', 'gl',       'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],
+                    ['10','Services',     'gl',       'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300'],
+                    ['11','Other Income', 'gl',       'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300'],
+                    ['12','Cost of Sales','gl',       'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'],
+                    ['13','Expenses',     'gl',       'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-300'],
+                    ['14','Employees',    'gl',       'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300'],
                 ] as [$pfx, $cat, $tgt, $cls])
                 <div class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40">
                     <span class="font-mono font-bold px-1.5 py-0.5 rounded {{ $cls }}">{{ $pfx }}</span>
@@ -87,7 +93,7 @@
                 </div>
                 @endforeach
                 <div class="flex items-center gap-2 p-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-600">
-                    <span class="font-mono font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400">09+</span>
+                    <span class="font-mono font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400">15+</span>
                     <div class="leading-tight">
                         <p class="font-semibold text-slate-500 dark:text-slate-400">Unmapped</p>
                         <p class="text-slate-400">→ excluded</p>
@@ -283,7 +289,9 @@
     // ── Category config (mirrors PREFIX_CATEGORY in the controller) ─
     const ALL_CATEGORIES = [
         'Banks', 'Inventory', 'Other Assets', 'Fixed Assets',
-        'Customers', 'Suppliers', 'Equity', 'Liabilities', 'Unmapped',
+        'Customers', 'Suppliers', 'Equity', 'Liabilities',
+        'Sales Income', 'Services', 'Other Income', 'Cost of Sales',
+        'Expenses', 'Employees', 'Unmapped',
     ];
 
     const CATEGORY_BADGE = {
@@ -295,6 +303,12 @@
         'Suppliers':    'purple',
         'Equity':       'amber',
         'Liabilities':  'rose',
+        'Sales Income': 'emerald',
+        'Services':     'cyan',
+        'Other Income': 'sky',
+        'Cost of Sales': 'orange',
+        'Expenses':     'fuchsia',
+        'Employees':    'pink',
         'Unmapped':     'slate',
     };
 
@@ -313,7 +327,11 @@
             icon:       'fa-book-open',
             color:      'emerald',
             targets:    ['gl'],
-            categories: ['Banks','Inventory','Other Assets','Fixed Assets','Equity','Liabilities'],
+            categories: [
+                'Banks', 'Inventory', 'Other Assets', 'Fixed Assets',
+                'Equity', 'Liabilities', 'Sales Income', 'Services',
+                'Other Income', 'Cost of Sales', 'Expenses', 'Employees'
+            ],
         },
         {
             id:         'sec-customers',
@@ -433,6 +451,7 @@
                     <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 dark:text-slate-400">Account ID</th>
                     <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 dark:text-slate-400">AC Code</th>
                     <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 dark:text-slate-400">Name</th>
+                    <th class="px-3 py-2 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 w-28">Balance</th>
                     <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 w-40">
                         Category <span class="font-normal text-slate-400">(editable)</span>
                     </th>
@@ -582,6 +601,9 @@
                         <td class="px-3 py-2.5 font-medium text-slate-800 dark:text-slate-100">
                             ${escHtml(row.name || '—')}
                         </td>
+                        <td class="px-3 py-2.5 text-right font-mono text-xs font-bold text-slate-700 dark:text-slate-200">
+                            ${row.balance !== undefined && row.balance !== null ? 'Rs. ' + parseFloat(row.balance).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '—'}
+                        </td>
                         <td class="px-3 py-2.5">
                             <select class="cat-select w-full text-xs rounded-lg border border-slate-300 dark:border-slate-600
                                            bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-2 py-1.5
@@ -704,6 +726,8 @@
                 const catToTarget = {
                     'Banks': 'gl', 'Inventory': 'gl', 'Other Assets': 'gl',
                     'Fixed Assets': 'gl', 'Equity': 'gl', 'Liabilities': 'gl',
+                    'Sales Income': 'gl', 'Services': 'gl', 'Other Income': 'gl',
+                    'Cost of Sales': 'gl', 'Expenses': 'gl', 'Employees': 'gl',
                     'Customers': 'customer',
                     'Suppliers': 'supplier',
                     'Unmapped':  'unmapped',

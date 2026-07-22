@@ -22,13 +22,22 @@ class DashboardController extends Controller
             ->latest('sale_date')
             ->get();
 
-        // Placeholder Data for KPIs (Hydrated with Real Sales)
+        // Real low-stock count: items below threshold OR completely out of stock
+        $lowStockCount = \App\Models\Item::where(function ($q) {
+            $q->where(function ($inner) {
+                $inner->whereNotNull('min_stock_level')
+                      ->where('min_stock_level', '>', 0)
+                      ->whereColumn('on_hand', '<', 'min_stock_level');
+            })->orWhere('on_hand', '<=', 0);
+        })->count();
+
+        // KPI Cards
         $kpis = [
             'daily_sales'        => $salesToday,          // Real Data
             'daily_transactions' => $todaySales->count(), // Real Data
             'cash_in_hand'       => 32000,                // Still static, can link to GL if needed later
             'receivables'        => 18500,                // Still static
-            'low_stock_count'    => \App\Models\Item::whereNotNull('min_stock_level')->where('min_stock_level', '>', 0)->whereColumn('on_hand', '<', 'min_stock_level')->count(),
+            'low_stock_count'    => $lowStockCount,       // Real Data
             'expiring_count'     => 4,                    // items
         ];
 
@@ -39,12 +48,25 @@ class DashboardController extends Controller
             'purchases' => [8000, 12000, 20000, 5000, 10000, 15000, 10000],
         ];
 
-        // Placeholder Data for Tables
-        $lowStockItems = [
-            ['name' => 'Panadol Extra', 'qty' => 5, 'supplier' => 'ABC Pharma'],
-            ['name' => 'Brufen 400mg', 'qty' => 0, 'supplier' => 'XYZ Distributors'],
-            ['name' => 'Disprin', 'qty' => 2, 'supplier' => 'Local Supply'],
-        ];
+        // Real low-stock items for the dashboard widget (top 5, worst first)
+        $lowStockItems = \App\Models\Item::where(function ($q) {
+            $q->where(function ($inner) {
+                $inner->whereNotNull('min_stock_level')
+                      ->where('min_stock_level', '>', 0)
+                      ->whereColumn('on_hand', '<', 'min_stock_level');
+            })->orWhere('on_hand', '<=', 0);
+        })
+        ->with('preferredSupplier:id,name')
+        ->orderByRaw('on_hand ASC')
+        ->limit(5)
+        ->get()
+        ->map(fn($item) => [
+            'name'     => $item->description ?? $item->code,
+            'qty'      => (float) $item->on_hand,
+            'supplier' => optional($item->preferredSupplier)->name ?? '—',
+            'status'   => $item->on_hand <= 0 ? 'out' : 'low',
+        ])
+        ->all();
 
         $expiringItems = [
             ['name' => 'Augmentin 625mg', 'batch' => 'B123', 'expiry' => '2026-02-01', 'days' => 12],

@@ -9,7 +9,21 @@ class PurchaseOrderItem extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'purchase_order_id',
+        'item_id',
+        'quantity_ordered',
+        'quantity_received',
+        'unit_cost',
+        'line_total',
+    ];
+
+    protected $casts = [
+        'quantity_ordered'  => 'decimal:2',
+        'quantity_received' => 'decimal:2',
+        'unit_cost'         => 'decimal:2',
+        'line_total'        => 'decimal:2',
+    ];
 
     public function purchaseOrder()
     {
@@ -19,5 +33,10 @@ class PurchaseOrderItem extends Model
     public function item()
     {
         return $this->belongsTo(Item::class);
+    }
+
+    public function getPendingQuantityAttribute(): float
+    {
+        return max(0, $this->quantity_ordered - $this->quantity_received);
     }
 }

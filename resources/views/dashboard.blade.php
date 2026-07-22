@@ -125,6 +125,23 @@
     </a>
     @endhasanyrole
 
+    {{-- Purchase Orders (PO) — owner, manager, warehouse --}}
+    @hasanyrole('owner|manager|warehouse')
+    <a href="{{ route('purchase-orders.index') }}"
+       id="shortcut-purchase-orders"
+       class="group flex flex-col items-center justify-center gap-2 bg-white dark:bg-slate-800
+              border border-indigo-100 dark:border-indigo-900 rounded-xl p-4 shadow-sm
+              hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-500
+              hover:-translate-y-0.5 transition-all duration-200">
+        <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center
+                    shadow-md shadow-indigo-200 dark:shadow-indigo-900
+                    group-hover:scale-110 transition-transform">
+            <i class="fas fa-file-invoice text-white text-base"></i>
+        </div>
+        <span class="text-xs font-bold text-gray-700 dark:text-slate-300 text-center leading-tight">PO Orders</span>
+    </a>
+    @endhasanyrole
+
     {{-- Purchase — manager, owner --}}
     @hasanyrole('owner|manager')
     <a href="{{ route('purchases.create') }}"

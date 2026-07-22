@@ -203,26 +203,40 @@ class SalesController extends Controller
     }
     public function history(Request $request)
     {
-        // 1. Calculate Stats for Cards (Global Totals)
+        $statsQuery = Sale::query();
+        if ($request->filled('from_date')) {
+            $statsQuery->whereDate('sale_date', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $statsQuery->whereDate('sale_date', '<=', $request->to_date);
+        }
+
+        // 1. Calculate Stats for Cards (Filtered or Global Totals)
         $stats = [
-            'all_count' => Sale::count(),
-            'all_total' => Sale::sum('grand_total'),
+            'all_count' => (clone $statsQuery)->count(),
+            'all_total' => (clone $statsQuery)->sum('grand_total'),
 
-            'cash_count' => Sale::where('payment_mode', 'Cash')->count(),
-            'cash_total' => Sale::where('payment_mode', 'Cash')->sum('grand_total'),
+            'cash_count' => (clone $statsQuery)->where('payment_mode', 'Cash')->count(),
+            'cash_total' => (clone $statsQuery)->where('payment_mode', 'Cash')->sum('grand_total'),
 
-            'debit_count' => Sale::where('payment_mode', 'Debit')->count(),
-            'debit_total' => Sale::where('payment_mode', 'Debit')->sum('grand_total'),
+            'debit_count' => (clone $statsQuery)->where('payment_mode', 'Debit')->count(),
+            'debit_total' => (clone $statsQuery)->where('payment_mode', 'Debit')->sum('grand_total'),
         ];
 
-        // 2. Filter Logic (Based on which card is clicked)
+        // 2. Filter Logic
         $query = Sale::with(['user', 'customer'])->latest();
 
+        if ($request->filled('from_date')) {
+            $query->whereDate('sale_date', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('sale_date', '<=', $request->to_date);
+        }
         if ($request->has('type') && $request->type != 'all') {
             $query->where('payment_mode', $request->type);
         }
 
-        $sales = $query->paginate(15);
+        $sales = $query->paginate(15)->withQueryString();
 
         return view('sales.history', compact('sales', 'stats'));
     }
@@ -230,7 +244,7 @@ class SalesController extends Controller
     public function todaysSales()
     {
         $todaySales = Sale::whereDate('sale_date', today())
-            ->with('customer:id,name')
+            ->with(['customer:id,name', 'user:id,name'])
             ->withCount('items')
             ->latest('sale_date')
             ->get();

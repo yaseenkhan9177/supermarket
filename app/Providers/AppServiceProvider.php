@@ -662,6 +662,13 @@ class AppServiceProvider extends ServiceProvider
                                     </div>
                                     <span class="pos-subnav-label">Access</span>
                                 </a>
+                               
+                                <a href="{{ route('accounts.import.show') }}" class="pos-subnav-link">
+                                    <div class="pos-subnav-icon" style="background-color: rgba(55,138,221,0.12); color: var(--pos-blue);">
+                                        <i class="fas fa-users-cog text-sm"></i>
+                                    </div>
+                                    <span class="pos-subnav-label">account import</span>
+                                </a>
                                 <a href="{{ route('customers.index') }}" class="pos-subnav-link">
                                     <div class="pos-subnav-icon" style="background-color: rgba(27,175,122,0.12); color: var(--pos-green);">
                                         <i class="fas fa-plus-circle text-sm"></i>
@@ -687,7 +694,26 @@ class AppServiceProvider extends ServiceProvider
                                     </div>
                                     <span class="pos-subnav-label">Staff</span>
                                 </a>
-                                <a href="#" class="pos-subnav-link">
+                               
+                                <a href="{{ route('reports.profit-loss') }}" class="pos-subnav-link">
+                                    <div class="pos-subnav-icon" style="background-color: rgba(16,185,129,0.12); color: var(--pos-green);">
+                                        <i class="fas fa-chart-line text-sm"></i>
+                                    </div>
+                                    <span class="pos-subnav-label">P&L Report</span>
+                                </a>
+                                <a href="{{ route('reports.daily-closing') }}" class="pos-subnav-link">
+                                    <div class="pos-subnav-icon" style="background-color: rgba(239,159,39,0.12); color: var(--pos-orange);">
+                                        <i class="fas fa-cash-register text-sm"></i>
+                                    </div>
+                                    <span class="pos-subnav-label">Daily Close</span>
+                                </a>
+                                <a href="{{ route('reports.audit-log') }}" class="pos-subnav-link">
+                                    <div class="pos-subnav-icon" style="background-color: rgba(139,92,246,0.12); color: var(--pos-purple);">
+                                        <i class="fas fa-shield-alt text-sm"></i>
+                                    </div>
+                                    <span class="pos-subnav-label">Audit Log</span>
+                                </a>
+                                <a href="{{ route('settings.backup.download') }}" class="pos-subnav-link">
                                     <div class="pos-subnav-icon" style="background-color: rgba(107,114,128,0.12); color: var(--pos-gray);">
                                         <i class="fas fa-database text-sm"></i>
                                     </div>
@@ -759,6 +785,12 @@ class AppServiceProvider extends ServiceProvider
                                 <a href="{{ route('purchase-orders.create') }}" class="pos-subnav-link">
                                     <div class="pos-subnav-icon" style="background-color: rgba(55,138,221,0.12); color: var(--pos-blue);"><i class="fas fa-shopping-cart"></i></div>
                                     <span class="pos-subnav-label">Pur. Order</span>
+                                </a>
+                                 <a href="{{ route('purchase-orders.index') }}" class="pos-subnav-link">
+                                    <div class="pos-subnav-icon" style="background-color: rgba(79,70,229,0.12); color: var(--pos-blue);">
+                                        <i class="fas fa-file-invoice text-sm"></i>
+                                    </div>
+                                    <span class="pos-subnav-label">PO System</span>
                                 </a>
                                 <a href="{{ route('purchase-returns.create') }}" class="pos-subnav-link">
                                     <div class="pos-subnav-icon" style="background-color: rgba(226,75,74,0.12); color: var(--pos-red);"><i class="fas fa-reply-all"></i></div>

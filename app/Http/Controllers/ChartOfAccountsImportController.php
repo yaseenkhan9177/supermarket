@@ -27,6 +27,12 @@ class ChartOfAccountsImportController extends Controller
         '06' => 'Suppliers',
         '07' => 'Equity',
         '08' => 'Liabilities',
+        '09' => 'Sales Income',
+        '10' => 'Services',
+        '11' => 'Other Income',
+        '12' => 'Cost of Sales',
+        '13' => 'Expenses',
+        '14' => 'Employees',
     ];
 
     /** Maps 2-digit prefix to destination target. */
@@ -39,6 +45,12 @@ class ChartOfAccountsImportController extends Controller
         '06' => 'supplier',
         '07' => 'gl',
         '08' => 'gl',
+        '09' => 'gl',
+        '10' => 'gl',
+        '11' => 'gl',
+        '12' => 'gl',
+        '13' => 'gl',
+        '14' => 'gl',
     ];
 
     /** Maps 2-digit prefix to general_ledger_accounts.account_type value. */
@@ -49,6 +61,12 @@ class ChartOfAccountsImportController extends Controller
         '04' => 'ASSETS',
         '07' => 'EQUITY',
         '08' => 'LIABILITIES',
+        '09' => 'INCOME',
+        '10' => 'INCOME',
+        '11' => 'INCOME',
+        '12' => 'EXPENSE',
+        '13' => 'EXPENSE',
+        '14' => 'EXPENSE',
     ];
 
     // =========================================================================
@@ -139,10 +157,18 @@ class ChartOfAccountsImportController extends Controller
                 $ac        = $this->cell($row, $colMap, 'ac');
                 $name      = $this->cell($row, $colMap, 'name');
 
-                // Derive prefix from first 2 characters of accountid
-                $prefix   = $accountId !== '' ? substr($accountId, 0, 2) : '';
-                $category = self::PREFIX_CATEGORY[$prefix] ?? 'Unmapped';
-                $target   = self::PREFIX_TARGET[$prefix]   ?? 'unmapped';
+                // Derive prefix from first 2 characters of accountid, parsing as an integer 1–14
+                $prefixChar = $accountId !== '' ? substr($accountId, 0, 2) : '';
+                $prefixVal  = is_numeric($prefixChar) ? (int)$prefixChar : 0;
+                if ($prefixVal >= 1 && $prefixVal <= 14) {
+                    $prefix   = str_pad($prefixVal, 2, '0', STR_PAD_LEFT);
+                    $category = self::PREFIX_CATEGORY[$prefix] ?? 'Unmapped';
+                    $target   = self::PREFIX_TARGET[$prefix]   ?? 'unmapped';
+                } else {
+                    $prefix   = $prefixChar;
+                    $category = 'Unmapped';
+                    $target   = 'unmapped';
+                }
 
                 // Duplicate detection against the correct target table
                 $isDuplicate    = false;
@@ -369,9 +395,13 @@ class ChartOfAccountsImportController extends Controller
         }
 
         // Derive prefix from accountId for account_type
-        $prefix      = substr($accountId, 0, 2);
+        $prefixChar  = substr($accountId, 0, 2);
+        $prefixVal   = is_numeric($prefixChar) ? (int)$prefixChar : 0;
+        $prefix      = str_pad($prefixVal, 2, '0', STR_PAD_LEFT);
         $accountType = self::PREFIX_ACCOUNT_TYPE[$prefix] ?? 'ASSETS';
         $glType      = $prefix; // Store bare 2-digit prefix, matching GeneralLedgerController queries
+
+        $balance     = (float) ($rowData['balance'] ?? 0);
 
         DB::beginTransaction();
         try {
@@ -380,8 +410,8 @@ class ChartOfAccountsImportController extends Controller
                 'gl_type'         => $glType,
                 'name'            => $name,
                 'account_type'    => $accountType,
-                'opening_balance' => 0,
-                'current_balance' => 0,
+                'opening_balance' => $balance,
+                'current_balance' => $balance,
             ]);
             $existing[$key] = true;
             DB::commit();
@@ -512,18 +542,35 @@ class ChartOfAccountsImportController extends Controller
 
         DB::beginTransaction();
         try {
+            $balance  = (float) ($rowData['balance'] ?? 0);
+            $phone    = trim($rowData['phone']   ?? '') ?: null;
+            $address  = trim($rowData['address'] ?? '') ?: null;
+
             $supplier = Supplier::create([
                 'name'            => $name,
                 'code'            => $code,
                 'account_code'    => $accountId,  // GL cross-reference
                 'company_name'    => null,
-                'phone'           => null,
-                'address'         => null,
-                'opening_balance' => 0,
-                'current_balance' => 0,
+                'phone'           => $phone,
+                'address'         => $address,
+                'opening_balance' => $balance,
+                'current_balance' => $balance,
                 'category_id'     => null,
             ]);
-            // opening_balance = 0 → no SupplierLedger entry (mirrors importSupplier logic)
+
+            // If there is an opening balance, record it as a supplier_ledger_entries row
+            // so the Supplier Profile ledger is accurate from day one.
+            if ($balance != 0) {
+                \App\Models\SupplierLedgerEntry::create([
+                    'supplier_id'   => $supplier->id,
+                    'type'          => 'manual_adjustment',
+                    'amount'        => $balance,
+                    'balance_after' => $balance,
+                    'note'          => "Opening balance imported from Chart of Accounts (code: {$code})",
+                    'created_by'    => auth()->id(),
+                ]);
+            }
+
             $existing[$codeKey] = $supplier->id;
             DB::commit();
             $summary['supplier']['inserted']++;

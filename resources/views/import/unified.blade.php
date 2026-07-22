@@ -126,7 +126,7 @@
                             </p>
                             <p class="text-xs text-slate-500 dark:text-slate-400">
                                 Import from a legacy CSV using account-prefix routing
-                                (01–08 → GL&nbsp;Accounts / Customers / Suppliers)
+                                (01–14 → GL&nbsp;Accounts / Customers / Suppliers)
                             </p>
                         </div>
                     </div>

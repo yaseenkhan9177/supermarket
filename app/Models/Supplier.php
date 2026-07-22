@@ -29,6 +29,12 @@ class Supplier extends Model
         return $this->hasMany(SupplierLedger::class)->orderBy('created_at', 'asc');
     }
 
+    /** Unified ledger entries */
+    public function ledgerEntries()
+    {
+        return $this->hasMany(SupplierLedgerEntry::class)->orderBy('created_at', 'desc');
+    }
+
     /** Stock returns to this supplier */
     public function returns()
     {

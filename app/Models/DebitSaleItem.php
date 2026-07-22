@@ -24,6 +24,11 @@ class DebitSaleItem extends Model
 
     public function sale()
     {
-        return $this->belongsTo(DebitSale::class);
+        return $this->belongsTo(DebitSale::class, 'debit_sale_id');
+    }
+
+    public function debitSale()
+    {
+        return $this->belongsTo(DebitSale::class, 'debit_sale_id');
     }
 }

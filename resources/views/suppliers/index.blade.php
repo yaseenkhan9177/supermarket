@@ -183,14 +183,20 @@
                     </td>
                     <td class="p-4 text-right">
                         @if($supplier->current_balance > 0)
-                            <span class="font-bold text-xs text-red-600 bg-red-100 px-2 py-0.5 rounded-full">Payable</span>
+                            <span class="inline-flex items-center gap-1 font-bold text-[11px] text-red-700 bg-red-100 border border-red-200 px-2 py-0.5 rounded-full">
+                                <i class="fas fa-arrow-circle-up text-[10px]"></i> Payable — You Owe
+                            </span>
                             <div class="font-bold text-red-600 mt-1">Rs. {{ number_format($supplier->current_balance, 2) }}</div>
                         @elseif($supplier->current_balance < 0)
-                            <span class="font-bold text-xs text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Credit</span>
+                            <span class="inline-flex items-center gap-1 font-bold text-[11px] text-emerald-700 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                <i class="fas fa-arrow-circle-down text-[10px]"></i> Advance / Credit
+                            </span>
                             <div class="font-bold text-emerald-600 mt-1">Rs. {{ number_format(abs($supplier->current_balance), 2) }}</div>
                         @else
-                            <span class="font-bold text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Settled</span>
-                            <div class="font-bold text-slate-400 mt-1">—</div>
+                            <span class="inline-flex items-center gap-1 font-bold text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                                Settled
+                            </span>
+                            <div class="font-semibold text-slate-400 mt-1">Rs. 0.00</div>
                         @endif
                     </td>
                     <td class="p-4 text-right">

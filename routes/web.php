@@ -224,9 +224,17 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
     Route::get('/customers/sample-excel', [\App\Http\Controllers\Store\CustomerController::class, 'sampleExcel'])->name('customers.sample_excel');
     Route::post('/customers/import', [\App\Http\Controllers\Store\CustomerController::class, 'import'])->name('customers.import');
     Route::post('/customers/quick-store', [\App\Http\Controllers\Store\CustomerController::class, 'quickStore'])->name('customers.quick-store');
+    Route::post('/customers/{id}/payments/receive', [\App\Http\Controllers\Store\CustomerController::class, 'receivePayment'])->name('customers.payments.receive');
+    Route::post('/customers/{id}/payments/pay', [\App\Http\Controllers\Store\CustomerController::class, 'payCustomer'])->name('customers.payments.pay');
+    Route::post('/customers/{id}/adjust-balance', [\App\Http\Controllers\Store\CustomerController::class, 'adjustBalance'])->name('customers.adjust-balance');
+    Route::post('/customers/{id}/write-off', [\App\Http\Controllers\Store\CustomerController::class, 'writeOffBalance'])->name('customers.write-off');
+    Route::post('/customers/{id}/reinstate', [\App\Http\Controllers\Store\CustomerController::class, 'reinstateCustomer'])->name('customers.reinstate');
+    Route::post('/customers/{id}/ledger/{entryId}/reverse', [\App\Http\Controllers\Store\CustomerController::class, 'reverseLedgerEntry'])->name('customers.ledger.reverse');
+    Route::post('/customers/{id}/deactivate', [\App\Http\Controllers\Store\CustomerController::class, 'deactivateCustomer'])->name('customers.deactivate');
     Route::resource('customers', \App\Http\Controllers\Store\CustomerController::class);
 
     // Receipts / Payments
+    Route::get('/payments', [\App\Http\Controllers\PaymentController::class, 'index'])->name('payments.index');
     Route::get('/payments/create', [\App\Http\Controllers\PaymentController::class, 'create'])->name('payments.create');
     Route::post('/payments/store', [\App\Http\Controllers\PaymentController::class, 'store'])->name('payments.store');
 
@@ -244,12 +252,14 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
     // ── Unified CSV/Excel Import ───────────────────────────────────────────────
     Route::get('/import', [\App\Http\Controllers\UnifiedImportController::class, 'showUpload'])->name('import.show');
     Route::post('/import/preview', [\App\Http\Controllers\UnifiedImportController::class, 'parsePreview'])->name('import.preview');
+    Route::get('/import/preview', fn () => redirect()->route('import.show'));
     Route::post('/import/commit', [\App\Http\Controllers\UnifiedImportController::class, 'commit'])->name('import.commit');
     Route::get('/import/sample', [\App\Http\Controllers\UnifiedImportController::class, 'downloadSample'])->name('import.sample');
 
     // ── Chart of Accounts CSV Import ──────────────────────────────────────────
     Route::get('/accounts/import',          [\App\Http\Controllers\ChartOfAccountsImportController::class, 'showUpload'])->name('accounts.import.show');
     Route::post('/accounts/import/preview', [\App\Http\Controllers\ChartOfAccountsImportController::class, 'parsePreview'])->name('accounts.import.preview');
+    Route::get('/accounts/import/preview', fn () => redirect()->route('accounts.import.show'));
     Route::post('/accounts/import/commit',  [\App\Http\Controllers\ChartOfAccountsImportController::class, 'commit'])->name('accounts.import.commit');
 
     // General Ledger (Chart of Accounts)
@@ -267,12 +277,22 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
     // Supplier Categories
     Route::resource('supplier-categories', \App\Http\Controllers\SupplierCategoryController::class)->only(['index', 'store', 'update', 'destroy']);
 
-    // Supplier Management
+    // Customer Payment Receipts
+    Route::get('/customer-receipts/{id}', [\App\Http\Controllers\Store\CustomerReceiptController::class, 'show'])->name('customer.receipts.show');
+
+    // Supplier Management & Profile System
     Route::get('/suppliers/sample-excel', [\App\Http\Controllers\SupplierController::class, 'sampleExcel'])->name('suppliers.sample-excel');
     Route::post('/suppliers/import', [\App\Http\Controllers\SupplierController::class, 'import'])->name('suppliers.import');
     Route::post('/suppliers/quick-store', [\App\Http\Controllers\SupplierController::class, 'quickStore'])->name('suppliers.quick-store');
     Route::get('/suppliers/{id}/ledger', [\App\Http\Controllers\SupplierController::class, 'ledger'])->name('suppliers.ledger');
-    Route::resource('suppliers', \App\Http\Controllers\SupplierController::class);
+    Route::get('/suppliers/{id}', [\App\Http\Controllers\Store\SupplierProfileController::class, 'show'])->name('suppliers.show');
+    Route::post('/suppliers/{id}/pay', [\App\Http\Controllers\Store\SupplierProfileController::class, 'paySupplier'])->name('suppliers.pay');
+    Route::post('/suppliers/{id}/adjust-balance', [\App\Http\Controllers\Store\SupplierProfileController::class, 'adjustBalance'])->name('suppliers.adjust-balance');
+    Route::post('/suppliers/{id}/ledger/{entryId}/reverse', [\App\Http\Controllers\Store\SupplierProfileController::class, 'reverseLedgerEntry'])->name('suppliers.ledger.reverse');
+    Route::resource('suppliers', \App\Http\Controllers\SupplierController::class)->except(['show']);
+
+    // Supplier Payment Vouchers
+    Route::get('/supplier-vouchers/{id}', [\App\Http\Controllers\Store\SupplierVoucherController::class, 'show'])->name('supplier.vouchers.show');
 
     // Supplier Payments
     Route::get('/suppliers/{id}/payments', [\App\Http\Controllers\SupplierController::class, 'paymentIndex'])->name('suppliers.payments');
@@ -294,10 +314,16 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
         Route::get('/{id}', [\App\Http\Controllers\PurchaseController::class, 'show'])->name('show');
     });
 
-    // Purchase Orders (Drafts)
+    // Purchase Orders (PO & Landed Cost Workflow)
     Route::group(['prefix' => 'purchase-orders', 'as' => 'purchase-orders.'], function () {
-        Route::get('/create', [\App\Http\Controllers\PurchaseOrderController::class, 'create'])->name('create');
-        Route::post('/store', [\App\Http\Controllers\PurchaseOrderController::class, 'store'])->name('store');
+        Route::get('/', [\App\Http\Controllers\Store\PurchaseOrderController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Store\PurchaseOrderController::class, 'create'])->name('create');
+        Route::post('/store', [\App\Http\Controllers\Store\PurchaseOrderController::class, 'store'])->name('store');
+        Route::get('/{id}', [\App\Http\Controllers\Store\PurchaseOrderController::class, 'show'])->name('show');
+        Route::post('/{id}/status', [\App\Http\Controllers\Store\PurchaseOrderController::class, 'updateStatus'])->name('status');
+        Route::post('/{id}/expenses', [\App\Http\Controllers\Store\PurchaseOrderController::class, 'addExpense'])->name('expenses');
+        Route::get('/{id}/receive', [\App\Http\Controllers\Store\PurchaseOrderController::class, 'receiveForm'])->name('receive');
+        Route::post('/{id}/receive', [\App\Http\Controllers\Store\PurchaseOrderController::class, 'processReceive'])->name('receive.process');
     });
 
     // Purchase Returns (Debit Note)
@@ -320,7 +346,18 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
         Route::get('/sales', [App\Http\Controllers\Store\ReportController::class, 'sales'])->name('sales');
         Route::get('/purchases', [App\Http\Controllers\Store\ReportController::class, 'purchases'])->name('purchases');
         Route::get('/accounts', [App\Http\Controllers\Store\ReportController::class, 'accounts'])->name('accounts');
+        Route::get('/written-off-customers', [App\Http\Controllers\Store\ReportController::class, 'writtenOffCustomers'])->name('written-off-customers');
+        Route::get('/daily-closing', [\App\Http\Controllers\Store\DailyClosingController::class, 'index'])->name('daily-closing');
+        Route::post('/daily-closing', [\App\Http\Controllers\Store\DailyClosingController::class, 'store'])->name('daily-closing.store');
+        Route::get('/audit-log', [\App\Http\Controllers\Store\AuditLogController::class, 'index'])->name('audit-log');
+        Route::get('/profit-loss', [\App\Http\Controllers\Store\ProfitLossController::class, 'index'])->name('profit-loss');
     });
+
+    // Global Search API Route
+    Route::get('/search', [\App\Http\Controllers\GlobalSearchController::class, 'search'])->name('global.search');
+
+    // Backup Direct Download Route (Owner / Admin)
+    Route::get('/settings/backup/download', [\App\Http\Controllers\Store\BackupController::class, 'download'])->name('settings.backup.download');
 
     // Report Layout & Permissions
     Route::get('/reports/layout', [\App\Http\Controllers\ReportLayoutController::class, 'index'])->name('reports.layout');

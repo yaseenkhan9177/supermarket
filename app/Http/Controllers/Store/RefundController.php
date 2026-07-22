@@ -310,17 +310,43 @@ class RefundController extends Controller
                 if ($refundMode === 'STORE_CREDIT' && $customer) {
                     // Add to customer's store credit balance
                     $customer->increment('store_credit', $totalAmount);
+                    \App\Models\CustomerLedgerEntry::create([
+                        'customer_id'   => $customer->id,
+                        'type'          => 'return',
+                        'amount'        => -$totalAmount,
+                        'balance_after' => $customer->fresh()->balance,
+                        'note'          => 'Customer Return (Store Credit) #' . $refundNumber,
+                        'created_by'    => auth()->id(),
+                    ]);
 
                 } elseif ($refundMode === 'REDUCE_DEBIT' && $customer) {
                     // Reduce what the customer owes (balance is positive = they owe us)
                     $newBalance = max(0, $customer->balance - $totalAmount);
                     $customer->update(['balance' => $newBalance]);
+                    \App\Models\CustomerLedgerEntry::create([
+                        'customer_id'   => $customer->id,
+                        'type'          => 'return',
+                        'amount'        => -$totalAmount,
+                        'balance_after' => $newBalance,
+                        'note'          => 'Customer Return (Reduce Debit) #' . $refundNumber,
+                        'created_by'    => auth()->id(),
+                    ]);
 
                 } elseif ($refundMode === 'CASH') {
                     // Cash out from active wallet
                     $activeWallet = \App\Models\Wallet::where('is_active', true)->first();
                     if ($activeWallet) {
                         $activeWallet->adjustBalance(-$totalAmount);
+                    }
+                    if ($customer) {
+                        \App\Models\CustomerLedgerEntry::create([
+                            'customer_id'   => $customer->id,
+                            'type'          => 'return',
+                            'amount'        => -$totalAmount,
+                            'balance_after' => $customer->balance,
+                            'note'          => 'Customer Return (Cash Refund) #' . $refundNumber,
+                            'created_by'    => auth()->id(),
+                        ]);
                     }
                 }
             } elseif ($refundMode === 'CASH') {

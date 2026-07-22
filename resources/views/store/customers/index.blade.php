@@ -104,11 +104,17 @@
             <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                 <i class="fas fa-users text-indigo-500"></i> Customer List
             </h3>
-            <form method="GET" action="{{ route('customers.index') }}" class="flex items-center gap-2">
+            <form method="GET" action="{{ route('customers.index') }}" class="flex items-center gap-2 flex-wrap">
+                <input type="hidden" name="show_deactivated" value="{{ $showDeactivated ? '1' : '0' }}">
                 <input type="text" name="search" value="{{ $search }}" placeholder="Search name or phone..." class="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded-md text-sm"/>
                 <button type="submit" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium">
                     <i class="fas fa-search"></i>
                 </button>
+                <a href="{{ route('customers.index', array_merge(request()->except('show_deactivated', 'page'), ['show_deactivated' => $showDeactivated ? '0' : '1'])) }}"
+                   class="px-3 py-1 {{ $showDeactivated ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300' }} rounded-md text-sm font-semibold hover:opacity-80 transition flex items-center gap-1">
+                    <i class="fas fa-user-slash text-xs"></i>
+                    {{ $showDeactivated ? 'Hide Deactivated' : 'Show Deactivated' }}
+                </a>
             </form>
         </div>
         <div class="overflow-x-auto">
@@ -125,8 +131,15 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                     @forelse($customers as $cust)
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                        <td class="p-4 font-medium text-slate-800 dark:text-white">{{ $cust->name }}</td>
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition {{ $cust->status === 'deactivated' ? 'opacity-60' : '' }}">
+                        <td class="p-4 font-medium text-slate-800 dark:text-white">
+                            {{ $cust->name }}
+                            @if($cust->status === 'written_off')
+                                <span class="ml-1.5 px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 rounded-full uppercase">Written Off</span>
+                            @elseif($cust->status === 'deactivated')
+                                <span class="ml-1.5 px-2 py-0.5 text-[10px] font-bold bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400 rounded-full uppercase">Deactivated</span>
+                            @endif
+                        </td>
                         <td class="p-4 text-slate-600 dark:text-slate-350">{{ $cust->phone ?? '—' }}</td>
                         <td class="p-4 text-slate-600 dark:text-slate-350">{{ $cust->address ?? '—' }}</td>
                         <td class="p-4 font-bold {{ $cust->balance > 0 ? 'text-red-600' : ($cust->balance < 0 ? 'text-emerald-600' : 'text-slate-500') }}">

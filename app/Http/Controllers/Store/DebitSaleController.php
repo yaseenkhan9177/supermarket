@@ -107,6 +107,14 @@ class DebitSaleController extends Controller
 
             // 4. Update Customer Balance (Increase Debt)
             $customer->increment('balance', $finalNet);
+            \App\Models\CustomerLedgerEntry::create([
+                'customer_id'   => $customer->id,
+                'type'          => 'sale',
+                'amount'        => $finalNet,
+                'balance_after' => $customer->fresh()->balance,
+                'note'          => 'Debit Sale Invoice #' . ($sale->invoice_no ?? $sale->id),
+                'created_by'    => auth()->id(),
+            ]);
 
             DB::commit();
             return redirect()->route('debit-sales.index')->with('success', 'Debit Invoice created successfully.');

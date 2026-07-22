@@ -55,16 +55,33 @@
         </div>
         
         <div class="flex flex-col text-left md:text-right">
-            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Current Balance</p>
+            <div class="flex items-center gap-1.5 justify-start md:justify-end">
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Current Balance</p>
+                <div class="group relative inline-block cursor-pointer">
+                    <i class="fas fa-info-circle text-slate-400 hover:text-indigo-600 text-xs"></i>
+                    <div class="hidden group-hover:block absolute right-0 w-64 p-2 bg-slate-800 text-white text-[11px] rounded-lg shadow-xl z-50 pointer-events-none font-normal text-left">
+                        <strong>Balance Rules:</strong><br>
+                        • <span class="text-red-400 font-semibold">Positive (+):</span> Store owes supplier (Payable).<br>
+                        • <span class="text-emerald-400 font-semibold">Negative (-):</span> Supplier owes store (Advance/Credit).
+                    </div>
+                </div>
+            </div>
+
             @if($supplier->current_balance > 0)
                 <h2 class="text-3xl font-black text-red-600 mt-1">Rs. {{ number_format($supplier->current_balance, 2) }}</h2>
-                <span class="text-xs font-bold text-red-500/80 bg-red-50 dark:bg-red-950/20 px-2 py-0.5 rounded-full inline-block mt-1 self-start md:self-end">Payable (We owe them)</span>
+                <span class="text-xs font-bold text-red-600 bg-red-100 dark:bg-red-950/40 px-2.5 py-1 rounded-full inline-block mt-1 self-start md:self-end border border-red-200">
+                    <i class="fas fa-arrow-circle-up mr-1"></i> Payable — You Owe Supplier
+                </span>
             @elseif($supplier->current_balance < 0)
                 <h2 class="text-3xl font-black text-emerald-600 mt-1">Rs. {{ number_format(abs($supplier->current_balance), 2) }}</h2>
-                <span class="text-xs font-bold text-emerald-500/80 bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-full inline-block mt-1 self-start md:self-end">Return Credit (They owe us)</span>
+                <span class="text-xs font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full inline-block mt-1 self-start md:self-end border border-emerald-200">
+                    <i class="fas fa-arrow-circle-down mr-1"></i> Advance / Credit — Supplier Owes You
+                </span>
             @else
-                <h2 class="text-3xl font-black text-slate-400 mt-1">Settled</h2>
-                <span class="text-xs font-bold text-slate-400 bg-slate-50 dark:bg-slate-950 px-2 py-0.5 rounded-full inline-block mt-1 self-start md:self-end">No Balance Outstanding</span>
+                <h2 class="text-3xl font-black text-slate-400 mt-1">Rs. 0.00</h2>
+                <span class="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full inline-block mt-1 self-start md:self-end">
+                    <i class="fas fa-check-circle mr-1"></i> Settled (Zero Balance)
+                </span>
             @endif
         </div>
     </div>

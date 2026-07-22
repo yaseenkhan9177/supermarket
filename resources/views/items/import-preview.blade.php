@@ -124,7 +124,7 @@
         <!-- Guide & Instructions -->
         <div class="bg-gray-50 dark:bg-slate-800/40 rounded-xl p-6 border border-gray-200 dark:border-slate-800">
             <h4 class="text-gray-800 dark:text-slate-300 font-bold text-sm uppercase tracking-wider mb-4">Column Guidelines & Validation Rules</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
                 <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-slate-850">
                     <span class="font-bold text-gray-900 dark:text-white">Name*</span> (Required)
                     <p class="text-gray-500 dark:text-slate-400 text-xs mt-1">Item description or title. Cannot be empty.</p>
@@ -144,6 +144,14 @@
                 <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-slate-850">
                     <span class="font-bold text-gray-900 dark:text-white">Pricing & Stock</span>
                     <p class="text-gray-500 dark:text-slate-400 text-xs mt-1">Sale Price, Cost Price, and Opening Stock must be numeric.</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-slate-850">
+                    <span class="font-bold text-gray-900 dark:text-white">Supplier Name/Code</span>
+                    <p class="text-gray-500 dark:text-slate-400 text-xs mt-1">Matches existing supplier by Code or exact Name, or creates new.</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-slate-850">
+                    <span class="font-bold text-gray-900 dark:text-white">Due Amount</span>
+                    <p class="text-gray-500 dark:text-slate-400 text-xs mt-1">Adds to supplier's payable balance and generates ledger entry.</p>
                 </div>
                 <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-slate-850">
                     <span class="font-bold text-gray-900 dark:text-white">Barcodes</span>
@@ -175,6 +183,60 @@
             </div>
         </div>
 
+        <!-- Supplier Dues Summary Card -->
+        <div x-show="supplierDues && supplierDues.length > 0" class="bg-white dark:bg-gray-800 rounded-2xl border border-indigo-200 dark:border-indigo-900/50 shadow-xl overflow-hidden mb-6">
+            <div class="p-6 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-transparent border-b border-indigo-100 dark:border-indigo-900/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md text-white flex-shrink-0">
+                        <i class="fas fa-file-invoice-dollar text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-gray-900 dark:text-white font-bold text-lg">Supplier Dues Summary</h3>
+                        <p class="text-xs text-gray-500 dark:text-slate-400">Review payable amounts to be added to supplier ledger balances upon import.</p>
+                    </div>
+                </div>
+                <div class="sm:text-right">
+                    <span class="text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wider block font-semibold">Total Dues to Add</span>
+                    <span class="text-2xl font-black text-indigo-600 dark:text-indigo-400" x-text="'Rs. ' + parseFloat(totalSupplierDues).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})">Rs. 0.00</span>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead class="bg-gray-50 dark:bg-slate-750 text-gray-500 uppercase font-semibold text-[11px] tracking-wider border-b border-gray-100 dark:border-slate-700/50">
+                        <tr>
+                            <th class="p-4">Supplier Name / Code</th>
+                            <th class="p-4 text-center w-24">Rows</th>
+                            <th class="p-4 w-36 text-center">Status</th>
+                            <th class="p-4 text-right w-40">Current Balance</th>
+                            <th class="p-4 text-right w-40">Due in File</th>
+                            <th class="p-4 text-right w-44">New Balance After Import</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+                        <template x-for="sd in supplierDues" :key="sd.name">
+                            <tr class="hover:bg-gray-50 dark:hover:bg-slate-750/30 transition">
+                                <td class="p-4">
+                                    <div class="flex flex-col">
+                                        <span class="font-bold text-gray-800 dark:text-slate-200" x-text="sd.name"></span>
+                                        <span class="text-xs text-gray-500 dark:text-slate-400 font-mono" x-text="'Code: ' + (sd.code || 'Auto-Gen')"></span>
+                                    </div>
+                                </td>
+                                <td class="p-4 text-center font-bold text-gray-700 dark:text-slate-300" x-text="sd.rows ? sd.rows.length : 0"></td>
+                                <td class="p-4 text-center">
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider inline-block"
+                                          :class="sd.is_new ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400'"
+                                          x-text="sd.is_new ? 'New Supplier' : 'Existing'"></span>
+                                </td>
+                                <td class="p-4 text-right font-mono font-semibold text-gray-600 dark:text-slate-400" x-text="'Rs. ' + parseFloat(sd.current_balance).toLocaleString('en-US', {minimumFractionDigits: 2})"></td>
+                                <td class="p-4 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400" x-text="'+ Rs. ' + parseFloat(sd.due_total).toLocaleString('en-US', {minimumFractionDigits: 2})"></td>
+                                <td class="p-4 text-right font-mono font-black text-emerald-600 dark:text-emerald-400" x-text="'Rs. ' + parseFloat(sd.projected_balance).toLocaleString('en-US', {minimumFractionDigits: 2})"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Preview Table -->
         <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xl overflow-hidden">
             <div class="p-6 border-b border-gray-100 dark:border-slate-700/50 flex justify-between items-center">
@@ -195,6 +257,8 @@
                             <th class="p-4 w-28 text-right">Price</th>
                             <th class="p-4 w-28 text-right">Cost</th>
                             <th class="p-4 w-24 text-center">Stock</th>
+                            <th class="p-4 w-36">Supplier</th>
+                            <th class="p-4 w-28 text-right">Due Amt</th>
                             <th class="p-4 w-36 text-center">Status</th>
                         </tr>
                     </thead>
@@ -233,6 +297,8 @@
                                 <td class="p-4 text-right font-mono font-bold text-gray-900 dark:text-white" x-text="'Rs.' + parseFloat(row.price).toFixed(2)"></td>
                                 <td class="p-4 text-right font-mono text-gray-600 dark:text-slate-400" x-text="'Rs.' + parseFloat(row.cost).toFixed(2)"></td>
                                 <td class="p-4 text-center font-bold text-gray-700 dark:text-slate-300" x-text="row.stock"></td>
+                                <td class="p-4 text-xs text-gray-600 dark:text-slate-400 truncate max-w-[130px]" :title="row.supplier_name || row.supplier_code || '-'" x-text="row.supplier_name || row.supplier_code || '-'"></td>
+                                <td class="p-4 text-right font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400" x-text="row.due > 0 ? ('Rs.' + parseFloat(row.due).toFixed(2)) : '-'"></td>
                                 <td class="p-4 text-center">
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
                                           :class="{
@@ -366,7 +432,9 @@
             importing: false,
             processedRows: 0,
             results: { imported: 0, skipped: 0, failed: 0 },
-           csrfToken: '{{ csrf_token() }}',
+            csrfToken: '{{ csrf_token() }}',
+            supplierDues: [],
+            totalSupplierDues: 0,
 
             get paginatedRows() {
                 const start = (this.currentPage - 1) * this.pageSize;
@@ -434,6 +502,8 @@
                 .then(data => {
                     this.rows = data.rows;
                     this.summary = data.summary;
+                    this.supplierDues = data.supplier_dues || [];
+                    this.totalSupplierDues = data.total_supplier_dues || 0;
                     this.currentPage = 1;
                     this.step = 2;
                 })
@@ -449,7 +519,6 @@
             parseCSV(text) {
                 const lines = text.trim().split(/\r?\n/);
                 return lines.map(line => {
-                    // Handle quoted fields with commas/tabs inside
                     const result = [];
                     let current = '';
                     let inQuotes = false;
@@ -460,7 +529,6 @@
                             result.push(current.trim());
                             current = '';
                         } else if (line[i] === '\t' && !inQuotes) {
-                            // Handle tab-separated (Excel default copy format)
                             result.push(current.trim());
                             current = '';
                         } else {
@@ -514,6 +582,9 @@
                     taxrate: findHeader(['taxrate', 'taxprate', 'tax_rate', 'tax rate', 'tax']),
                     itemid: findHeader(['itemid', 'item_id', 'imported_id', 'imported id', 'id']),
                     unit: findHeader(['unit', 'uom', 'measure']),
+                    supplier: findHeader(['supplier', 'supplier_name', 'supplier name', 'vendor', 'vendor_name', 'vendor name']),
+                    supplier_code: findHeader(['supplier_code', 'supplier code', 'vendor_code', 'vendor code', 'supplier_id', 'supplier id']),
+                    due: findHeader(['due', 'due_amount', 'due amount', 'balance', 'supplier_due', 'supplier due', 'payable']),
                     description: findHeader(['description', 'desc', 'details', 'item description']),
                 };
 
@@ -524,16 +595,15 @@
 
                 const previewRows = [];
                 const summary = { ready: 0, warnings: 0, errors: 0, total: 0 };
+                const supplierGroups = {};
 
                 for (let i = 1; i < parsed.length; i++) {
                     const row = parsed[i];
-                    // Skip empty rows
                     if (row.length === 0 || (row.length === 1 && !row[0].trim())) {
                         continue;
                     }
 
                     const rowNumber = i + 1;
-
                     const name = (map.name !== false && row[map.name] !== undefined) ? String(row[map.name]).trim() : '';
                     const type = (map.type !== false && row[map.type] !== undefined) ? String(row[map.type]).toLowerCase().trim() : 'inventory';
                     const sku = (map.bar_code !== false && row[map.bar_code] !== undefined) ? String(row[map.bar_code]).trim() : '';
@@ -544,7 +614,6 @@
                     const costRaw = (map.cost !== false && row[map.cost] !== undefined && row[map.cost] !== '') ? row[map.cost] : 0;
                     const stockRaw = (map.stock !== false && row[map.stock] !== undefined && row[map.stock] !== '') ? row[map.stock] : 0;
                     const minStockRaw = (map.min !== false && row[map.min] !== undefined && row[map.min] !== '') ? row[map.min] : 0;
-
                     const tradeRaw = (map.trade !== false && row[map.trade] !== undefined && row[map.trade] !== '') ? row[map.trade] : 0;
                     const wholesaleRaw = (map.h_price !== false && row[map.h_price] !== undefined && row[map.h_price] !== '') ? row[map.h_price] : 0;
                     const maxStockRaw = (map.max !== false && row[map.max] !== undefined && row[map.max] !== '') ? row[map.max] : 0;
@@ -552,71 +621,44 @@
                     const openPriceRaw = (map.openprice !== false && row[map.openprice] !== undefined && row[map.openprice] !== '') ? row[map.openprice] : false;
                     const taxRateRaw = (map.taxrate !== false && row[map.taxrate] !== undefined && row[map.taxrate] !== '') ? row[map.taxrate] : 0;
                     const importedId = (map.itemid !== false && row[map.itemid] !== undefined && row[map.itemid] !== '') ? row[map.itemid] : null;
+                    const supplierName = (map.supplier !== false && row[map.supplier] !== undefined) ? String(row[map.supplier]).trim() : '';
+                    const supplierCode = (map.supplier_code !== false && row[map.supplier_code] !== undefined) ? String(row[map.supplier_code]).trim() : '';
+                    const dueRaw = (map.due !== false && row[map.due] !== undefined && row[map.due] !== '') ? row[map.due] : 0;
                     const description = (map.description !== false && row[map.description] !== undefined) ? String(row[map.description]).trim() : '';
 
                     let status = 'ready';
                     const issues = [];
-
-                    // Required validations
                     if (!name) {
                         status = 'error';
                         issues.push('Item Name is required.');
                     }
-
                     const validTypes = ['inventory', 'service', 'package'];
                     if (!validTypes.includes(type)) {
                         status = 'error';
                         issues.push("Invalid type '" + type + "'. Must be one of: inventory, service, package.");
                     }
-
-                    // Helper to check if a value is numeric
                     const isNumeric = (val) => {
                         if (val === undefined || val === null || val === '') return true;
                         const str = String(val).trim();
                         if (str === '') return true;
                         return !isNaN(str) && !isNaN(parseFloat(str));
                     };
-
-                    // Numeric checks
-                    if (!isNumeric(priceRaw)) {
-                        status = 'error';
-                        issues.push('Price must be numeric.');
-                    }
-                    if (!isNumeric(costRaw)) {
-                        status = 'error';
-                        issues.push('Cost must be numeric.');
-                    }
-                    if (!isNumeric(stockRaw)) {
-                        status = 'error';
-                        issues.push('Stock must be numeric.');
-                    }
-
-                    // Warnings
+                    if (!isNumeric(priceRaw)) { status = 'error'; issues.push('Price must be numeric.'); }
+                    if (!isNumeric(costRaw)) { status = 'error'; issues.push('Cost must be numeric.'); }
+                    if (!isNumeric(stockRaw)) { status = 'error'; issues.push('Stock must be numeric.'); }
+                    if (!isNumeric(dueRaw)) { status = 'error'; issues.push('Due Amount must be numeric.'); }
+                    const dueAmount = isNumeric(dueRaw) ? (parseFloat(dueRaw) || 0) : 0;
                     if (status !== 'error') {
-                        if (!category) {
-                            status = 'warning';
-                            issues.push('Category is empty.');
-                        }
+                        if (!category) { status = 'warning'; issues.push('Category is empty.'); }
                     }
-
-                    // Update counts
-                    if (status === 'error') {
-                        summary.errors++;
-                    } else if (status === 'warning') {
-                        summary.warnings++;
-                    } else {
-                        summary.ready++;
-                    }
+                    if (status === 'error') { summary.errors++; } else if (status === 'warning') { summary.warnings++; } else { summary.ready++; }
                     summary.total++;
-
-                    // Parse open price boolean
                     let openPrice = false;
                     if (openPriceRaw) {
                         const opStr = String(openPriceRaw).toLowerCase().trim();
                         openPrice = (opStr === 'true' || opStr === '1' || opStr === 'yes' || opStr === 'y');
                     }
-
-                    previewRows.push({
+                    const rowObj = {
                         index: rowNumber,
                         name: name,
                         type: type,
@@ -634,14 +676,36 @@
                         open_price: openPrice,
                         tax_rate: isNumeric(taxRateRaw) ? (parseFloat(taxRateRaw) || 0) : 0,
                         imported_id: importedId,
+                        supplier_name: supplierName,
+                        supplier_code: supplierCode,
+                        due: dueAmount,
                         description: description,
                         status: status,
                         issues: issues
-                    });
+                    };
+                    previewRows.push(rowObj);
+                    if (status !== 'error' && dueAmount > 0 && (supplierName || supplierCode)) {
+                        const gKey = (supplierCode || supplierName).toLowerCase();
+                        if (!supplierGroups[gKey]) {
+                            supplierGroups[gKey] = {
+                                name: supplierName || supplierCode,
+                                code: supplierCode || 'Auto-Gen',
+                                is_new: true,
+                                current_balance: 0.0,
+                                due_total: 0.0,
+                                projected_balance: 0.0,
+                                rows: []
+                            };
+                        }
+                        supplierGroups[gKey].due_total += dueAmount;
+                        supplierGroups[gKey].projected_balance += dueAmount;
+                        supplierGroups[gKey].rows.push(rowObj);
+                    }
                 }
-
                 this.rows = previewRows;
                 this.summary = summary;
+                this.supplierDues = Object.values(supplierGroups);
+                this.totalSupplierDues = this.supplierDues.reduce((sum, g) => sum + g.due_total, 0);
                 this.currentPage = 1;
                 this.step = 2;
             },
@@ -663,6 +727,8 @@
                 this.pastedData = '';
                 this.rows = [];
                 this.summary = { ready: 0, warnings: 0, errors: 0, total: 0 };
+                this.supplierDues = [];
+                this.totalSupplierDues = 0;
                 this.currentPage = 1;
                 this.step = 1;
                 this.importing = false;
@@ -681,15 +747,14 @@
                 this.importing = true;
                 this.processedRows = 0;
                 this.results = { imported: 0, skipped: 0, failed: 0 };
+                const fileName = this.selectedFile ? this.selectedFile.name : 'pasted_stock_import.csv';
 
-                // Split into chunks of 100
                 const chunkSize = 100;
                 const chunks = [];
                 for (let i = 0; i < validRows.length; i += chunkSize) {
                     chunks.push(validRows.slice(i, i + chunkSize));
                 }
 
-                // Process chunks sequentially
                 for (let i = 0; i < chunks.length; i++) {
                     const chunk = chunks[i];
                     try {
@@ -699,11 +764,12 @@
                                  'Content-Type': 'application/json',
                                  'X-CSRF-TOKEN': this.csrfToken,
                                  'Accept': 'application/json'
-    },
-                            body: JSON.stringify({
-                                rows: chunk,
-                                chunk_index: i
-                            })
+                         },
+                         body: JSON.stringify({
+                             rows: chunk,
+                             chunk_index: i,
+                             file_name: fileName
+                         })
                         });
 
                         if (!response.ok) {
@@ -711,7 +777,6 @@
                         }
 
                         const data = await response.json();
-                        
                         if (data.success === false) {
                             this.results.failed += chunk.length;
                         } else {
@@ -726,7 +791,6 @@
                         this.processedRows += chunk.length;
                     }
                 }
-
                 this.importing = false;
             }
         };
