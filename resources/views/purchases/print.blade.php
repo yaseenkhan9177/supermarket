@@ -29,10 +29,23 @@
 
     <div class="max-w-2xl mx-auto bg-white p-8 shadow-md print:shadow-none print:w-full">
 
+        @php
+            $companySetting = \App\Models\CompanySetting::first();
+            $store = \App\Models\Store::first();
+            $appName = config('app.name');
+            $fallbackName = ($appName && strtolower($appName) !== 'laravel') ? $appName : 'Supermarket';
+            $storeName = $companySetting?->business_name ?: ($store?->name ?: $fallbackName);
+        @endphp
         <!-- Header -->
         <div class="text-center border-b-2 border-dashed border-gray-300 pb-4 mb-4">
-            <h1 class="text-2xl font-bold uppercase tracking-widest text-gray-900">Purchase Voucher</h1>
-            <p class="text-sm text-gray-500">OwnStore PRO - Internal Record</p>
+            <h1 class="text-2xl font-black uppercase tracking-widest text-gray-900 mb-1">{{ $storeName }}</h1>
+            @if(!empty($companySetting?->address))
+                <p class="text-xs text-gray-600">{{ $companySetting->address }}</p>
+            @endif
+            @if(!empty($companySetting?->phone))
+                <p class="text-xs text-gray-600">Phone: {{ $companySetting->phone }}</p>
+            @endif
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mt-2">Purchase Voucher — Internal Record</p>
         </div>
 
         <!-- Info Grid -->

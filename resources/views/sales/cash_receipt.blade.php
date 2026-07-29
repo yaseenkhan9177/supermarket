@@ -67,9 +67,22 @@
 
 <body>
 
+    @php
+        $companySetting = \App\Models\CompanySetting::first();
+        $store = \App\Models\Store::first();
+        $appName = config('app.name');
+        $fallbackName = ($appName && strtolower($appName) !== 'laravel') ? $appName : 'Supermarket';
+        $storeName = $companySetting?->business_name ?: ($store?->name ?: $fallbackName);
+    @endphp
     <div class="header">
-        <div class="store-name">OwnStore PRO</div>
-        <div>Retail Invoice</div>
+        <div class="store-name" style="text-transform: uppercase;">{{ $storeName }}</div>
+        @if(!empty($companySetting?->address))
+            <div style="font-size: 11px;">{{ $companySetting->address }}</div>
+        @endif
+        @if(!empty($companySetting?->phone))
+            <div style="font-size: 10px;">Ph: {{ $companySetting->phone }}</div>
+        @endif
+        <div style="font-weight: bold; margin-top: 3px;">Retail Invoice</div>
     </div>
 
     <div class="meta">

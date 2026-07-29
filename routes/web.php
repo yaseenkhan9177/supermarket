@@ -221,6 +221,7 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
 Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->group(function () {
 
     // Customers
+    Route::get('/customers/search', [\App\Http\Controllers\Store\CustomerController::class, 'search'])->name('customers.search');
     Route::get('/customers/sample-excel', [\App\Http\Controllers\Store\CustomerController::class, 'sampleExcel'])->name('customers.sample_excel');
     Route::post('/customers/import', [\App\Http\Controllers\Store\CustomerController::class, 'import'])->name('customers.import');
     Route::post('/customers/quick-store', [\App\Http\Controllers\Store\CustomerController::class, 'quickStore'])->name('customers.quick-store');
@@ -281,6 +282,7 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
     Route::get('/customer-receipts/{id}', [\App\Http\Controllers\Store\CustomerReceiptController::class, 'show'])->name('customer.receipts.show');
 
     // Supplier Management & Profile System
+    Route::get('/suppliers/search', [\App\Http\Controllers\SupplierController::class, 'search'])->name('suppliers.search');
     Route::get('/suppliers/sample-excel', [\App\Http\Controllers\SupplierController::class, 'sampleExcel'])->name('suppliers.sample-excel');
     Route::post('/suppliers/import', [\App\Http\Controllers\SupplierController::class, 'import'])->name('suppliers.import');
     Route::post('/suppliers/quick-store', [\App\Http\Controllers\SupplierController::class, 'quickStore'])->name('suppliers.quick-store');
@@ -333,7 +335,8 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
     });
 
     // Report Center
-    Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'accountReports'])->name('reports.index');
+    Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/data', [\App\Http\Controllers\ReportController::class, 'data'])->name('reports.data');
     Route::get('/reports/view/{id}', [\App\Http\Controllers\ReportController::class, 'view'])->name('reports.view');
     Route::post('/reports/generate', [\App\Http\Controllers\ReportController::class, 'generate'])->name('reports.generate');
 

@@ -1,37 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Process Return | OwnStore PRO</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</head>
-<body class="bg-gray-950 text-gray-200 font-sans min-h-screen" x-data="returnForm()">
+@extends('layouts.admin')
 
-    <!-- Nav -->
-    <nav class="bg-gray-900 border-b border-gray-800 px-6 py-3 sticky top-0 z-50 shadow-lg mb-8">
-        <div class="container mx-auto max-w-[1200px] flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <a href="{{ route('supplier-returns.index') }}" class="text-gray-400 hover:text-orange-400 transition">
-                    <i class="fas fa-arrow-left"></i>
-                </a>
-                <div class="w-9 h-9 rounded-full bg-orange-500 flex items-center justify-center text-white shadow-md">
-                    <i class="fas fa-rotate-left text-sm"></i>
-                </div>
-                <div>
-                    <h1 class="text-lg font-extrabold text-white leading-none">Process Supplier Return</h1>
-                    <span class="text-xs text-gray-400">Review items and choose resolution</span>
-                </div>
-            </div>
-            <a href="{{ route('supplier-returns.index') }}" class="text-gray-400 hover:text-gray-200 text-sm flex items-center gap-2">
-                <i class="fas fa-times"></i> Cancel
-            </a>
-        </div>
-    </nav>
+@section('navbar_subtitle', 'Process Supplier Return')
+
+@section('content')
+<div x-data="returnForm()">
 
     <!-- Flash Errors -->
     @if(session('error'))
@@ -150,13 +122,7 @@
                     <label class="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-2">
                         <i class="fas fa-user-tie mr-1 text-indigo-400"></i> Supplier
                     </label>
-                    <select name="supplier_id" required
-                            class="w-full border border-gray-700 bg-gray-800 text-white rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                        <option value="">— Select Supplier —</option>
-                        @foreach($suppliers as $sup)
-                        <option value="{{ $sup->id }}">{{ $sup->name }}{{ $sup->company_name ? ' — '.$sup->company_name : '' }}</option>
-                        @endforeach
-                    </select>
+                    <x-supplier-search :required="true" />
                     <p class="text-[10px] text-gray-500 mt-1">Select the supplier this stock was purchased from.</p>
                 </div>
 
@@ -266,5 +232,5 @@
             }
         }
     </script>
-</body>
-</html>
+</div>
+@endsection

@@ -15,29 +15,37 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 lg:gap-3 flex-wrap">
             @include('partials.global_search')
 
             @yield('navbar_actions')
+
+            <!-- Dashboard -->
+            <a href="{{ route('dashboard') }}" id="nav-dashboard"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition transform hover:scale-105 {{ request()->routeIs('dashboard') ? 'bg-indigo-800 text-white shadow-md ring-2 ring-indigo-300' : 'bg-indigo-600 hover:bg-indigo-700 text-white' }}">
+                <i class="fas fa-home"></i>
+                Dashboard
+            </a>
 
             {{-- ======================================================
                  SALES — visible to: owner, manager, cashier
                  ====================================================== --}}
             @hasanyrole('owner|manager|cashier')
             <div x-data="{ open: false }" @click.away="open = false" class="relative">
-                <button @click="open = !open" id="nav-sales-btn" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
+                <button @click="open = !open" id="nav-sales-btn"
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105 {{ (request()->routeIs('sales.*') || request()->routeIs('cash-sales.*') || request()->routeIs('debit-sales.*')) ? 'bg-indigo-800 text-white shadow-md ring-2 ring-indigo-300' : 'bg-indigo-600 hover:bg-indigo-700 text-white' }}">
                     <i class="fas fa-cash-register"></i>
-                    Sales <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                    Sales <i class="fas fa-chevron-down ml-1 text-xs"></i>
                 </button>
                 <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-                    <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                        <a href="{{ route('sales.pos') }}" id="nav-pos" class="block text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors" role="menuitem">
+                    <div class="py-1" role="menu" aria-orientation="vertical">
+                        <a href="{{ route('sales.pos') }}" id="nav-pos" class="block text-sm text-gray-700 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('sales.pos') ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}">
                             Counter Sales (POS)
                         </a>
-                        <a href="{{ route('cash-sales.create') }}" id="nav-cash-sales" class="block text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors" role="menuitem">
+                        <a href="{{ route('cash-sales.create') }}" id="nav-cash-sales" class="block text-sm text-gray-700 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('cash-sales.*') ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}">
                             Cash Sales
                         </a>
-                        <a href="{{ route('debit-sales.create') }}" id="nav-debit-sales" class="block text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors" role="menuitem">
+                        <a href="{{ route('debit-sales.create') }}" id="nav-debit-sales" class="block text-sm text-gray-700 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('debit-sales.*') ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}">
                             Debit Sales
                         </a>
                     </div>
@@ -45,28 +53,75 @@
             </div>
             @endhasanyrole
 
+            {{-- Items / Inventory --}}
+            @hasanyrole('owner|manager|warehouse')
+            <a href="{{ route('items.index') }}" id="nav-items"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition transform hover:scale-105 {{ request()->routeIs('items.*') ? 'bg-indigo-800 text-white shadow-md ring-2 ring-indigo-300' : 'bg-indigo-600 hover:bg-indigo-700 text-white' }}">
+                <i class="fas fa-boxes"></i>
+                Items
+            </a>
+            @endhasanyrole
+
+            {{-- Customers & Suppliers --}}
+            @hasanyrole('owner|manager')
+            <a href="{{ route('customers.index') }}" id="nav-customers"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition transform hover:scale-105 {{ (request()->routeIs('customers.*') || request()->routeIs('store.customers.*')) ? 'bg-indigo-800 text-white shadow-md ring-2 ring-indigo-300' : 'bg-indigo-600 hover:bg-indigo-700 text-white' }}">
+                <i class="fas fa-user-friends"></i>
+                Customers
+            </a>
+
+            <a href="{{ route('suppliers.index') }}" id="nav-suppliers"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition transform hover:scale-105 {{ (request()->routeIs('suppliers.*') || request()->routeIs('store.suppliers.*')) ? 'bg-indigo-800 text-white shadow-md ring-2 ring-indigo-300' : 'bg-indigo-600 hover:bg-indigo-700 text-white' }}">
+                <i class="fas fa-truck-loading"></i>
+                Suppliers
+            </a>
+            @endhasanyrole
+
+            {{-- Purchase Orders --}}
+            @hasanyrole('owner|manager|warehouse')
+            <a href="{{ route('purchase-orders.index') }}" id="nav-po"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition transform hover:scale-105 {{ (request()->routeIs('purchase-orders.*') || request()->routeIs('purchases.*')) ? 'bg-indigo-800 text-white shadow-md ring-2 ring-indigo-300' : 'bg-indigo-600 hover:bg-indigo-700 text-white' }}">
+                <i class="fas fa-file-invoice"></i>
+                Purchase Orders
+            </a>
+
+            <!-- GODAM (Warehouse) LINK -->
+            <a href="{{ route('godams.index') }}" id="nav-godams"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition transform hover:scale-105 {{ request()->routeIs('godams.*') ? 'bg-indigo-800 text-white shadow-md ring-2 ring-indigo-300' : 'bg-indigo-600 hover:bg-indigo-700 text-white' }}">
+                <i class="fas fa-warehouse"></i>
+                Godam
+            </a>
+
+            <a href="{{ route('stock-transfers.index') }}" id="nav-transfers"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition transform hover:scale-105 {{ (request()->routeIs('stock-transfers.*') || request()->routeIs('transfers.*')) ? 'bg-indigo-800 text-white shadow-md ring-2 ring-indigo-300' : 'bg-indigo-600 hover:bg-indigo-700 text-white' }}">
+                <i class="fas fa-exchange-alt"></i>
+                Transfers
+            </a>
+            @endhasanyrole
+
             {{-- ======================================================
                  REPORTS — visible to: owner, manager (dropdown)
                  ====================================================== --}}
             @hasanyrole('owner|manager')
             <div x-data="{ open: false }" @click.away="open = false" class="relative">
-                <button @click="open = !open" id="nav-reports-btn" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
+                <button @click="open = !open" id="nav-reports-btn"
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105 {{ request()->routeIs('reports.*') ? 'bg-indigo-800 text-white shadow-md ring-2 ring-indigo-300' : 'bg-indigo-600 hover:bg-indigo-700 text-white' }}">
                     <i class="fas fa-chart-pie"></i>
-                    Reports <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                    Reports <i class="fas fa-chevron-down ml-1 text-xs"></i>
                 </button>
                 <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute right-0 mt-2 w-52 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
                     <div class="py-1" role="menu">
-                        <a href="{{ route('reports.index') }}" id="nav-reports" class="flex items-center gap-2 text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                        <a href="{{ route('reports.index') }}" id="nav-reports" class="flex items-center gap-2 text-sm text-gray-700 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('reports.index') ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}">
                             <i class="fas fa-chart-bar w-4 text-center"></i> All Reports
                         </a>
-                        <a href="{{ route('reports.profit-loss') }}" id="nav-profit-loss" class="flex items-center gap-2 text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                        <a href="{{ route('reports.profit-loss') }}" id="nav-profit-loss" class="flex items-center gap-2 text-sm text-gray-700 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('reports.profit-loss') ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}">
                             <i class="fas fa-file-invoice-dollar w-4 text-center"></i> Profit & Loss
                         </a>
-                        <a href="{{ route('reports.daily-closing') }}" id="nav-daily-closing" class="flex items-center gap-2 text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                        <a href="{{ route('reports.daily-closing') }}" id="nav-daily-closing" class="flex items-center gap-2 text-sm text-gray-700 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('reports.daily-closing') ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}">
                             <i class="fas fa-cash-register w-4 text-center"></i> Daily Closing
                         </a>
                         @role('owner')
-                        <a href="{{ route('reports.audit-log') }}" id="nav-audit-log" class="flex items-center gap-2 text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                        <a href="{{ route('reports.audit-log') }}" id="nav-audit-log" class="flex items-center gap-2 text-sm text-gray-700 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('reports.audit-log') ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}">
                             <i class="fas fa-shield-alt w-4 text-center"></i> Audit Log
                         </a>
                         @endrole
@@ -76,50 +131,44 @@
             @endhasanyrole
 
             {{-- ======================================================
-                 GODAMS — visible to: owner, manager, warehouse
-                 ====================================================== --}}
-            @hasanyrole('owner|manager|warehouse')
-            <a href="{{ route('purchase-orders.index') }}" id="nav-po" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
-                <i class="fas fa-file-invoice"></i>
-                Purchase Orders
-            </a>
-
-            <a href="{{ route('godams.index') }}" id="nav-godams" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
-                <i class="fas fa-warehouse"></i>
-                Godams
-            </a>
-
-            <a href="{{ route('stock-transfers.index') }}" id="nav-transfers" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
-                <i class="fas fa-exchange-alt"></i>
-                Transfers
-            </a>
-            @endhasanyrole
-
-            {{-- ======================================================
-                 SETTINGS — visible to: owner only
+                 SETTINGS / ADMIN — visible to: owner only
                  ====================================================== --}}
             @role('owner')
             <div x-data="{ open: false }" @click.away="open = false" class="relative">
-                <button @click="open = !open" id="nav-settings-btn" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-700 hover:bg-gray-900 text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
+                <button @click="open = !open" id="nav-settings-btn"
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105 {{ (request()->routeIs('staff.*') || request()->routeIs('settings.*')) ? 'bg-gray-900 text-white shadow-md ring-2 ring-gray-400' : 'bg-gray-700 hover:bg-gray-900 text-white' }}">
                     <i class="fas fa-cog"></i>
-                    Admin <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                    Admin <i class="fas fa-chevron-down ml-1 text-xs"></i>
                 </button>
                 <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute right-0 mt-2 w-52 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
                     <div class="py-1" role="menu">
-                        <a href="{{ route('staff.index') }}" id="nav-staff" class="flex items-center gap-2 text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                        <a href="{{ route('staff.index') }}" id="nav-staff" class="flex items-center gap-2 text-sm text-gray-700 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
                             <i class="fas fa-users-cog w-4 text-center"></i> Staff Management
                         </a>
-                        <a href="{{ route('settings.general') }}" id="nav-settings" class="flex items-center gap-2 text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                        <a href="{{ route('settings.general') }}" id="nav-settings" class="flex items-center gap-2 text-sm text-gray-700 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
                             <i class="fas fa-sliders-h w-4 text-center"></i> Settings
                         </a>
-                        <a href="{{ route('staff.create') }}" id="nav-employees" class="flex items-center gap-2 text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                        <a href="{{ route('settings.users') }}" id="nav-user-access" class="flex items-center gap-2 text-sm text-gray-700 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-user-shield w-4 text-center"></i> User Access
+                        </a>
+                        <a href="{{ route('accounts.import.show') }}" id="nav-account-import" class="flex items-center gap-2 text-sm text-gray-700 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-file-import w-4 text-center"></i> Account Import
+                        </a>
+                        <a href="{{ route('staff.create') }}" id="nav-employees" class="flex items-center gap-2 text-sm text-gray-700 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
                             <i class="fas fa-user-plus w-4 text-center"></i> Add Staff
                         </a>
-                        <a href="{{ route('godams.index') }}" id="nav-admin-godams" class="flex items-center gap-2 text-base text-gray-500 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
-                            <i class="fas fa-warehouse w-4 text-center"></i> Godams
+                        <a href="{{ route('godams.index') }}" id="nav-admin-godams" class="flex items-center gap-2 text-sm text-gray-700 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-warehouse w-4 text-center"></i> Godam
                         </a>
                         <hr class="my-1 border-slate-200 dark:border-slate-600">
-                        <a href="{{ route('settings.backup.download') }}" id="nav-backup" class="flex items-center gap-2 text-base text-orange-500 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-500/10 px-3 py-2 rounded-lg transition-colors font-semibold">
+                        <a href="{{ route('todo') }}" id="nav-todo" class="flex items-center gap-2 text-sm text-gray-700 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-clipboard-list w-4 text-center"></i> To Do List
+                        </a>
+                        <a href="{{ route('reminders.index') }}" id="nav-reminders" class="flex items-center gap-2 text-sm text-gray-700 dark:text-indigo-200 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-[#4338CA]/50 px-3 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-bell w-4 text-center"></i> Reminders
+                        </a>
+                        <hr class="my-1 border-slate-200 dark:border-slate-600">
+                        <a href="{{ route('settings.backup.download') }}" id="nav-backup" class="flex items-center gap-2 text-sm text-orange-500 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-500/10 px-3 py-2 rounded-lg transition-colors font-semibold">
                             <i class="fas fa-database w-4 text-center"></i> Download Backup
                         </a>
                     </div>
@@ -127,20 +176,14 @@
             </div>
             @endrole
 
-            <!-- Dashboard — visible to all -->
-            <a href="{{ route('dashboard') }}" id="nav-dashboard" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
-                <i class="fas fa-home"></i>
-                Dashboard
-            </a>
-
             <!-- Theme Toggle -->
-            <button @click="toggleTheme()" id="btn-theme-toggle" class="w-10 h-10 rounded-full flex items-center justify-center transition bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-yellow-400 hover:bg-slate-200 dark:hover:bg-slate-700">
-                <i x-show="isDark" class="fas fa-sun text-lg"></i>
-                <i x-show="!isDark" class="fas fa-moon text-lg"></i>
+            <button @click="toggleTheme()" id="btn-theme-toggle" class="w-9 h-9 rounded-full flex items-center justify-center transition bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-yellow-400 hover:bg-slate-200 dark:hover:bg-slate-700 ml-1">
+                <i x-show="isDark" class="fas fa-sun text-sm"></i>
+                <i x-show="!isDark" class="fas fa-moon text-sm"></i>
             </button>
 
             <!-- User Profile -->
-            <div class="flex items-center gap-3 pl-4 border-l border-gray-200">
+            <div class="flex items-center gap-2 pl-3 border-l border-gray-200">
                 <div x-data="{ open: false }" @click.away="open = false" class="relative">
                     <button @click="open = !open" id="btn-user-menu"
                             class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-200 hover:text-indigo-600 transition">

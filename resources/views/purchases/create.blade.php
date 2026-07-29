@@ -72,17 +72,10 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Select Vendor</label>
-                            <div class="flex gap-2">
-                                <select name="supplier_id" id="supplierSelect"
-                                        @change="onSupplierChange($event.target.value)"
-                                        class="w-full bg-gray-900 border border-gray-600 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500 outline-none">
-                                    <option value="">— Choose Supplier —</option>
-                                    @foreach($suppliers as $sup)
-                                    <option value="{{ $sup->id }}" {{ request('supplier_id') == $sup->id ? 'selected' : '' }}>{{ $sup->name }}{{ $sup->company_name ? ' — '.$sup->company_name : '' }}</option>
-                                    @endforeach
-                                </select>
+                            <div class="flex gap-2" @open-add-supplier-modal.window="showSupplierModal = true">
+                                <x-supplier-search id="supplierSelect" name="supplier_id" :add-new="true" />
                                 <button type="button" @click="showSupplierModal = true"
-                                        class="bg-indigo-600 px-3 rounded-lg text-white hover:bg-indigo-700 transition">
+                                        class="bg-indigo-600 px-3 rounded-lg text-white hover:bg-indigo-700 transition shrink-0">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>

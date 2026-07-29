@@ -68,7 +68,7 @@
         {{-- Store Branding Header --}}
         <div class="flex flex-col md:flex-row items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-6 mb-8 gap-4 text-center md:text-left">
             <div class="flex items-center gap-4">
-                @if(!empty($companySetting->logo_path))
+                @if(!empty($companySetting?->logo_path))
                     <img src="{{ asset('storage/' . $companySetting->logo_path) }}" alt="Logo" class="h-16 w-auto object-contain">
                 @else
                     <div class="w-14 h-14 rounded-2xl bg-blue-600 text-white font-black text-2xl flex items-center justify-center shadow-md">
@@ -77,12 +77,14 @@
                 @endif
                 <div>
                     <h1 class="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                        {{ $voucher->store_name ?: ($companySetting->business_name ?? config('app.name')) }}
+                        {{ $voucher->store_name ?: ($companySetting?->business_name ?? ((config('app.name') && strtolower(config('app.name')) !== 'laravel') ? config('app.name') : 'Supermarket')) }}
                     </h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        {{ $companySetting->address ?? 'Main City Market Store' }}
-                    </p>
-                    @if(!empty($companySetting->phone))
+                    @if(!empty($companySetting?->address))
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            {{ $companySetting->address }}
+                        </p>
+                    @endif
+                    @if(!empty($companySetting?->phone))
                         <p class="text-xs text-slate-500 dark:text-slate-400">
                             Phone: {{ $companySetting->phone }}
                         </p>

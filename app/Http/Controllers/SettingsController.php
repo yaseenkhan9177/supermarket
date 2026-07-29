@@ -27,7 +27,11 @@ class SettingsController extends Controller
         }
 
         // 4. Mass assignment of standard fields
-        $settings->fill($request->except('logo'));
+        //    array_filter removes null values so that ConvertEmptyStringsToNull
+        //    (which turns "" → null) doesn't wipe model defaults on first save.
+        $settings->fill(
+            array_filter($request->except(['logo', '_token', '_method']), fn ($v) => $v !== null)
+        );
 
         // 5. Explicitly handle checkboxes (standard web form issue)
         $settings->outlook_integration = $request->has('outlook_integration');

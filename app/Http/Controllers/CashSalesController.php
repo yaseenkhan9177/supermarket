@@ -7,6 +7,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Item;
 use App\Models\Customer;
+use App\Models\CustomerLedgerEntry;
 use App\Models\User;
 use App\Services\FifoStockService;
 use Illuminate\Support\Facades\DB;
@@ -135,6 +136,24 @@ class CashSalesController extends Controller
                 $activeWallet = \App\Models\Wallet::where('is_active', true)->first();
                 if ($activeWallet) {
                     $activeWallet->adjustBalance($grandTotal);
+                }
+
+                // E. Write Customer Ledger Entry (only if a real customer is attached)
+                //    Cash sales are paid immediately — do NOT increment customer balance.
+                //    This entry records the purchase in their history without creating debt.
+                if (!empty($sale->customer_id)) {
+                    $customer = Customer::lockForUpdate()->find($sale->customer_id);
+                    if ($customer) {
+                        CustomerLedgerEntry::create([
+                            'customer_id'   => $customer->id,
+                            'type'          => 'sale',
+                            'amount'        => $grandTotal,
+                            'balance_after' => $customer->balance, // unchanged — cash paid in full
+                            'method'        => 'Cash',
+                            'note'          => 'Cash Sale Invoice #' . ($sale->invoice_no ?? $sale->id),
+                            'created_by'    => Auth::id(),
+                        ]);
+                    }
                 }
 
                 return $sale;

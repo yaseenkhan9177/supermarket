@@ -13,13 +13,9 @@
                 </div>
                 Customer
             </h3>
-            <select id="customer-select" x-model="customer_id" @change="if(customer_id === 'new') showCustomerModal = true" @keydown.enter.prevent="document.getElementById('item-search').focus()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white mb-3 focus:border-blue-500 outline-none">
-                <option value="">Walk-in Customer</option>
-                <option value="new" class="text-blue-400 font-bold">+ Add New Customer</option>
-                @foreach($customers as $c)
-                <option value="{{ $c->id }}">{{ $c->name }} {{ $c->phone ? '('.$c->phone.')' : '' }}</option>
-                @endforeach
-            </select>
+            <div @open-add-customer-modal.window="showCustomerModal = true" @customer-selected.window="customer_id = $event.detail.id; document.getElementById('item-search')?.focus()">
+                <x-customer-search :walk-in="true" :add-new="true" selected-name="Walk-in Customer" id="customer-select" name="customer_id" placeholder="Walk-in Customer" />
+            </div>
         </div>
 
         <div class="bg-slate-900 rounded-2xl shadow-xl border border-slate-800 p-6 relative overflow-hidden group">

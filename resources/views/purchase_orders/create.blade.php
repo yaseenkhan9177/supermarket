@@ -32,12 +32,7 @@
             {{-- Supplier --}}
             <div>
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Supplier <span class="text-red-500">*</span></label>
-                <select name="supplier_id" required class="w-full text-sm font-semibold p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white">
-                    <option value="">Select Supplier...</option>
-                    @foreach($suppliers as $sup)
-                    <option value="{{ $sup->id }}">{{ $sup->name }} ({{ $sup->code }})</option>
-                    @endforeach
-                </select>
+                <x-supplier-search :required="true" />
             </div>
 
             {{-- Expected Date --}}

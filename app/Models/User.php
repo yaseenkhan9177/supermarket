@@ -33,6 +33,7 @@ class User extends Authenticatable
         'role',
         'is_active',
         'avatar',
+        'tenant_id',
     ];
 
     /**

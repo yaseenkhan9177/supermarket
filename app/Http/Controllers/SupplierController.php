@@ -16,6 +16,30 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class SupplierController extends Controller
 {
+    /**
+     * Live search suppliers by name, code, company_name, or phone (AJAX autocomplete).
+     */
+    public function search(Request $request)
+    {
+        $query = trim($request->get('q', ''));
+
+        if (strlen($query) < 1) {
+            return response()->json([]);
+        }
+
+        $suppliers = Supplier::where(function ($q) use ($query) {
+            $q->where('name', 'like', "%{$query}%")
+              ->orWhere('code', 'like', "%{$query}%")
+              ->orWhere('company_name', 'like', "%{$query}%")
+              ->orWhere('phone', 'like', "%{$query}%");
+        })
+        ->orderBy('name', 'asc')
+        ->limit(30)
+        ->get(['id', 'name', 'code', 'company_name', 'phone', 'current_balance', 'address']);
+
+        return response()->json($suppliers);
+    }
+
     public function index()
     {
         $suppliers   = Supplier::with('category')->latest()->paginate(10);

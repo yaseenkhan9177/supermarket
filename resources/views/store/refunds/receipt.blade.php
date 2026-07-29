@@ -111,10 +111,23 @@
 </head>
 
 <body>
+    @php
+        $companySetting = \App\Models\CompanySetting::first();
+        $store = \App\Models\Store::first();
+        $appName = config('app.name');
+        $fallbackName = ($appName && strtolower($appName) !== 'laravel') ? $appName : 'Supermarket';
+        $storeName = $companySetting?->business_name ?: ($store?->name ?: $fallbackName);
+    @endphp
     <div class="header">
-        <h1>🔄 REFUND RECEIPT</h1>
-        <h2>{{ config('app.name', 'OwnStore POS') }}</h2>
-        <div>{{ now()->format('d M Y, h:i A') }}</div>
+        <h1 style="font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 3px;">{{ $storeName }}</h1>
+        @if(!empty($companySetting?->address))
+            <div style="font-size: 11px;">{{ $companySetting->address }}</div>
+        @endif
+        @if(!empty($companySetting?->phone))
+            <div style="font-size: 10px;">Ph: {{ $companySetting->phone }}</div>
+        @endif
+        <h2 style="font-size: 13px; font-weight: bold; margin-top: 4px;">REFUND RECEIPT</h2>
+        <div style="font-size: 11px;">{{ now()->format('d M Y, h:i A') }}</div>
     </div>
 
     <div class="section">

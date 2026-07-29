@@ -13,7 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
-<body class="bg-gray-900 font-sans text-gray-200" x-data="creditPurchaseForm()">
+<body class="bg-gray-900 font-sans text-gray-200" x-data="creditPurchaseForm()" @supplier-selected.window="onSupplierSelected($event.detail)">
 
     <!-- SweetAlert Flash Messages -->
     @if(session('success'))
@@ -101,14 +101,9 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Select Supplier *</label>
-                            <div class="flex gap-2">
-                                <select x-model="supplierId" @change="updateBalance()" name="supplier_id" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm text-white focus:border-amber-500 outline-none">
-                                    <option value="">-- Choose Supplier --</option>
-                                    @foreach($suppliers as $sup)
-                                    <option value="{{ $sup->id }}">{{ $sup->name }}</option>
-                                    @endforeach
-                                </select>
-                                <button type="button" @click="showSupplierModal = true" class="bg-amber-600 px-3 rounded text-white hover:bg-amber-700"><i class="fas fa-plus"></i></button>
+                            <div class="flex gap-2" @open-add-supplier-modal.window="showSupplierModal = true">
+                                <x-supplier-search :add-new="true" :required="true" />
+                                <button type="button" @click="showSupplierModal = true" class="bg-amber-600 px-3 rounded text-white hover:bg-amber-700 shrink-0"><i class="fas fa-plus"></i></button>
                             </div>
                         </div>
 
@@ -326,6 +321,11 @@
 
                 init() {
                     // Blade-level scripts handle flash messages
+                },
+
+                onSupplierSelected(detail) {
+                    this.supplierId = detail.id || '';
+                    this.updateBalance();
                 },
 
                 updateBalance() {

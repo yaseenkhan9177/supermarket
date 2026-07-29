@@ -3,7 +3,7 @@
 @section('navbar_subtitle', 'Debit Sales (Credit Sale)')
 
 @section('content')
-<div x-data="debitSalesForm()">
+<div x-data="debitSalesForm()" @customer-selected.window="onCustomerSelected($event.detail)">
 
 
     @if(session('error'))
@@ -25,14 +25,9 @@
 
                 <div class="mb-4">
                     <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Customer *</label>
-                    <div class="flex gap-2">
-                        <select id="customer_select" x-model="selectedCustomerId" @change="fetchCustomerDetails()" name="customer_id" class="w-full bg-gray-900 border border-gray-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition" required>
-                            <option value="">-- Select Customer --</option>
-                            @foreach($customers as $cust)
-                            <option value="{{ $cust->id }}">{{ $cust->name }}</option>
-                            @endforeach
-                        </select>
-                        <button type="button" @click="isOpen = true" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 rounded-lg shadow-md transition transform hover:scale-105">
+                    <div class="flex gap-2" @open-add-customer-modal.window="isOpen = true">
+                        <x-customer-search :add-new="true" :required="true" />
+                        <button type="button" @click="isOpen = true" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 rounded-lg shadow-md transition transform hover:scale-105 shrink-0">
                             <i class="fas fa-plus"></i>
                         </button>
                     </div>
@@ -140,13 +135,52 @@
 
         <!-- 3. Items Table -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex-grow flex flex-col overflow-hidden mb-6 text-gray-800">
-            <div class="p-4 bg-gray-50 border-b flex justify-between items-center shrink-0">
-                <h3 class="font-bold text-gray-900 flex items-center">
-                    <i class="fas fa-shopping-basket mr-2 text-indigo-600"></i> 3. Items
-                </h3>
-                <button type="button" @click="addRow()" class="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm flex items-center">
-                    <i class="fas fa-plus mr-1.5"></i> Add Row
-                </button>
+            <div class="p-4 bg-gray-50 border-b shrink-0">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-gray-900 flex items-center">
+                        <i class="fas fa-shopping-basket mr-2 text-indigo-600"></i> 3. Items
+                    </h3>
+                    <button type="button" @click="addRow()" class="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm flex items-center">
+                        <i class="fas fa-plus mr-1.5"></i> Add Row
+                    </button>
+                </div>
+                <!-- Live Product Search -->
+                <div class="relative">
+                    <div class="flex items-center gap-2 bg-white border-2 border-indigo-400 rounded-lg px-3 py-2 shadow-sm focus-within:border-indigo-600 transition">
+                        <i class="fas fa-search text-indigo-400"></i>
+                        <input
+                            type="text"
+                            x-model="productQuery"
+                            @input.debounce.300ms="searchProducts()"
+                            @keydown.escape="productResults = []"
+                            placeholder="Search by product name or barcode..."
+                            class="flex-1 outline-none text-sm text-gray-800 bg-transparent placeholder-gray-400"
+                            autocomplete="off"
+                        >
+                        <span x-show="productLoading" class="text-indigo-500 text-xs animate-pulse"><i class="fas fa-spinner fa-spin"></i></span>
+                        <button type="button" x-show="productQuery" @click="productQuery=''; productResults=[]" class="text-gray-300 hover:text-gray-500 text-xs"><i class="fas fa-times"></i></button>
+                    </div>
+                    <!-- Results Dropdown -->
+                    <div x-show="productResults.length > 0" @click.outside="productResults = []" class="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden">
+                        <div class="max-h-64 overflow-y-auto divide-y divide-gray-100">
+                            <template x-for="product in productResults" :key="product.id">
+                                <button type="button" @click="selectProduct(product)" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-indigo-50 text-left transition">
+                                    <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+                                        <i class="fas fa-box text-indigo-600 text-xs"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-semibold text-gray-800 truncate" x-text="product.name"></p>
+                                        <p class="text-xs text-gray-400" x-text="'Code: ' + product.code"></p>
+                                    </div>
+                                    <div class="text-right shrink-0">
+                                        <p class="text-sm font-bold text-indigo-700" x-text="'Rs. ' + parseFloat(product.sale_price || 0).toFixed(2)"></p>
+                                        <p class="text-xs" :class="product.stock_qty > 0 ? 'text-gray-400' : 'text-red-400'" x-text="'Stock: ' + (product.stock_qty || 0)"></p>
+                                    </div>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="flex-grow overflow-auto">
@@ -326,6 +360,9 @@
                 credit_limit: '0.00',
                 balance: '0.00'
             },
+            productQuery: '',
+            productResults: [],
+            productLoading: false,
             rows: [{
                 id: Date.now(),
                 product_id: '',
@@ -339,6 +376,54 @@
             totalQty: 0,
             grossTotal: '0.00',
             netTotal: '0.00',
+
+            async searchProducts() {
+                if (this.productQuery.length < 1) { this.productResults = []; return; }
+                this.productLoading = true;
+                try {
+                    const res = await fetch(`/api/products/search?query=${encodeURIComponent(this.productQuery)}`);
+                    this.productResults = await res.json();
+                } catch(e) { this.productResults = []; }
+                this.productLoading = false;
+            },
+
+            selectProduct(product) {
+                let emptyIdx = this.rows.findIndex(r => !r.product_id);
+                let newRow = {
+                    id: Date.now(),
+                    product_id: product.id,
+                    barcode: product.code || '',
+                    name: product.name,
+                    qty: 1,
+                    rate: parseFloat(product.sale_price || 0),
+                    disc: 0
+                };
+                if (emptyIdx !== -1) {
+                    this.rows[emptyIdx] = newRow;
+                } else {
+                    this.rows.push(newRow);
+                }
+                this.productQuery = '';
+                this.productResults = [];
+                this.calculateTotals();
+                if (!this.rows.find(r => !r.product_id)) this.addRow();
+            },
+
+            onCustomerSelected(detail) {
+                this.selectedCustomerId = detail.id || '';
+                if (detail.customer) {
+                    this.customer = detail.customer;
+                } else if (this.selectedCustomerId) {
+                    this.fetchCustomerDetails();
+                } else {
+                    this.customer = {
+                        address: '',
+                        phone: '',
+                        credit_limit: '0.00',
+                        balance: '0.00'
+                    };
+                }
+            },
 
             fetchCustomerDetails() {
                 if (!this.selectedCustomerId) {

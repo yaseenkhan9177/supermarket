@@ -3,298 +3,508 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Report;
+use App\Models\GeneralLedgerAccount;
+use App\Models\Sale;
+use App\Models\SaleItem;
+use App\Models\Purchase;
+use App\Models\PurchaseItem;
+use App\Models\Customer;
+use App\Models\CustomerLedgerEntry;
+use App\Models\Supplier;
+use App\Models\SupplierLedgerEntry;
+use App\Models\Item;
+use App\Models\Batch;
+use App\Models\Refund;
+use App\Models\Payment;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
-    public function index()
+    /**
+     * Reports Sidebar Structure grouped into 6 exact sections.
+     */
+    public function getReportCategories()
     {
-        // Dynamic: Fetch root-level folders (or reports)
-        // Dynamic: Fetch root-level folders (or reports)
-        $query = \App\Models\Report::whereNull('parent_id')
-            ->where('is_hidden_global', false);
-
-        // Safety Check: Filter strictly if not owner
-        // Assuming 'is_owner' is a property on User model. Ensure Auth check to avoid crash if guest.
-        if (auth()->check() && !auth()->user()->is_owner) {
-            $query->where('is_owner_only', false);
-        }
-
-        $categories = $query->with(['children' => function ($q) {
-            $q->where('is_hidden_global', false);
-            if (auth()->check() && !auth()->user()->is_owner) {
-                $q->where('is_owner_only', false);
-            }
-            $q->orderBy('sort_order')->orderBy('name');
-        }])
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
-
-        return view('reports.index', compact('categories'));
-    }
-
-    public function view($id, Request $request)
-    {
-        // Dynamic: Fetch Report Name from DB
-        $report = \App\Models\Report::find($id);
-
-        $report_name = $report ? $report->name : 'Unknown Report';
-
-        return view('reports.view', [
-            'report_id' => $id,
-            'report_name' => $report_name
-        ]);
-    }
-
-    public function generate(Request $request)
-    {
-        // 1. Capture Inputs
-        $fromDate = $request->date_from;
-        $toDate = $request->date_to;
-        $reportId = $request->report_id;
-
-        // 2. Define Structure (Mock Data Logic)
-        // In a real app, you would run SQL queries here based on $reportId
-
-        $reportData = [
-            'company' => [
-                'name' => 'OwnStore Supermarket',
-                'address' => '123 Main Street, Peshawar, Pakistan',
-                'phone' => '+92-300-1234567',
-            ],
-            'meta' => [
-                'title' => 'Sales Report', // Default
-                'period' => "$fromDate to $toDate",
-                'generated_by' => 'Administrator',
-                'generated_at' => now()->format('d-M-Y h:i A'),
-            ],
-            'columns' => [], // Table Headers
-            'rows' => [],    // Table Data
-            'totals' => [],  // Footer Totals
-        ];
-
-        // 3. Mock Different Reports
-        switch ($reportId) {
-            case 1: // Daily Sales
-                $reportData['meta']['title'] = 'Daily Sales Summary';
-                $reportData['columns'] = ['Date', 'Invoice Count', 'Cash Sales', 'Credit Sales', 'Total Revenue'];
-                $reportData['rows'] = [
-                    ['2026-01-01', '150', '50,000', '10,000', '60,000'],
-                    ['2026-01-02', '120', '40,000', '5,000', '45,000'],
-                    ['2026-01-03', '180', '70,000', '20,000', '90,000'],
-                ];
-                $reportData['totals'] = ['Total', '450', '160,000', '35,000', '195,000'];
-                break;
-
-            case 5: // Supplier Ledger
-                $reportData['meta']['title'] = 'Supplier Ledger (General)';
-                $reportData['columns'] = ['Date', 'Ref #', 'Supplier Name', 'Bill Amount', 'Paid', 'Balance'];
-                $reportData['rows'] = [
-                    ['2026-01-05', 'PUR-001', 'Nestle Pakistan', '120,000', '0', '120,000'],
-                    ['2026-01-06', 'PAY-998', 'Nestle Pakistan', '0', '50,000', '70,000'],
-                ];
-                $reportData['totals'] = ['Closing Balance', '', '', '120,000', '50,000', '70,000'];
-                break;
-
-            default: // Generic Fallback
-                $reportData['meta']['title'] = 'General List';
-                $reportData['columns'] = ['Item ID', 'Description', 'Qty', 'Rate', 'Amount'];
-                $reportData['rows'] = [
-                    ['101', 'Test Item A', '10', '500', '5000'],
-                    ['102', 'Test Item B', '2', '1000', '2000'],
-                ];
-                $reportData['totals'] = ['Total', '', '12', '', '7000'];
-        }
-
-        // 4. Return the Universal View
-        return view('reports.output', compact('reportData'));
-    }
-
-    public function accountReports()
-    {
-        $reportTree = [
+        return [
             [
-                'name' => 'Financial',
-                'icon' => 'fas fa-landmark',
-                'color' => 'indigo',
+                'title' => 'FINANCIAL',
                 'reports' => [
-                    'Account Ledger WEB CR DR', 'Account Ledger WEB Details', 'Account Ledger WEB DR CR',
-                    'Accounts By Vouchers', 'Accounts Ledger', 'Accounts Ledger Full Details 1',
-                    'Accounts Ledger Full Details 2', 'Activities Report Details', 'Balance Sheet Details 1',
-                    'Balance Sheet Details 2', 'Balance Sheet Details 3', 'Balance Sheet Summary',
-                    'Balance Sheet Summary Live', 'Balance Sheet To Excel', 'Consolidated Trial Balance AC',
-                    'Consolidated Trial Balance GL', 'General Ledger Accounts', 'General Ledger Accounts PDF',
-                    'General Ledger Accounts WEB', 'Journal', 'Journal Entries',
-                    'Month Wise Account Summary (1 Month)', 'Month Wise Account Summary (2 Months)',
-                    'Month Wise Account Summary (3 Months)', 'Profit and Loss Accountwise',
-                    'Profit and Loss Summary', 'Trial Balance AC Wise 1', 'Trial Balance AC Wise 2',
-                    'Trial Balance AC Wise 3', 'Trial Balance GL Wise',
-                ],
+                    ['slug' => 'trial_balance',          'name' => 'Trial Balance'],
+                    ['slug' => 'general_ledger',         'name' => 'General Ledger'],
+                    ['slug' => 'balance_sheet_summary',  'name' => 'Balance Sheet Summary'],
+                    ['slug' => 'profit_loss_summary',    'name' => 'Profit & Loss Summary'],
+                ]
             ],
             [
-                'name' => 'Items and Services',
-                'icon' => 'fas fa-boxes',
-                'color' => 'emerald',
+                'title' => 'SALES',
                 'reports' => [
-                    'Artical Summary', 'Category Profitability Reports', 'Category Profitability Summary CATEGORY',
-                    'Category Profitability Summary COUNTER', 'Category wise Profit Details CATEGORY',
-                    'Category wise Profitability Details', 'Category/Item Profit Summary CATEGORY',
-                    'Category/Item Profitability Summary', 'Class Profitability Summary',
-                    'Class wise Propitability Details', 'Class/Item Profitability Summary',
-                    'Final Stock Details By Class (ALL)', 'Final Stock Details By Class (Non-Zero)',
-                    'Final Stock List by Category (ALL)', 'Final Stock List by Category (NON-ZERO)',
-                    'Final Stock List By Class (ALL)', 'Final Stock List By Class (Non-Zero)',
-                    'Final Stock List By Record (Non-Zero)', 'Final Stock List Details by Category',
-                    'Final Stock Summary By Category', 'Final Stock Summary By Class',
-                    'Inventory Position on Date',
-                ],
+                    ['slug' => 'sales_summary',          'name' => 'Sales Summary'],
+                    ['slug' => 'sales_by_item',          'name' => 'Sales by Item'],
+                    ['slug' => 'sales_by_customer',      'name' => 'Sales by Customer'],
+                ]
             ],
             [
-                'name' => 'Item Lists',
-                'icon' => 'fas fa-list',
-                'color' => 'sky',
+                'title' => 'PURCHASES',
                 'reports' => [
-                    'Item List', 'Item List with Batch', 'LIST OF SUSPECTS',
-                    'MINIMUM LIMIT CROSSED CLASS', 'MINIMUM LIMIT CROSSED DEPART',
-                    'Physical Inventory Worksheet',
-                ],
+                    ['slug' => 'purchase_by_item',       'name' => 'Purchase by Item'],
+                    ['slug' => 'purchase_by_supplier',   'name' => 'Purchase by Supplier'],
+                ]
             ],
             [
-                'name' => 'Price List',
-                'icon' => 'fas fa-tags',
-                'color' => 'amber',
+                'title' => 'CUSTOMERS / SUPPLIERS',
                 'reports' => [
-                    'Price List By Batch All Class', 'Price List By Batch Dept',
-                    'Price List By Batch Existing Class', 'Price List By Batch Existing Dept',
-                    'Price List By Existing Dept', 'Price List By Item All Class',
-                    'Price List By Item All Dept', 'Price List By Item Existing Class',
-                    'Profitability By SaleMan By G. Profit', 'Profitability By SaleMan On Sales',
-                    'Sale List', 'Sale List WhatsApp', 'Stock Checking Histry', 'Stock Sheet',
-                ],
+                    ['slug' => 'customer_statement',     'name' => 'Customer Statement'],
+                    ['slug' => 'supplier_statement',     'name' => 'Supplier Statement'],
+                ]
             ],
             [
-                'name' => 'Lists',
-                'icon' => 'fas fa-th-list',
-                'color' => 'violet',
+                'title' => 'STOCK',
                 'reports' => [
-                    'Accounts', 'Assets', 'Bank Accounts', 'Category wise All',
-                    'Category wise No Almara', 'Category wise With Almara', 'Customers',
-                    'Employees', 'Expences', 'General Leadgers', 'Income',
-                    'Liabilities', 'Users', 'Vendors',
-                ],
+                    ['slug' => 'stock_below_minimum',    'name' => 'Stock Below Minimum'],
+                    ['slug' => 'stock_expiry',           'name' => 'Stock Expiry'],
+                    ['slug' => 'final_stock_list',       'name' => 'Final Stock List'],
+                ]
             ],
             [
-                'name' => 'Lucky Garments Suggested Reports',
-                'icon' => 'fas fa-star',
-                'color' => 'rose',
+                'title' => 'PROFIT',
                 'reports' => [
-                    'Category wise profit summay', 'Class wise profit Summary',
-                    'Profit by Vendor Details', 'Profit by Vendor Summary',
-                    'Profit by Vendor/Category Details', 'Saleman Summary',
-                ],
-            ],
-            [
-                'name' => 'Programmers',
-                'icon' => 'fas fa-code',
-                'color' => 'slate',
-                'reports' => [
-                    'Account Closing Balances Datewise', 'ACCOUNT EFFECTS DAYWISE',
-                    'ACCOUNT EFFECTS MONTHWISE', 'ACCOUNT EFFECTS WEEKWISE',
-                    'Adjustment Effect', 'Adjustments', 'Adjustments in Dates',
-                    'Adjustments in Dates Excel', 'Analise Sessions', 'Duplicate Bills',
-                    'Duplicate Payments', 'Duplicate Sales', 'Find Serial',
-                ],
-            ],
-            [
-                'name' => 'Maqbool Suggested',
-                'icon' => 'fas fa-lightbulb',
-                'color' => 'orange',
-                'reports' => [
-                    'Negative Class Order Name', 'Negative Department Order Code',
-                    'Negative Department Order Name', 'Negative Department Order Vendor',
-                    'Missing Items', 'Run External', 'Sold Not Enough Record',
-                    'Sold Not Enough Recorded Report',
-                ],
-            ],
-            [
-                'name' => 'Purchase',
-                'icon' => 'fas fa-shopping-cart',
-                'color' => 'cyan',
-                'reports' => [
-                    'Bill List', 'Expences by Account Details', 'Expences by Account Summary',
-                    'Payments List', 'Price List of vendor', 'Purchase by Item Details',
-                    'Purchase by Item summary', 'Purchase by Vendor Summary',
-                    'Purchase by Vendor Details', 'Sales by Vendor Itemwise ALI',
-                    'Sales/Stock By Vendor Itemwise', 'Sales/Stock By Vendor SALE RATE',
-                    'Short Expiry', 'Stock Bellow Minimum',
-                ],
-            ],
-            [
-                'name' => 'Sales Cash',
-                'icon' => 'fas fa-cash-register',
-                'color' => 'green',
-                'reports' => [
-                    'Closed Sessions Analisis', 'Closed Sessions Continued', 'Closed Sessions Daywise',
-                    'Excel NON for', 'External Sales/Purchase', 'Member Discounted Sales',
-                    'Oceans Saleman Commission', 'Operator Cash Sale List',
-                    'Operator Cash Sale List with Totals', 'Operator/Saleman Sales Summary',
-                    'Profit by Customer Details (Cash Sales)', 'Profit by Customer Summary (Cash Sales)',
-                    'Saleman Commision', 'Sales By Client Total Disc', 'Sales by Customer',
-                    'Sales by Item Details (Cash Sales)', 'Sales by Item Summary (Cash Sales)',
-                    'Sales Total Summary', 'Sales Total Disc Service', 'Sales/Purchases Excel',
-                ],
-            ],
-            [
-                'name' => 'Sales Credit',
-                'icon' => 'fas fa-credit-card',
-                'color' => 'blue',
-                'reports' => [
-                    'DS By Customer', 'DS By Item', 'Profit by Customer Details (DB WEB)',
-                    'Profit by Customer Details (DB)', 'Profit by Customer Summary (DB)',
-                    'Saleman Commision', 'Sales by Item Details (Credit)',
-                    'Sales by Item Summary (Credit)',
-                ],
-            ],
-            [
-                'name' => 'Sales Joined',
-                'icon' => 'fas fa-link',
-                'color' => 'purple',
-                'reports' => [
-                    'Altar Report', 'Embroidery Report', 'Gents Tailor',
-                    'Income and Expenses Daywise', 'Income and Expenses Monthwise',
-                    'Income and Expenses Spot Session Wise', 'Income and Expenses Weekwise',
-                    'Profit by Customer Details (Joined)', 'Profit by Customer Summary (Joined)',
-                    'Saleman Commision', 'Sales by Customer Details (Joined)',
-                    'Sales by Customer Summary (Joined)', 'Sales by Item Details (Joined)',
-                    'Sales by Item Summary (Joined)', 'Sales by Salesman Summary', 'Tailor Report',
-                ],
-            ],
-            [
-                'name' => 'Statements',
-                'icon' => 'fas fa-file-invoice',
-                'color' => 'teal',
-                'reports' => [
-                    'Cash Flow Counterwise', 'Customer Statement', 'Detail Ledger',
-                    'Distribution Sheet', 'Group Ledger', 'Pack Reports', 'Recovery Report',
-                    'Saleman Collection Areawise', 'Saleman Collection Sheet',
-                    'Saleman Progress Actual', 'Saleman Progress Trade',
-                    'Sales Purchase By Vendor Cost Rate', 'Sales Purchase By Vendor Sale Rate',
-                    'SAS Reports', 'Vendor Statement', 'Week Wise Collection',
-                ],
+                    ['slug' => 'profit_by_item',         'name' => 'Profit by Item'],
+                    ['slug' => 'profit_by_customer',     'name' => 'Profit by Customer'],
+                ]
             ],
         ];
-
-        return view('reports.account_reports', compact('reportTree'));
     }
 
-    public function openReport(\Illuminate\Http\Request $request)
+    /**
+     * Main Reports Hub View
+     */
+    public function index(Request $request)
     {
-        $reportName = $request->input('name', 'Report');
-        $category   = $request->input('category', '');
-        return view('reports.view', [
-            'report_id'   => 0,
-            'report_name' => $reportName,
-        ]);
+        $categories = $this->getReportCategories();
+        $activeReport = $request->query('report', 'trial_balance');
+
+        return view('reports.index', compact('categories', 'activeReport'));
+    }
+
+    /**
+     * AJAX Endpoint to return report HTML table / partial.
+     */
+    public function data(Request $request)
+    {
+        $report = $request->input('report', 'trial_balance');
+
+        // Default Date Range: Current Month
+        $fromDate = $request->input('date_from', Carbon::now()->startOfMonth()->toDateString());
+        $toDate   = $request->input('date_to', Carbon::now()->endOfMonth()->toDateString());
+
+        switch ($report) {
+
+            // ── 1. FINANCIAL: Trial Balance ──────────────────────────────────────
+            case 'trial_balance':
+                $accounts = GeneralLedgerAccount::orderBy('gl_code')->get();
+                $grouped = $accounts->groupBy('account_type');
+
+                $totals = ['debit' => 0, 'credit' => 0];
+                $processed = [];
+
+                foreach ($grouped as $type => $accts) {
+                    $processed[$type] = [];
+                    foreach ($accts as $a) {
+                        $bal = (float)$a->current_balance;
+                        $debit = 0;
+                        $credit = 0;
+
+                        if (in_array(strtoupper($type), ['ASSETS', 'EXPENSE'])) {
+                            if ($bal >= 0) $debit = $bal;
+                            else $credit = abs($bal);
+                        } else {
+                            if ($bal >= 0) $credit = $bal;
+                            else $debit = abs($bal);
+                        }
+
+                        $totals['debit'] += $debit;
+                        $totals['credit'] += $credit;
+
+                        $processed[$type][] = [
+                            'account' => $a,
+                            'debit'   => $debit,
+                            'credit'  => $credit,
+                        ];
+                    }
+                }
+
+                return view('reports.partials.trial_balance', compact('processed', 'totals'));
+
+            // ── 2. FINANCIAL: General Ledger (Account Balances) ──────────────────
+            case 'general_ledger':
+                $accounts = GeneralLedgerAccount::orderBy('gl_code')->get();
+                $selectedAccountId = $request->input('account_id');
+                $selectedAccount = $selectedAccountId ? GeneralLedgerAccount::find($selectedAccountId) : null;
+
+                return view('reports.partials.general_ledger', compact('accounts', 'selectedAccountId', 'selectedAccount'));
+
+            // ── 3. FINANCIAL: Balance Sheet Summary ──────────────────────────────
+            case 'balance_sheet_summary':
+                $assets = GeneralLedgerAccount::where('account_type', 'ASSETS')->get();
+                $liabilities = GeneralLedgerAccount::where('account_type', 'LIABILITIES')->get();
+                $equity = GeneralLedgerAccount::where('account_type', 'EQUITY')->get();
+
+                $totalAssets = $assets->sum('current_balance');
+                $totalLiabilities = $liabilities->sum('current_balance');
+                $totalEquity = $equity->sum('current_balance');
+                $totalLiabEquity = $totalLiabilities + $totalEquity;
+                $difference = $totalAssets - $totalLiabEquity;
+
+                return view('reports.partials.balance_sheet_summary', compact(
+                    'assets', 'liabilities', 'equity',
+                    'totalAssets', 'totalLiabilities', 'totalEquity',
+                    'totalLiabEquity', 'difference'
+                ));
+
+            // ── 4. FINANCIAL: Profit & Loss Summary ──────────────────────────────
+            case 'profit_loss_summary':
+                $incomeTotal = GeneralLedgerAccount::where('account_type', 'INCOME')->sum('current_balance');
+                $expenseTotal = GeneralLedgerAccount::where('account_type', 'EXPENSE')->sum('current_balance');
+
+                // Sales & COGS for selectable date range
+                $salesQuery = Sale::query();
+                if ($fromDate) $salesQuery->whereDate('sale_date', '>=', $fromDate);
+                if ($toDate)   $salesQuery->whereDate('sale_date', '<=', $toDate);
+                $grossSales = $salesQuery->sum('grand_total');
+
+                $refundsQuery = Refund::query();
+                if ($fromDate) $refundsQuery->whereDate('refund_date', '>=', $fromDate);
+                if ($toDate)   $refundsQuery->whereDate('refund_date', '<=', $toDate);
+                $totalRefunds = $refundsQuery->sum('total_amount');
+                $netRevenue = max(0, $grossSales - $totalRefunds);
+
+                // COGS from SaleItems (FIFO cost)
+                $saleItems = SaleItem::whereHas('sale', function ($q) use ($fromDate, $toDate) {
+                    if ($fromDate) $q->whereDate('sale_date', '>=', $fromDate);
+                    if ($toDate)   $q->whereDate('sale_date', '<=', $toDate);
+                })->with(['batch', 'item'])->get();
+
+                $cogs = 0;
+                foreach ($saleItems as $si) {
+                    $costRate = ($si->batch_id && $si->batch) ? $si->batch->cost_price : ($si->item->cost_rate ?? 0);
+                    $cogs += ($si->qty * $costRate);
+                }
+
+                $grossProfit = $netRevenue - $cogs;
+
+                // Operating Expenses & Write-offs
+                $paymentsQuery = Payment::query();
+                if ($fromDate) $paymentsQuery->whereDate('payment_date', '>=', $fromDate);
+                if ($toDate)   $paymentsQuery->whereDate('payment_date', '<=', $toDate);
+                $operatingExpenses = $paymentsQuery->sum('amount_paid');
+
+                $badDebtQuery = CustomerLedgerEntry::where('type', 'write_off');
+                if ($fromDate) $badDebtQuery->whereDate('created_at', '>=', $fromDate);
+                if ($toDate)   $badDebtQuery->whereDate('created_at', '<=', $toDate);
+                $totalBadDebt = abs($badDebtQuery->sum('amount'));
+
+                $netProfit = $grossProfit - $operatingExpenses - $totalBadDebt;
+
+                return view('reports.partials.profit_loss_summary', compact(
+                    'fromDate', 'toDate', 'grossSales', 'totalRefunds', 'netRevenue',
+                    'cogs', 'grossProfit', 'operatingExpenses', 'totalBadDebt', 'netProfit',
+                    'incomeTotal', 'expenseTotal'
+                ));
+
+            // ── 5. SALES: Sales Summary ──────────────────────────────────────────
+            case 'sales_summary':
+                $query = Sale::query();
+                if ($fromDate) $query->whereDate('sale_date', '>=', $fromDate);
+                if ($toDate)   $query->whereDate('sale_date', '<=', $toDate);
+
+                $dailySales = $query->select(
+                    DB::raw('DATE(sale_date) as date'),
+                    DB::raw('COUNT(*) as total_transactions'),
+                    DB::raw('SUM(subtotal) as subtotal'),
+                    DB::raw('SUM(tax_total) as tax_total'),
+                    DB::raw('SUM(discount_total) as discount_total'),
+                    DB::raw('SUM(grand_total) as grand_total')
+                )
+                ->groupBy(DB::raw('DATE(sale_date)'))
+                ->orderBy('date', 'desc')
+                ->get();
+
+                $totals = [
+                    'transactions' => $dailySales->sum('total_transactions'),
+                    'subtotal'     => $dailySales->sum('subtotal'),
+                    'tax'          => $dailySales->sum('tax_total'),
+                    'discount'     => $dailySales->sum('discount_total'),
+                    'grand_total'  => $dailySales->sum('grand_total'),
+                ];
+
+                return view('reports.partials.sales_summary', compact('dailySales', 'totals', 'fromDate', 'toDate'));
+
+            // ── 6. SALES: Sales by Item ──────────────────────────────────────────
+            case 'sales_by_item':
+                $query = SaleItem::whereHas('sale', function ($q) use ($fromDate, $toDate) {
+                    if ($fromDate) $q->whereDate('sale_date', '>=', $fromDate);
+                    if ($toDate)   $q->whereDate('sale_date', '<=', $toDate);
+                })->with('item');
+
+                $itemsData = $query->select(
+                    'item_id',
+                    'item_name',
+                    DB::raw('SUM(qty) as total_qty'),
+                    DB::raw('SUM(total) as total_revenue')
+                )
+                ->groupBy('item_id', 'item_name')
+                ->orderBy('total_revenue', 'desc')
+                ->get();
+
+                $totals = [
+                    'qty'     => $itemsData->sum('total_qty'),
+                    'revenue' => $itemsData->sum('total_revenue'),
+                ];
+
+                return view('reports.partials.sales_by_item', compact('itemsData', 'totals', 'fromDate', 'toDate'));
+
+            // ── 7. SALES: Sales by Customer ──────────────────────────────────────
+            case 'sales_by_customer':
+                $query = Sale::query();
+                if ($fromDate) $query->whereDate('sale_date', '>=', $fromDate);
+                if ($toDate)   $query->whereDate('sale_date', '<=', $toDate);
+
+                $customersData = $query->with('customer')
+                    ->select(
+                        'customer_id',
+                        'customer_name',
+                        DB::raw('COUNT(*) as total_orders'),
+                        DB::raw('SUM(grand_total) as total_spent')
+                    )
+                    ->groupBy('customer_id', 'customer_name')
+                    ->orderBy('total_spent', 'desc')
+                    ->get();
+
+                $totals = [
+                    'orders' => $customersData->sum('total_orders'),
+                    'spent'  => $customersData->sum('total_spent'),
+                ];
+
+                return view('reports.partials.sales_by_customer', compact('customersData', 'totals', 'fromDate', 'toDate'));
+
+            // ── 8. PURCHASES: Purchase by Item ──────────────────────────────────
+            case 'purchase_by_item':
+                $query = PurchaseItem::whereHas('purchase', function ($q) use ($fromDate, $toDate) {
+                    if ($fromDate) $q->where(function($w) use ($fromDate) {
+                        $w->whereDate('invoice_date', '>=', $fromDate)->orWhereDate('created_at', '>=', $fromDate);
+                    });
+                    if ($toDate) $q->where(function($w) use ($toDate) {
+                        $w->whereDate('invoice_date', '<=', $toDate)->orWhereDate('created_at', '<=', $toDate);
+                    });
+                })->with('item');
+
+                $purchaseItems = $query->select(
+                    'item_id',
+                    DB::raw('SUM(qty) as total_qty'),
+                    DB::raw('SUM(total) as total_cost')
+                )
+                ->groupBy('item_id')
+                ->orderBy('total_cost', 'desc')
+                ->get();
+
+                $totals = [
+                    'qty'  => $purchaseItems->sum('total_qty'),
+                    'cost' => $purchaseItems->sum('total_cost'),
+                ];
+
+                return view('reports.partials.purchase_by_item', compact('purchaseItems', 'totals', 'fromDate', 'toDate'));
+
+            // ── 9. PURCHASES: Purchase by Supplier ──────────────────────────────
+            case 'purchase_by_supplier':
+                $query = Purchase::query();
+                if ($fromDate) {
+                    $query->where(function($w) use ($fromDate) {
+                        $w->whereDate('invoice_date', '>=', $fromDate)->orWhereDate('created_at', '>=', $fromDate);
+                    });
+                }
+                if ($toDate) {
+                    $query->where(function($w) use ($toDate) {
+                        $w->whereDate('invoice_date', '<=', $toDate)->orWhereDate('created_at', '<=', $toDate);
+                    });
+                }
+
+                $suppliersData = $query->with('supplier')
+                    ->select(
+                        'supplier_id',
+                        DB::raw('COUNT(*) as total_bills'),
+                        DB::raw('SUM(net_total) as total_purchased')
+                    )
+                    ->groupBy('supplier_id')
+                    ->orderBy('total_purchased', 'desc')
+                    ->get();
+
+                $totals = [
+                    'bills'     => $suppliersData->sum('total_bills'),
+                    'purchased' => $suppliersData->sum('total_purchased'),
+                ];
+
+                return view('reports.partials.purchase_by_supplier', compact('suppliersData', 'totals', 'fromDate', 'toDate'));
+
+            // ── 10. CUSTOMERS / SUPPLIERS: Customer Statement ────────────────────
+            case 'customer_statement':
+                $customers = Customer::orderBy('name')->get();
+                $selectedCustomerId = $request->input('customer_id');
+                $selectedCustomer = $selectedCustomerId ? Customer::find($selectedCustomerId) : null;
+                $entries = collect();
+
+                if ($selectedCustomer) {
+                    $entryQuery = CustomerLedgerEntry::where('customer_id', $selectedCustomerId);
+                    if ($fromDate) $entryQuery->whereDate('created_at', '>=', $fromDate);
+                    if ($toDate)   $entryQuery->whereDate('created_at', '<=', $toDate);
+
+                    $entries = $entryQuery->orderBy('created_at', 'asc')->get();
+                }
+
+                return view('reports.partials.customer_statement', compact(
+                    'customers', 'selectedCustomerId', 'selectedCustomer', 'entries', 'fromDate', 'toDate'
+                ));
+
+            // ── 11. CUSTOMERS / SUPPLIERS: Supplier Statement ────────────────────
+            case 'supplier_statement':
+                $suppliers = Supplier::orderBy('name')->get();
+                $selectedSupplierId = $request->input('supplier_id');
+                $selectedSupplier = $selectedSupplierId ? Supplier::find($selectedSupplierId) : null;
+                $entries = collect();
+
+                if ($selectedSupplier) {
+                    $entryQuery = SupplierLedgerEntry::where('supplier_id', $selectedSupplierId);
+                    if ($fromDate) $entryQuery->whereDate('created_at', '>=', $fromDate);
+                    if ($toDate)   $entryQuery->whereDate('created_at', '<=', $toDate);
+
+                    $entries = $entryQuery->orderBy('created_at', 'asc')->get();
+                }
+
+                return view('reports.partials.supplier_statement', compact(
+                    'suppliers', 'selectedSupplierId', 'selectedSupplier', 'entries', 'fromDate', 'toDate'
+                ));
+
+            // ── 12. STOCK: Stock Below Minimum ───────────────────────────────────
+            case 'stock_below_minimum':
+                $items = Item::query()
+                    ->where(function ($q) {
+                        $q->where(function ($inner) {
+                            $inner->whereNotNull('min_stock_level')
+                                  ->where('min_stock_level', '>', 0)
+                                  ->whereColumn('on_hand', '<', 'min_stock_level');
+                        })
+                        ->orWhere('on_hand', '<=', 0);
+                    })
+                    ->orderByRaw('on_hand ASC')
+                    ->get();
+
+                return view('reports.partials.stock_below_minimum', compact('items'));
+
+            // ── 13. STOCK: Stock Expiry ──────────────────────────────────────────
+            case 'stock_expiry':
+                $batches = Batch::with('item')
+                    ->whereNotNull('expires_at')
+                    ->orderBy('expires_at', 'asc')
+                    ->get();
+
+                return view('reports.partials.stock_expiry', compact('batches'));
+
+            // ── 14. STOCK: Final Stock List ──────────────────────────────────────
+            case 'final_stock_list':
+                $items = Item::orderBy('description', 'asc')->get();
+                $totalStockValue = $items->sum(fn($i) => (float)$i->on_hand * (float)$i->cost_rate);
+                $totalOnHand = $items->sum('on_hand');
+
+                return view('reports.partials.final_stock_list', compact('items', 'totalStockValue', 'totalOnHand'));
+
+            // ── 15. PROFIT: Profit by Item ───────────────────────────────────────
+            case 'profit_by_item':
+                $saleItems = SaleItem::whereHas('sale', function ($q) use ($fromDate, $toDate) {
+                    if ($fromDate) $q->whereDate('sale_date', '>=', $fromDate);
+                    if ($toDate)   $q->whereDate('sale_date', '<=', $toDate);
+                })->with(['batch', 'item'])->get();
+
+                $profitByItem = [];
+                foreach ($saleItems as $si) {
+                    $key = $si->item_id ?? ('custom_' . $si->item_name);
+                    if (!isset($profitByItem[$key])) {
+                        $profitByItem[$key] = [
+                            'item_code' => $si->item->code ?? 'N/A',
+                            'item_name' => $si->item_name ?? ($si->item->description ?? 'Unknown'),
+                            'qty_sold'  => 0,
+                            'revenue'   => 0,
+                            'cost'      => 0,
+                        ];
+                    }
+
+                    $costRate = ($si->batch_id && $si->batch) ? (float)$si->batch->cost_price : (float)($si->item->cost_rate ?? 0);
+
+                    $profitByItem[$key]['qty_sold'] += $si->qty;
+                    $profitByItem[$key]['revenue']  += (float)$si->total;
+                    $profitByItem[$key]['cost']     += ($si->qty * $costRate);
+                }
+
+                $profitList = collect($profitByItem)->map(function ($row) {
+                    $row['profit'] = $row['revenue'] - $row['cost'];
+                    $row['margin'] = $row['revenue'] > 0 ? ($row['profit'] / $row['revenue']) * 100 : 0;
+                    return $row;
+                })->sortByDesc('profit')->values();
+
+                $totals = [
+                    'revenue' => $profitList->sum('revenue'),
+                    'cost'    => $profitList->sum('cost'),
+                    'profit'  => $profitList->sum('profit'),
+                ];
+
+                return view('reports.partials.profit_by_item', compact('profitList', 'totals', 'fromDate', 'toDate'));
+
+            // ── 16. PROFIT: Profit by Customer ───────────────────────────────────
+            case 'profit_by_customer':
+                $sales = Sale::whereHas('items')
+                    ->when($fromDate, fn($q) => $q->whereDate('sale_date', '>=', $fromDate))
+                    ->when($toDate,   fn($q) => $q->whereDate('sale_date', '<=', $toDate))
+                    ->with(['customer', 'items.batch', 'items.item'])
+                    ->get();
+
+                $profitByCust = [];
+                foreach ($sales as $sale) {
+                    $key = $sale->customer_id ?? ('walkin_' . ($sale->customer_name ?: 'Cash Customer'));
+                    if (!isset($profitByCust[$key])) {
+                        $profitByCust[$key] = [
+                            'customer_name' => $sale->customer->name ?? ($sale->customer_name ?: 'Cash Customer'),
+                            'phone'         => $sale->customer->phone ?? '-',
+                            'orders'        => 0,
+                            'revenue'       => 0,
+                            'cost'          => 0,
+                        ];
+                    }
+
+                    $profitByCust[$key]['orders']++;
+                    $profitByCust[$key]['revenue'] += (float)$sale->grand_total;
+
+                    foreach ($sale->items as $si) {
+                        $costRate = ($si->batch_id && $si->batch) ? (float)$si->batch->cost_price : (float)($si->item->cost_rate ?? 0);
+                        $profitByCust[$key]['cost'] += ($si->qty * $costRate);
+                    }
+                }
+
+                $customerProfitList = collect($profitByCust)->map(function ($row) {
+                    $row['profit'] = $row['revenue'] - $row['cost'];
+                    $row['margin'] = $row['revenue'] > 0 ? ($row['profit'] / $row['revenue']) * 100 : 0;
+                    return $row;
+                })->sortByDesc('profit')->values();
+
+                $totals = [
+                    'orders'  => $customerProfitList->sum('orders'),
+                    'revenue' => $customerProfitList->sum('revenue'),
+                    'cost'    => $customerProfitList->sum('cost'),
+                    'profit'  => $customerProfitList->sum('profit'),
+                ];
+
+                return view('reports.partials.profit_by_customer', compact('customerProfitList', 'totals', 'fromDate', 'toDate'));
+
+            default:
+                return response('<div class="p-6 text-center text-red-500 font-bold">Report not found.</div>', 404);
+        }
     }
 }

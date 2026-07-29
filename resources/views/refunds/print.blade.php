@@ -59,21 +59,37 @@
     ================================================================== -->
     <div class="receipt-card w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
 
+        @php
+            $companySetting = \App\Models\CompanySetting::first();
+            $store = \App\Models\Store::first();
+            $appName = config('app.name');
+            $fallbackName = ($appName && strtolower($appName) !== 'laravel') ? $appName : 'Supermarket';
+            $storeName = $companySetting?->business_name ?: ($store?->name ?: $fallbackName);
+        @endphp
         <!-- Header stripe -->
         <div class="bg-gradient-to-r from-red-700 to-red-500 px-8 py-6 text-white">
             <div class="flex justify-between items-start">
                 <div>
-                    <p class="text-red-200 text-xs font-semibold uppercase tracking-widest mb-1">Credit Note</p>
-                    <h1 class="text-3xl font-extrabold tracking-tight">{{ $refund->credit_no }}</h1>
-                    <p class="text-red-200 text-sm mt-1">
-                        Issued: {{ \Carbon\Carbon::parse($refund->refund_date)->format('d M Y') }}
-                    </p>
+                    <h1 class="text-2xl font-black uppercase tracking-wider text-white">{{ $storeName }}</h1>
+                    @if(!empty($companySetting?->address))
+                        <p class="text-red-100 text-xs mt-0.5">{{ $companySetting->address }}</p>
+                    @endif
+                    @if(!empty($companySetting?->phone))
+                        <p class="text-red-100 text-xs">Phone: {{ $companySetting->phone }}</p>
+                    @endif
+                    <div class="mt-3 pt-2 border-t border-red-400/40">
+                        <p class="text-red-200 text-xs font-semibold uppercase tracking-widest">Credit Note / Return Receipt</p>
+                        <p class="text-2xl font-extrabold tracking-tight text-white">{{ $refund->credit_no }}</p>
+                        <p class="text-red-200 text-xs mt-0.5">
+                            Issued: {{ \Carbon\Carbon::parse($refund->refund_date)->format('d M Y') }}
+                        </p>
+                    </div>
                 </div>
                 <div class="text-right">
-                    <div class="w-14 h-14 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                    <div class="w-14 h-14 bg-white bg-opacity-20 rounded-xl flex items-center justify-center ml-auto">
                         <i class="fas fa-undo-alt text-white text-2xl"></i>
                     </div>
-                    <p class="text-red-100 text-xs mt-2 font-semibold">OwnStore POS</p>
+                    <p class="text-red-100 text-xs mt-2 font-semibold uppercase tracking-wide">{{ $storeName }}</p>
                 </div>
             </div>
         </div>

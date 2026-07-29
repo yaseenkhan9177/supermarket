@@ -46,15 +46,27 @@
 
 <body onload="window.print()">
 
+    @php
+        $companySetting = \App\Models\CompanySetting::first();
+        $store = \App\Models\Store::first();
+        $appName = config('app.name');
+        $fallbackName = ($appName && strtolower($appName) !== 'laravel') ? $appName : 'Supermarket';
+        $storeName = $companySetting?->business_name ?: ($store?->name ?: $fallbackName);
+    @endphp
     <div class="text-center">
-        <h2 style="margin:0;">OWN STORE</h2>
-        <p style="margin:2px 0;">Retail & Wholesale</p>
+        <h2 style="margin:0; font-weight: bold; text-transform: uppercase; font-size: 16px;">{{ $storeName }}</h2>
+        @if(!empty($companySetting?->address))
+            <p style="margin:2px 0; font-size: 11px;">{{ $companySetting->address }}</p>
+        @endif
+        @if(!empty($companySetting?->phone))
+            <p style="margin:1px 0; font-size: 10px;">Ph: {{ $companySetting->phone }}</p>
+        @endif
         <p class="divider"></p>
     </div>
 
     <div style="border-bottom: 1px dashed #000; margin-bottom: 5px; padding-bottom: 5px;">
         Invoice: <strong>{{ $sale->invoice_no }}</strong><br>
-        Date: {{ $sale->created_at->format('d-M-Y h:i A') }}<br>
+        Date: {{ is_a($sale->created_at, 'DateTimeInterface') ? $sale->created_at->format('d-M-Y h:i A') : \Carbon\Carbon::parse($sale->created_at ?? $sale->sale_date ?? now())->format('d-M-Y h:i A') }}<br>
 
         Customer: <strong>{{ $sale->customer->name ?? 'Walk-in Customer' }}</strong><br>
 

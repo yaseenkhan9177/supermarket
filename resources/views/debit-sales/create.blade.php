@@ -13,13 +13,9 @@
                 </div>
                 Customer (Required)
             </h3>
-            <select id="customer-select" autofocus x-model="customer_id" @change="if(customer_id === 'new') showCustomerModal = true" @keydown.enter.prevent="if (customer_id) { document.getElementById('item-search').focus() }" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white mb-3 focus:border-red-500 outline-none">
-                <option value="">-- Select Customer --</option>
-                <option value="new" class="text-blue-400 font-bold">+ Add New Customer</option>
-                @foreach($customers as $c)
-                <option value="{{ $c->id }}">{{ $c->name }} {{ $c->phone ? '('.$c->phone.')' : '' }}</option>
-                @endforeach
-            </select>
+            <div @open-add-customer-modal.window="showCustomerModal = true" @customer-selected.window="customer_id = $event.detail.id; if ($event.detail.id) document.getElementById('item-search')?.focus()">
+                <x-customer-search :add-new="true" :required="true" id="customer-select" name="customer_id" placeholder="-- Select Customer --" />
+            </div>
             <p x-show="!customer_id" class="text-xs text-red-400 mt-1">* You must select a customer for Debit sales.</p>
         </div>
 

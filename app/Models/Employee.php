@@ -30,6 +30,7 @@ class Employee extends Authenticatable
         'avatar_path',
         'is_active',
         'password',
+        'tenant_id',
     ];
 
     protected $casts = [

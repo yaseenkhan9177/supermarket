@@ -40,6 +40,29 @@ class CustomerController extends Controller
     }
 
     /**
+     * Live search customers by name or phone (AJAX autocomplete).
+     */
+    public function search(Request $request)
+    {
+        $query = trim($request->get('q', ''));
+
+        if (strlen($query) < 1) {
+            return response()->json([]);
+        }
+
+        $customers = Customer::where('status', '!=', 'deactivated')
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('phone', 'like', "%{$query}%");
+            })
+            ->orderBy('name', 'asc')
+            ->limit(30)
+            ->get(['id', 'name', 'phone', 'address', 'credit_limit', 'balance']);
+
+        return response()->json($customers);
+    }
+
+    /**
      * Customer list with search + totals banner.
      */
     public function index()

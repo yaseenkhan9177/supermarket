@@ -1,43 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('layouts.admin')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Return | OwnStore PRO</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+@section('navbar_subtitle', 'Return Goods to Vendor (Debit Note)')
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- SweetAlert for nice alerts -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</head>
-
-<body class="bg-gray-900 font-sans text-gray-200" x-data="returnForm(@json(session('success')), @json(session('error')))">
-
-    <nav class="bg-white border-b border-gray-200 px-6 py-3 shadow-sm sticky top-0 z-50 mb-8">
-        <div class="container mx-auto max-w-[1400px] flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-full bg-red-700 flex items-center justify-center text-white shadow-md">
-                    <i class="fas fa-undo text-lg"></i>
-                </div>
-                <div class="flex flex-col">
-                    <h1 class="text-xl font-extrabold text-gray-900 leading-none tracking-tight">
-                        OwnStore <span class="text-red-700">PRO</span>
-                    </h1>
-                    <span class="text-xs text-gray-500 font-medium mt-0.5">Return Goods to Vendor (Debit Note)</span>
-                </div>
-            </div>
-            <div>
-                <a href="/dashboard" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-800 hover:bg-black text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
-                    <i class="fas fa-home"></i> Dashboard
-                </a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container mx-auto px-6 max-w-[1400px] pb-32">
+@section('content')
+<div x-data="returnForm(@json(session('success')), @json(session('error')))" @supplier-selected.window="supplierId = $event.detail.id">
 
         <form action="/purchase-returns/store" method="POST" @submit.prevent="submitForm">
             @csrf
@@ -54,12 +20,7 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Select Supplier</label>
-                            <select x-model="supplierId" name="supplier_id" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm text-white focus:border-red-500 outline-none">
-                                <option value="">-- Choose Supplier --</option>
-                                @foreach($suppliers as $sup)
-                                <option value="{{ $sup->id }}">{{ $sup->name }}</option>
-                                @endforeach
-                            </select>
+                            <x-supplier-search :required="true" />
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
@@ -251,7 +212,6 @@
                 }
             }
         }
-    </script>
-</body>
-
-</html>
+    </div>
+</div>
+@endsection

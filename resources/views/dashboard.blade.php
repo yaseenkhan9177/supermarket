@@ -63,10 +63,13 @@
     @endhasanyrole
 
     {{-- Low Stock — all roles --}}
-    <a href="{{ route('stock.low-stock') }}" class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center relative overflow-hidden group hover:shadow-md transition-all duration-150 @if($kpis['low_stock_count'] > 0) border-l-4 border-red-500 @else border-l-4 border-green-500 @endif">
-        <div>
+    <a href="{{ route('stock.low-stock') }}"
+       id="card-low-stock"
+       class="w-full text-left bg-white p-4 rounded-xl shadow-sm flex justify-between items-center relative overflow-hidden group hover:shadow-md hover:ring-2 @if($kpis['low_stock_count'] > 0) hover:ring-red-300 border-l-4 border-red-500 @else hover:ring-green-300 border-l-4 border-green-500 @endif transition-all duration-150">
+        <div class="relative z-10">
             <p class="text-gray-500 text-xs font-semibold mb-1">Low Stock Items</p>
             <h3 class="text-xl font-bold @if($kpis['low_stock_count'] > 0) text-red-600 @else text-gray-800 @endif">{{ $kpis['low_stock_count'] }} Products</h3>
+            <p class="text-[10px] @if($kpis['low_stock_count'] > 0) text-red-600 @else text-green-600 @endif font-semibold mt-0.5">&middot; click to view report</p>
         </div>
         <div class="bg-@if($kpis['low_stock_count'] > 0) red @else green @endif-100 p-2 rounded-lg text-@if($kpis['low_stock_count'] > 0) red @else green @endif-600 group-hover:scale-110 transition-transform">
             <i class="fas fa-exclamation-triangle text-lg"></i>
@@ -386,12 +389,12 @@
             <p class="text-xs text-gray-500 font-semibold mb-1">Net Sales</p>
             <p class="text-2xl font-extrabold text-green-700">Rs. {{ number_format($kpis['daily_sales']) }}</p>
         </div>
-        <div class="bg-indigo-50 rounded-xl p-4 text-center">
-            <p class="text-xs text-gray-500 font-semibold mb-1">Low Stock Alerts</p>
+        <a href="{{ route('stock.low-stock') }}" class="block bg-indigo-50 hover:bg-indigo-100 transition-all rounded-xl p-4 text-center group cursor-pointer shadow-sm hover:shadow">
+            <p class="text-xs text-gray-500 font-semibold mb-1 group-hover:text-indigo-700 transition">Low Stock Alerts <i class="fas fa-external-link-alt text-[10px] ml-0.5 opacity-60"></i></p>
             <p class="text-2xl font-extrabold {{ $kpis['low_stock_count'] > 0 ? 'text-red-600' : 'text-gray-700' }}">
                 {{ $kpis['low_stock_count'] }}
             </p>
-        </div>
+        </a>
     </div>
     <div class="mt-4 text-center">
         <a href="{{ route('sales.pos') }}"
@@ -409,12 +412,12 @@
         <i class="fas fa-warehouse text-amber-500"></i> Warehouse Overview
     </h3>
     <div class="grid grid-cols-2 gap-4 mb-4">
-        <div class="bg-amber-50 rounded-xl p-4 text-center">
-            <p class="text-xs text-gray-500 font-semibold mb-1">Low Stock Items</p>
+        <a href="{{ route('stock.low-stock') }}" class="block bg-amber-50 hover:bg-amber-100 transition-all rounded-xl p-4 text-center group cursor-pointer shadow-sm hover:shadow">
+            <p class="text-xs text-gray-500 font-semibold mb-1 group-hover:text-amber-800 transition">Low Stock Items <i class="fas fa-external-link-alt text-[10px] ml-0.5 opacity-60"></i></p>
             <p class="text-2xl font-extrabold {{ $kpis['low_stock_count'] > 0 ? 'text-red-600' : 'text-green-600' }}">
                 {{ $kpis['low_stock_count'] }}
             </p>
-        </div>
+        </a>
         <div class="bg-purple-50 rounded-xl p-4 text-center">
             <p class="text-xs text-gray-500 font-semibold mb-1">Near Expiry</p>
             <p class="text-2xl font-extrabold text-purple-700">{{ $kpis['expiring_count'] }}</p>

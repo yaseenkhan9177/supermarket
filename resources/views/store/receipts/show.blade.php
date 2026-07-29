@@ -69,9 +69,22 @@
 
 <body onload="window.print()">
 
-    <div class="text-center bold mb-2" style="font-size: 16px;">
-        {{ config('app.name', 'OWN STORE POS') }}
+    @php
+        $companySetting = \App\Models\CompanySetting::first();
+        $store = \App\Models\Store::first();
+        $appName = config('app.name');
+        $fallbackName = ($appName && strtolower($appName) !== 'laravel') ? $appName : 'Supermarket';
+        $storeName = $companySetting?->business_name ?: ($store?->name ?: $fallbackName);
+    @endphp
+    <div class="text-center bold mb-2" style="font-size: 16px; text-transform: uppercase;">
+        {{ $storeName }}
     </div>
+    @if(!empty($companySetting?->address))
+        <div class="text-center" style="font-size: 11px;">{{ $companySetting->address }}</div>
+    @endif
+    @if(!empty($companySetting?->phone))
+        <div class="text-center mb-1" style="font-size: 10px;">Ph: {{ $companySetting->phone }}</div>
+    @endif
     <div class="text-center border-b">
         PAYMENT RECEIPT
     </div>

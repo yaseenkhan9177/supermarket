@@ -93,8 +93,16 @@
 </head>
 
 <body onload="window.print()">
+    @php
+        $companySetting = \App\Models\CompanySetting::first();
+        $store = \App\Models\Store::first();
+        $appName = config('app.name');
+        $fallbackName = ($appName && strtolower($appName) !== 'laravel') ? $appName : 'Supermarket';
+        $storeName = $companySetting?->business_name ?: ($store?->name ?: $fallbackName);
+    @endphp
 
     <div class="header">
+        <div class="store-name" style="font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 3px;">{{ $storeName }}</div>
         <div class="title">{{ isset($total) ? 'GUEST BILL' : 'KITCHEN ORDER' }}</div>
         <div class="meta">
             #{{ $kot->kot_no }}<br>
