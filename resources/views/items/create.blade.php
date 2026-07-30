@@ -4,111 +4,179 @@
 
 @section('content')
 
-<div class="max-w-7xl mx-auto" x-data="itemManager()">
+<div class="max-w-7xl mx-auto space-y-6" x-data="itemManager()">
 
-    <div class="flex justify-between items-center mb-8">
-        <div>
-            <h1 class="text-3xl font-extrabold text-white tracking-tight">Create Product</h1>
-            <p class="text-slate-400 text-sm mt-1">Add a new inventory item to your catalog.</p>
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-6 rounded-2xl shadow-2xl backdrop-blur-md relative overflow-hidden">
+        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 text-xl font-bold shadow-lg shadow-blue-900/20">
+                <i class="fas fa-box-open"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+                    Create Product
+                    <span class="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium">New Catalog Item</span>
+                </h1>
+                <p class="text-slate-400 text-sm mt-0.5">Define product details, set up pricing, and configure stock controls.</p>
+            </div>
         </div>
-        <div class="flex gap-3">
-            <button type="button" @click="showImportModal = true" class="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-900/50 transition transform hover:-translate-y-0.5">
-                <i class="fas fa-file-excel mr-2"></i> Import from Excel
+
+        <div class="flex flex-wrap items-center gap-3">
+            <button type="button" @click="showImportModal = true" class="px-4 py-2.5 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-600 hover:text-white font-bold text-sm shadow-lg shadow-emerald-950/40 transition duration-200 flex items-center gap-2">
+                <i class="fas fa-file-excel"></i> Import from Excel
             </button>
-            <a href="/items" class="px-5 py-2.5 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white transition font-bold text-sm">Cancel</a>
-            <button form="itemForm" type="submit" class="px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/50 transition transform hover:-translate-y-0.5">
-                <i class="fas fa-save mr-2"></i> Save Product
+            <a href="/items" class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white transition font-bold text-sm flex items-center gap-2">
+                <i class="fas fa-arrow-left text-xs"></i> Cancel
+            </a>
+            <button form="itemForm" type="submit" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-900/50 transition duration-200 transform hover:-translate-y-0.5 flex items-center gap-2">
+                <i class="fas fa-save"></i> Save Product
             </button>
         </div>
+    </div>
+
+    <!-- Quick Navigation / Progress Indicator -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <a href="#section-identity" class="bg-slate-900/60 border border-slate-800/80 hover:border-blue-500/50 p-3 rounded-xl flex items-center gap-3 transition group">
+            <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center font-bold text-xs transition">1</div>
+            <div class="text-left">
+                <p class="text-xs font-bold text-slate-300 group-hover:text-white transition">Product Identity</p>
+                <p class="text-[10px] text-slate-500">Name, Type & Dept</p>
+            </div>
+        </a>
+        <a href="#section-pricing" class="bg-slate-900/60 border border-slate-800/80 hover:border-emerald-500/50 p-3 rounded-xl flex items-center gap-3 transition group">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white flex items-center justify-center font-bold text-xs transition">2</div>
+            <div class="text-left">
+                <p class="text-xs font-bold text-slate-300 group-hover:text-white transition">Pricing Engine</p>
+                <p class="text-[10px] text-slate-500">CP, SP & Margins</p>
+            </div>
+        </a>
+        <a href="#section-stock" class="bg-slate-900/60 border border-slate-800/80 hover:border-orange-500/50 p-3 rounded-xl flex items-center gap-3 transition group">
+            <div class="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-400 group-hover:bg-orange-600 group-hover:text-white flex items-center justify-center font-bold text-xs transition">3</div>
+            <div class="text-left">
+                <p class="text-xs font-bold text-slate-300 group-hover:text-white transition">Stock Control</p>
+                <p class="text-[10px] text-slate-500">Alerts & Opening Qty</p>
+            </div>
+        </a>
+        <a href="#section-image" class="bg-slate-900/60 border border-slate-800/80 hover:border-purple-500/50 p-3 rounded-xl flex items-center gap-3 transition group">
+            <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 group-hover:bg-purple-600 group-hover:text-white flex items-center justify-center font-bold text-xs transition">4</div>
+            <div class="text-left">
+                <p class="text-xs font-bold text-slate-300 group-hover:text-white transition">Media & Image</p>
+                <p class="text-[10px] text-slate-500">Upload Photo</p>
+            </div>
+        </a>
     </div>
 
     <form id="itemForm" action="/items/store" method="POST" enctype="multipart/form-data">
         @csrf
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
+            <!-- Left Column: Identity & Media -->
             <div class="lg:col-span-7 space-y-6">
 
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                <!-- Product Identity Card -->
+                <div id="section-identity" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
 
-                    <h3 class="text-white font-bold text-lg mb-6 flex items-center gap-2">
-                        <i class="fas fa-cube text-blue-500"></i> Product Identity
-                    </h3>
+                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800/80">
+                        <h3 class="text-white font-bold text-lg flex items-center gap-2.5">
+                            <i class="fas fa-cube text-blue-500"></i> Product Identity
+                        </h3>
+                        <span class="text-[11px] font-semibold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-lg border border-blue-500/20">Essential</span>
+                    </div>
 
                     <div class="space-y-5">
                         <div class="grid grid-cols-12 gap-4">
-                            <div class="col-span-8">
+                            <div class="col-span-12 md:col-span-8">
                                 <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Product Name <span class="text-red-500">*</span></label>
-                                <input type="text" name="description" x-model="name" @input="generateBarcode()" placeholder="e.g. Nestle Milkpak 1L" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition font-medium">
+                                <input type="text" name="description" x-model="name" @input="generateBarcode()" placeholder="e.g. Nestle Milkpak 1L" required class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition font-medium">
                             </div>
-                            <div class="col-span-4">
+                            <div class="col-span-12 md:col-span-4">
                                 <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Barcode / Code</label>
                                 <div class="relative">
                                     <input type="text" name="code" x-model="code" placeholder="Scan or Auto..." class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-3 pr-10 py-3 text-white font-mono focus:border-blue-500 outline-none">
-                                    <button type="button" @click="forceGenerate()" class="absolute right-2 top-2 text-slate-500 hover:text-white transition" title="Regenerate">
+                                    <button type="button" @click="forceGenerate()" class="absolute right-2 top-2.5 text-slate-500 hover:text-white p-1 transition" title="Regenerate Barcode">
                                         <i class="fas fa-sync-alt"></i>
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
+                        <!-- Searchable Item Type & Department Fields -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Item Type</label>
-                                <select name="item_type" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-slate-300 focus:border-blue-500 outline-none">
-                                    <option value="Inventory">Inventory Item</option>
-                                    <option value="Service">Service (No Stock)</option>
-                                    <option value="Package">Package / Deal</option>
-                                </select>
+                                <x-searchable-select 
+                                    name="item_type" 
+                                    id="item_type" 
+                                    label="Item Type" 
+                                    placeholder="Search or add type..." 
+                                    search-url="/item-types/search" 
+                                    create-url="/item-types" 
+                                    value-key="name" 
+                                    display-key="name" 
+                                    selected-id="Inventory"
+                                    selected-name="Inventory"
+                                    entity-label="Item Type" 
+                                    icon="fa-layer-group" />
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Department</label>
-                                <select name="department_id" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-slate-300 focus:border-blue-500 outline-none">
-                                    <option value="">Select Dept...</option>
-                                    <option value="1">Grocery</option>
-                                    <option value="2">Dairy</option>
-                                </select>
+                                <x-searchable-select 
+                                    name="department_id" 
+                                    id="department_id" 
+                                    label="Department" 
+                                    placeholder="Search or add dept..." 
+                                    search-url="/departments/search" 
+                                    create-url="/departments" 
+                                    value-key="id" 
+                                    display-key="name" 
+                                    entity-label="Department" 
+                                    icon="fa-sitemap" />
                             </div>
                         </div>
 
+                        <!-- Checkboxes & Settings -->
                         <div class="flex flex-wrap gap-4 pt-2">
-                            <label class="flex items-center gap-2 cursor-pointer bg-slate-800 px-3 py-2 rounded-lg border border-slate-700 hover:border-blue-500 transition">
-                                <input type="checkbox" name="hide_sale_price" class="rounded text-blue-500 bg-slate-900 border-slate-600 focus:ring-0">
+                            <label class="flex items-center gap-2 cursor-pointer bg-slate-950 px-3.5 py-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition">
+                                <input type="checkbox" name="hide_sale_price" class="rounded text-blue-500 bg-slate-900 border-slate-700 focus:ring-0">
                                 <span class="text-xs font-bold text-slate-300 uppercase">Hide Price</span>
                             </label>
-                            <label class="flex items-center gap-2 cursor-pointer bg-slate-800 px-3 py-2 rounded-lg border border-slate-700 hover:border-blue-500 transition">
-                                <input type="checkbox" name="open_price" class="rounded text-blue-500 bg-slate-900 border-slate-600 focus:ring-0">
+                            <label class="flex items-center gap-2 cursor-pointer bg-slate-950 px-3.5 py-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition">
+                                <input type="checkbox" name="open_price" class="rounded text-blue-500 bg-slate-900 border-slate-700 focus:ring-0">
                                 <span class="text-xs font-bold text-slate-300 uppercase">Open Price</span>
                             </label>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative group">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
-                    <h3 class="text-white font-bold text-lg mb-4 flex items-center gap-2">
-                        <i class="fas fa-image text-purple-500"></i> Product Image
-                    </h3>
+                <!-- Product Image Upload Card -->
+                <div id="section-image" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative group">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-purple-500"></div>
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800/80">
+                        <h3 class="text-white font-bold text-lg flex items-center gap-2.5">
+                            <i class="fas fa-image text-purple-500"></i> Product Image
+                        </h3>
+                        <span class="text-[11px] font-semibold text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded-lg border border-purple-500/20">Optional</span>
+                    </div>
 
-                    <div class="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:border-purple-500 hover:bg-slate-800/50 transition cursor-pointer relative" @click="$refs.fileInput.click()">
-                        <input type="file" name="photo" x-ref="fileInput" class="hidden" @change="previewImage">
+                    <div class="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:border-purple-500 hover:bg-slate-800/40 transition cursor-pointer relative" @click="$refs.fileInput.click()">
+                        <input type="file" name="photo" x-ref="fileInput" class="hidden" accept="image/*" @change="previewImage">
 
                         <template x-if="!imageUrl">
                             <div>
-                                <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <i class="fas fa-cloud-upload-alt text-2xl text-slate-500"></i>
+                                <div class="w-16 h-16 bg-slate-800/80 border border-slate-700/60 rounded-2xl flex items-center justify-center mx-auto mb-3 text-slate-400 group-hover:scale-110 transition">
+                                    <i class="fas fa-cloud-upload-alt text-2xl"></i>
                                 </div>
-                                <p class="text-slate-300 font-medium">Click to upload or drag and drop</p>
-                                <p class="text-slate-500 text-xs mt-1">SVG, PNG, JPG (Max 800x800px)</p>
+                                <p class="text-slate-300 font-medium text-sm">Click to upload or drag & drop</p>
+                                <p class="text-slate-500 text-xs mt-1">PNG, JPG, WEBP (Max 800x800px)</p>
                             </div>
                         </template>
 
                         <template x-if="imageUrl">
-                            <div class="relative">
-                                <img :src="imageUrl" class="h-48 mx-auto rounded-lg object-contain">
-                                <button type="button" @click.stop="imageUrl = null" class="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 shadow hover:bg-red-600">
-                                    <i class="fas fa-times"></i>
+                            <div class="relative inline-block">
+                                <img :src="imageUrl" class="h-48 mx-auto rounded-xl object-contain shadow-lg border border-slate-700">
+                                <button type="button" @click.stop="imageUrl = null" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 shadow-lg hover:bg-red-600 transition" title="Remove image">
+                                    <i class="fas fa-times text-xs"></i>
                                 </button>
                             </div>
                         </template>
@@ -117,91 +185,101 @@
 
             </div>
 
+            <!-- Right Column: Pricing, Stock & GL Accounts -->
             <div class="lg:col-span-5 space-y-6">
 
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
-                    <h3 class="text-white font-bold text-lg mb-6 flex items-center gap-2">
-                        <i class="fas fa-tag text-green-500"></i> Pricing Engine
-                    </h3>
+                <!-- Pricing Engine Card -->
+                <div id="section-pricing" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
+                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800/80">
+                        <h3 class="text-white font-bold text-lg flex items-center gap-2.5">
+                            <i class="fas fa-tag text-emerald-500"></i> Pricing Engine
+                        </h3>
+                        <span class="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">Financials</span>
+                    </div>
 
                     <div class="space-y-4">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cost Price (CP)</label>
                                 <div class="relative">
-                                    <span class="absolute left-3 top-3 text-slate-500 text-sm">Rs.</span>
-                                    <input type="number" step="0.01" name="cost_price" x-model="cost" class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-white font-mono focus:border-green-500 outline-none">
+                                    <span class="absolute left-3 top-3 text-slate-500 text-xs font-bold">Rs.</span>
+                                    <input type="number" step="0.01" name="cost_price" x-model="cost" class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-3 py-2.5 text-white font-mono text-sm focus:border-emerald-500 outline-none">
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-[10px] font-bold text-green-400 uppercase mb-1">Sale Price (SP)</label>
+                                <label class="block text-[10px] font-bold text-emerald-400 uppercase mb-1">Sale Price (SP)</label>
                                 <div class="relative">
-                                    <span class="absolute left-3 top-3 text-green-500 text-sm">Rs.</span>
-                                    <input type="number" step="0.01" name="sale_price" x-model="sale" class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-white font-bold font-mono focus:border-green-500 outline-none">
+                                    <span class="absolute left-3 top-3 text-emerald-500 text-xs font-bold">Rs.</span>
+                                    <input type="number" step="0.01" name="sale_price" x-model="sale" class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-3 py-2.5 text-white font-bold font-mono text-sm focus:border-emerald-500 outline-none">
                                 </div>
                             </div>
                         </div>
 
-                        <div class="bg-slate-950 rounded-lg p-3 border border-slate-800 flex justify-between items-center">
-                            <span class="text-xs text-slate-400 font-bold uppercase">Estimated Margin</span>
-                            <span class="text-sm font-mono font-bold" :class="margin >= 0 ? 'text-green-400' : 'text-red-400'" x-text="margin + '%'"></span>
+                        <div class="bg-slate-950 rounded-xl p-3.5 border border-slate-800/80 flex justify-between items-center">
+                            <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Estimated Profit Margin</span>
+                            <span class="text-sm font-mono font-bold px-2.5 py-1 rounded-lg" :class="margin >= 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'" x-text="margin + '%'"></span>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4 pt-2">
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Whole Sale Price</label>
-                                <input type="number" name="wholesale_price" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-300 text-sm focus:border-green-500 outline-none">
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Wholesale Price</label>
+                                <input type="number" step="0.01" name="wholesale_price" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-300 text-sm focus:border-emerald-500 outline-none">
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Trade Rate</label>
-                                <input type="number" name="trade_rate" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-300 text-sm focus:border-green-500 outline-none">
+                                <input type="number" step="0.01" name="trade_rate" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-300 text-sm focus:border-emerald-500 outline-none">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
-                    <h3 class="text-white font-bold text-lg mb-6 flex items-center gap-2">
-                        <i class="fas fa-boxes text-orange-500"></i> Stock Control
-                    </h3>
+                <!-- Stock Control Card -->
+                <div id="section-stock" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-orange-500"></div>
+                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800/80">
+                        <h3 class="text-white font-bold text-lg flex items-center gap-2.5">
+                            <i class="fas fa-boxes text-orange-500"></i> Stock Control
+                        </h3>
+                        <span class="text-[11px] font-semibold text-orange-400 bg-orange-500/10 px-2.5 py-1 rounded-lg border border-orange-500/20">Inventory</span>
+                    </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Min Stock (Alert)</label>
-                            <input type="number" name="min_stock" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-orange-500 outline-none">
+                            <input type="number" name="min_stock" placeholder="0" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:border-orange-500 outline-none">
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Max Stock</label>
-                            <input type="number" name="max_stock" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-orange-500 outline-none">
+                            <input type="number" name="max_stock" placeholder="0" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:border-orange-500 outline-none">
                         </div>
                     </div>
 
                     <div class="mt-4 pt-4 border-t border-slate-800">
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Opening Stock (On Hand)</label>
-                        <input type="number" name="on_hand" placeholder="0" class="w-full bg-yellow-900/20 border border-yellow-700/50 rounded-lg px-4 py-3 text-yellow-400 font-bold focus:border-yellow-500 outline-none">
+                        <label class="block text-[10px] font-bold text-amber-400 uppercase mb-1">Opening Stock (On Hand)</label>
+                        <input type="number" name="on_hand" placeholder="0" class="w-full bg-amber-950/20 border border-amber-500/40 rounded-xl px-4 py-3 text-amber-400 font-bold focus:border-amber-500 outline-none transition">
                     </div>
                 </div>
 
-                <div x-data="{ open: false }" class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
-                    <button type="button" @click="open = !open" class="w-full p-4 flex justify-between items-center text-left">
-                        <span class="text-sm font-bold text-slate-400 flex items-center gap-2">
+                <!-- GL Accounts Integration Card -->
+                <div x-data="{ open: false }" class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+                    <button type="button" @click="open = !open" class="w-full p-4 flex justify-between items-center text-left hover:bg-slate-800/40 transition">
+                        <span class="text-sm font-bold text-slate-300 flex items-center gap-2.5">
                             <i class="fas fa-book text-slate-500"></i> GL Accounts Integration
                         </span>
-                        <i class="fas fa-chevron-down text-slate-600 transition" :class="open ? 'rotate-180' : ''"></i>
+                        <i class="fas fa-chevron-down text-slate-500 transition duration-200" :class="open ? 'rotate-180 text-blue-400' : ''"></i>
                     </button>
 
                     <div x-show="open" x-collapse class="p-6 pt-0 border-t border-slate-800 space-y-4">
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sales Income Account</label>
-                            <select name="sales_account_id" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-2 text-xs text-slate-300">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Sales Income Account</label>
+                            <select name="sales_account_id" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-300 focus:border-blue-500 outline-none">
                                 <option value="1">40100 - Sales Revenue</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">COGS Account</label>
-                            <select name="cogs_account_id" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-2 text-xs text-slate-300">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">COGS Account</label>
+                            <select name="cogs_account_id" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-300 focus:border-blue-500 outline-none">
                                 <option value="2">50100 - Cost of Goods Sold</option>
                             </select>
                         </div>
@@ -226,7 +304,7 @@
             <div class="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div>
             
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-white font-extrabold text-xl flex items-center gap-2">
+                <h3 class="text-white font-extrabold text-xl flex items-center gap-2.5">
                     <i class="fas fa-file-excel text-emerald-500"></i> Bulk Import Items
                 </h3>
                 <button type="button" @click="showImportModal = false" class="text-slate-400 hover:text-white transition">
@@ -356,7 +434,6 @@
                 }
             },
 
-            // Auto-Generate Barcode Logic
             generateBarcode() {
                 if (this.name.length > 2 && this.code === '') {
                     this.code = this.getRandomCode();
@@ -368,7 +445,6 @@
             },
 
             getRandomCode() {
-                // Generate random unique-ish 8 digit number
                 return Math.floor(10000000 + Math.random() * 90000000).toString();
             },
 
@@ -388,7 +464,7 @@
                 const formData = new FormData();
                 formData.append('excel_file', this.excelFile);
                 
-                const csrfToken = document.querySelector('input[name="_token"]').value;
+                const csrfToken = document.querySelector('input[name="_token"]')?.value || '';
 
                 fetch('/items/import', {
                     method: 'POST',
@@ -409,7 +485,7 @@
                         } else {
                             const text = await response.text();
                             console.error('Non-JSON error response:', text);
-                            throw new Error('Server returned an error (status ' + response.status + '). Please check your internet connection or the server logs.');
+                            throw new Error('Server returned an error (status ' + response.status + ').');
                         }
                     }
                     
@@ -429,7 +505,7 @@
                 })
                 .catch(error => {
                     this.importing = false;
-                    alert(error.message || 'Import failed. Please make sure the Excel file structure is correct and contains valid headers.');
+                    alert(error.message || 'Import failed. Please check your file.');
                     console.error(error);
                 });
             },

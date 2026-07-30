@@ -212,6 +212,12 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
     Route::post('/items/upload-preview', [\App\Http\Controllers\ItemController::class, 'uploadPreview'])->name('items.upload-preview');
     Route::post('/items/import-chunk', [\App\Http\Controllers\ItemController::class, 'importChunk'])->name('items.import-chunk');
     Route::get('/items/download-sample', [\App\Http\Controllers\ItemController::class, 'downloadSample'])->name('items.download-sample');
+
+    // Item Types & Departments AJAX search & quick create
+    Route::get('/item-types/search', [\App\Http\Controllers\ItemTypeController::class, 'search'])->name('item-types.search');
+    Route::post('/item-types', [\App\Http\Controllers\ItemTypeController::class, 'store'])->name('item-types.store');
+    Route::get('/departments/search', [\App\Http\Controllers\DepartmentController::class, 'search'])->name('departments.search');
+    Route::post('/departments', [\App\Http\Controllers\DepartmentController::class, 'store'])->name('departments.store');
 });
 
 // ============================================================================
