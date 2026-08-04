@@ -119,6 +119,7 @@ class ItemController extends Controller
         $data['cost_rate'] = $request->input('cost_price', 0);
         $data['sale_rate'] = $request->input('sale_price', 0);
         $data['sale_whole'] = $request->input('wholesale_price', 0);
+        $data['trade_rate'] = $request->input('trade_rate', 0);
         $data['hide_sale_price'] = $request->has('hide_sale_price');
         $data['open_price'] = $request->has('open_price');
 
