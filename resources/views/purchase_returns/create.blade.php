@@ -212,6 +212,6 @@
                 }
             }
         }
-    </div>
+    </script>
 </div>
 @endsection

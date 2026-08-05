@@ -147,10 +147,6 @@ class RefundController extends Controller
     }
 
     // =========================================================================
-    // GET BILL ITEMS — AJAX endpoint
-    // Returns line items for one specific bill, normalised into a common shape.
-    // =========================================================================
-
     public function getBillItems(Request $request)
     {
         $source = $request->input('source');
@@ -158,40 +154,65 @@ class RefundController extends Controller
 
         $items = [];
 
+        // Sum past returned quantities grouped by sale_item_id
+        $returnedQtyMap = RefundItem::where('sale_source', $source)
+            ->where('original_bill_id', $id)
+            ->selectRaw('sale_item_id, SUM(quantity) as total_returned')
+            ->groupBy('sale_item_id')
+            ->pluck('total_returned', 'sale_item_id');
+
         if ($source === 'cash_sale') {
             $sale = CashSale::with('items')->findOrFail($id);
             foreach ($sale->items as $row) {
+                $origQty = (float) $row->quantity;
+                $alreadyReturned = (float) ($returnedQtyMap[$row->id] ?? 0);
+                $availableQty = max(0, $origQty - $alreadyReturned);
+
                 $items[] = [
-                    'line_item_id' => $row->id,
-                    'product_id'   => $row->product_id,
-                    'item_name'    => $row->item_name,
-                    'quantity'     => $row->quantity,
-                    'rate'         => $row->rate,
-                    'total'        => $row->total,
+                    'line_item_id'         => $row->id,
+                    'product_id'           => $row->product_id,
+                    'item_name'            => $row->item_name,
+                    'quantity'             => $origQty,
+                    'already_returned_qty' => $alreadyReturned,
+                    'available_qty'        => $availableQty,
+                    'rate'                 => $row->rate,
+                    'total'                => $row->total,
                 ];
             }
         } elseif ($source === 'debit_sale') {
             $sale = DebitSale::with('items')->findOrFail($id);
             foreach ($sale->items as $row) {
+                $origQty = (float) $row->quantity;
+                $alreadyReturned = (float) ($returnedQtyMap[$row->id] ?? 0);
+                $availableQty = max(0, $origQty - $alreadyReturned);
+
                 $items[] = [
-                    'line_item_id' => $row->id,
-                    'product_id'   => $row->product_id,
-                    'item_name'    => $row->item_name,
-                    'quantity'     => $row->quantity,
-                    'rate'         => $row->rate,
-                    'total'        => $row->net_amount,
+                    'line_item_id'         => $row->id,
+                    'product_id'           => $row->product_id,
+                    'item_name'            => $row->item_name,
+                    'quantity'             => $origQty,
+                    'already_returned_qty' => $alreadyReturned,
+                    'available_qty'        => $availableQty,
+                    'rate'                 => $row->rate,
+                    'total'                => $row->net_amount,
                 ];
             }
         } elseif ($source === 'pos_sale') {
             $sale = Sale::with('items')->findOrFail($id);
             foreach ($sale->items as $row) {
+                $origQty = (float) $row->qty;
+                $alreadyReturned = (float) ($returnedQtyMap[$row->id] ?? 0);
+                $availableQty = max(0, $origQty - $alreadyReturned);
+
                 $items[] = [
-                    'line_item_id' => $row->id,
-                    'product_id'   => $row->item_id,
-                    'item_name'    => $row->item_name,
-                    'quantity'     => $row->qty,
-                    'rate'         => $row->rate,
-                    'total'        => $row->total,
+                    'line_item_id'         => $row->id,
+                    'product_id'           => $row->item_id,
+                    'item_name'            => $row->item_name,
+                    'quantity'             => $origQty,
+                    'already_returned_qty' => $alreadyReturned,
+                    'available_qty'        => $availableQty,
+                    'rate'                 => $row->rate,
+                    'total'                => $row->total,
                 ];
             }
         } else {
@@ -222,6 +243,39 @@ class RefundController extends Controller
             'items.min'            => 'Please add at least one item to the return cart.',
             'refund_method.required' => 'Please select a refund method.',
         ]);
+
+        // Validate each item return quantity against original minus all prior returns
+        foreach ($request->items as $idx => $item) {
+            $saleSource = $item['sale_source'];
+            $lineItemId = $item['line_item_id'] ?? null;
+            $returnQty  = (float) $item['return_qty'];
+
+            if ($lineItemId) {
+                $origQty = 0;
+                if ($saleSource === 'cash_sale') {
+                    $origRow = \App\Models\CashSaleItem::find($lineItemId);
+                    $origQty = $origRow ? (float)$origRow->quantity : 0;
+                } elseif ($saleSource === 'debit_sale') {
+                    $origRow = \App\Models\DebitSaleItem::find($lineItemId);
+                    $origQty = $origRow ? (float)$origRow->quantity : 0;
+                } elseif ($saleSource === 'pos_sale') {
+                    $origRow = \App\Models\SaleItem::find($lineItemId);
+                    $origQty = $origRow ? (float)$origRow->qty : 0;
+                }
+
+                $alreadyReturned = (float) RefundItem::where('sale_source', $saleSource)
+                    ->where('sale_item_id', $lineItemId)
+                    ->sum('quantity');
+
+                $availableQty = max(0, $origQty - $alreadyReturned);
+
+                if ($returnQty > ($availableQty + 0.0001)) {
+                    return back()
+                        ->withInput()
+                        ->with('error', "Cannot return {$returnQty} unit(s) of '{$item['item_name']}'. Maximum available to return is {$availableQty} unit(s) (Original: {$origQty}, Previously Returned: {$alreadyReturned}).");
+                }
+            }
+        }
 
         DB::beginTransaction();
         try {

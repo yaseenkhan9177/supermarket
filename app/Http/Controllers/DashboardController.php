@@ -12,9 +12,10 @@ class DashboardController extends Controller
         $user = Auth::user(); // Strictly Web Guard User
         $store = $user->store;
 
-        // 1. Calculate Real Financials
-        $salesToday = \App\Models\Sale::whereDate('sale_date', today())->sum('grand_total');
-        // $salesMonth = \App\Models\Sale::whereMonth('created_at', now()->month)->sum('grand_total'); // Can be used for charts
+        // 1. Calculate Real Financials (Net Sales = Gross Sales - Refunds)
+        $grossSalesToday = \App\Models\Sale::whereDate('sale_date', today())->sum('grand_total');
+        $refundsToday    = \App\Models\Refund::whereDate('refund_date', today())->sum('total_amount');
+        $salesToday      = max(0, $grossSalesToday - $refundsToday);
 
         $todaySales = \App\Models\Sale::whereDate('sale_date', today())
             ->with('customer:id,name')

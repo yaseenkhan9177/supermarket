@@ -1,21 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('layouts.admin')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Credit Purchase | OwnStore PRO</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+@section('navbar_subtitle', 'Credit Purchase (Pay Later)')
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</head>
+@section('content')
+<div x-data="creditPurchaseForm()" @supplier-selected.window="onSupplierSelected($event.detail)">
 
-<body class="bg-gray-900 font-sans text-gray-200" x-data="creditPurchaseForm()" @supplier-selected.window="onSupplierSelected($event.detail)">
-
-    <!-- SweetAlert Flash Messages -->
+    <!-- Flash Messages -->
     @if(session('success'))
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -51,7 +41,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 title: 'Validation Error',
-                html: '<ul class="text-left list-disc pl-4">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>',
+                html: '<ul class="text-left list-disc pl-4 text-xs">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>',
                 icon: 'warning',
                 background: '#1f2937',
                 color: '#fff',
@@ -61,28 +51,28 @@
     </script>
     @endif
 
-    <nav class="bg-white border-b border-gray-200 px-6 py-3 shadow-sm sticky top-0 z-50 mb-8">
-        <div class="container mx-auto max-w-[1400px] flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-full bg-amber-600 flex items-center justify-center text-white shadow-md">
-                    <i class="fas fa-file-invoice text-lg"></i>
-                </div>
-                <div class="flex flex-col">
-                    <h1 class="text-xl font-extrabold text-gray-900 leading-none tracking-tight">
-                        OwnStore <span class="text-amber-600">PRO</span>
-                    </h1>
-                    <span class="text-xs text-gray-500 font-medium mt-0.5">Credit Purchase (Pay Later)</span>
-                </div>
-            </div>
+    <div class="container mx-auto px-4 max-w-[1400px] pb-32">
+
+        <!-- Top Header Bar / Navigation Switcher -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-                <a href="/dashboard" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-800 hover:bg-black text-white text-sm font-bold rounded-lg shadow-sm transition transform hover:scale-105">
-                    <i class="fas fa-home"></i> Dashboard
+                <h1 class="text-2xl font-black text-white flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center text-white shadow-lg shadow-amber-600/30">
+                        <i class="fas fa-file-invoice"></i>
+                    </span>
+                    Credit Purchase (Pay Later)
+                </h1>
+                <p class="text-xs text-gray-400 mt-1">Record purchases on credit, receive stock immediately, and update supplier payable balances.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('purchases.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md transition">
+                    <i class="fas fa-truck-loading"></i> Cash Purchase Entry
+                </a>
+                <a href="{{ route('supplier-returns.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl shadow-md transition">
+                    <i class="fas fa-rotate-left"></i> Supplier Returns
                 </a>
             </div>
         </div>
-    </nav>
-
-    <div class="container mx-auto px-6 max-w-[1400px] pb-32">
 
         <form action="/purchases/store" method="POST" @submit.prevent="submitForm">
             @csrf
@@ -90,119 +80,122 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+                <!-- Supplier Details Panel -->
+                <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-amber-500"></div>
 
-                    <div class="flex items-center gap-2 mb-4 border-b border-gray-700 pb-2">
+                    <div class="flex items-center gap-2 mb-4 border-b border-gray-800 pb-3">
                         <i class="fas fa-user-clock text-amber-400"></i>
-                        <h3 class="text-white font-bold">Supplier Details</h3>
+                        <h3 class="text-white font-bold text-sm uppercase tracking-wider">Supplier Details</h3>
                     </div>
 
                     <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Select Supplier *</label>
                             <div class="flex gap-2" @open-add-supplier-modal.window="showSupplierModal = true">
-                                <x-supplier-search :add-new="true" :required="true" />
-                                <button type="button" @click="showSupplierModal = true" class="bg-amber-600 px-3 rounded text-white hover:bg-amber-700 shrink-0"><i class="fas fa-plus"></i></button>
+                                <x-supplier-search id="supplierSelect" name="supplier_id" :add-new="true" :required="true" />
+                                <button type="button" @click="showSupplierModal = true" class="bg-amber-600 px-3.5 rounded-xl text-white hover:bg-amber-700 transition shrink-0"><i class="fas fa-plus"></i></button>
                             </div>
                         </div>
 
-                        <div class="bg-gray-900 rounded p-3 border border-gray-600 flex justify-between items-center">
-                            <span class="text-xs text-gray-400 font-bold uppercase">Current Debt</span>
-                            <span class="text-xl font-bold text-amber-500" x-text="'Rs. ' + supplierBalance">0.00</span>
+                        <div class="bg-gray-950 rounded-xl p-3.5 border border-gray-800 flex justify-between items-center">
+                            <span class="text-xs text-gray-400 font-bold uppercase">Current Debt / Payable</span>
+                            <span class="text-lg font-bold text-amber-400 font-mono" x-text="'Rs. ' + supplierBalance">0.00</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-lg text-gray-800">
-                    <div class="flex items-center gap-2 mb-4 border-b pb-2">
-                        <i class="fas fa-calendar-alt text-amber-600"></i>
-                        <h3 class="font-bold text-gray-900">Bill Dates</h3>
+                <!-- Bill Dates Panel -->
+                <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
+                    <div class="flex items-center gap-2 mb-4 border-b border-gray-800 pb-3">
+                        <i class="fas fa-calendar-alt text-amber-400"></i>
+                        <h3 class="text-white font-bold text-sm uppercase tracking-wider">Bill Dates</h3>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Purchase ID</label>
-                            <input type="text" name="purchase_no" value="PC-{{ date('Y') }}-{{ rand(1000,9999) }}" readonly class="w-full bg-gray-100 border border-gray-300 rounded p-2 text-sm font-mono">
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Purchase ID</label>
+                            <input type="text" name="purchase_no" value="PC-{{ date('Y') }}-{{ rand(1000,9999) }}" readonly class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs font-mono text-gray-400">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Vendor Bill #</label>
-                            <input type="text" name="vendor_bill_no" placeholder="e.g. INV-9988" class="w-full bg-white border border-gray-300 rounded p-2 text-sm focus:border-amber-500">
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Vendor Bill #</label>
+                            <input type="text" name="vendor_bill_no" placeholder="e.g. INV-9988" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-xs text-white focus:border-amber-500 outline-none">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Bill Date</label>
-                            <input type="date" name="purchase_date" value="{{ date('Y-m-d') }}" class="w-full bg-white border border-gray-300 rounded p-2 text-sm">
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Bill Date</label>
+                            <input type="date" name="purchase_date" value="{{ date('Y-m-d') }}" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-xs text-white focus:border-amber-500 outline-none">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-red-500 uppercase mb-1">Due Date *</label>
-                            <input type="date" name="due_date" required class="w-full bg-amber-50 border border-amber-300 rounded p-2 text-sm text-gray-900 focus:ring-2 focus:ring-amber-500">
+                            <label class="block text-xs font-bold text-red-400 uppercase mb-1">Due Date *</label>
+                            <input type="date" name="due_date" required class="w-full bg-gray-950 border border-amber-500/50 rounded-xl p-2.5 text-xs text-amber-300 focus:ring-2 focus:ring-amber-500 outline-none">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden text-gray-800 mb-6">
-                <div class="p-4 bg-amber-50 border-b border-amber-100 flex justify-between items-center">
-                    <h3 class="font-bold text-amber-900"><i class="fas fa-boxes mr-2"></i>Items (Stock In)</h3>
-                    <button type="button" @click="addRow()" class="bg-amber-600 text-white hover:bg-amber-700 px-4 py-2 rounded text-sm font-bold transition shadow">
+            <!-- Items Table -->
+            <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden mb-6">
+                <div class="p-4 bg-amber-950/20 border-b border-amber-900/30 flex justify-between items-center">
+                    <h3 class="font-bold text-amber-200 text-sm flex items-center gap-2"><i class="fas fa-boxes text-amber-400"></i> Items (Stock In)</h3>
+                    <button type="button" @click="addRow()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow">
                         <i class="fas fa-plus mr-1"></i> Add Row
                     </button>
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                    <table class="w-full text-left border-collapse text-sm">
                         <thead>
-                            <tr class="text-xs font-bold text-gray-500 uppercase bg-gray-50 border-b">
+                            <tr class="text-[11px] font-bold text-gray-400 uppercase bg-gray-950 border-b border-gray-800">
                                 <th class="p-3 w-10">#</th>
                                 <th class="p-3 w-32">Barcode</th>
-                                <th class="p-3">Description</th>
+                                <th class="p-3 min-w-[200px]">Description</th>
                                 <th class="p-3 w-32">Expiry</th>
                                 <th class="p-3 w-20 text-center">Qty</th>
-                                <th class="p-3 w-24 text-right">Cost</th>
-                                <th class="p-3 w-20 text-center">In Stock</th>
+                                <th class="p-3 w-28 text-right">Cost</th>
                                 <th class="p-3 w-24 text-right">Total</th>
+                                <th class="p-3 w-20 text-center">In Stock</th>
                                 <th class="p-3 w-10"></th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="divide-y divide-gray-800/60">
                             <template x-for="(row, index) in rows" :key="index">
-                                <tr class="border-b hover:bg-amber-50 transition">
-                                    <td class="p-3 text-center text-gray-400" x-text="index + 1"></td>
+                                <tr class="hover:bg-gray-800/40 transition">
+                                    <td class="p-3 text-center text-gray-500 text-xs" x-text="index + 1"></td>
 
                                     <td class="p-3">
-                                        <input type="text" :name="`items[${index}][code]`" x-model="row.code" @keydown.enter.prevent="fetchProduct(index)" @blur="fetchProduct(index)" class="w-full p-1 border rounded text-xs text-gray-950" placeholder="Scan...">
+                                        <input type="text" :name="`items[${index}][code]`" x-model="row.code" @keydown.enter.prevent="fetchProduct(index)" @blur="fetchProduct(index)" class="w-full p-2 bg-gray-950 border border-gray-700 rounded-lg text-xs text-white font-mono focus:ring-1 focus:ring-amber-500 outline-none" placeholder="Scan...">
                                     </td>
 
                                     <td class="p-3">
-                                        <input type="text" :name="`items[${index}][name]`" x-model="row.name" class="w-full p-1 border rounded text-xs text-gray-950" placeholder="Item name...">
-                                        <span class="text-[10px] text-gray-400">Stock: <span :class="row.stock > 0 ? 'text-green-600 font-bold' : 'text-red-500 font-bold'" x-text="row.stock ?? '—'"></span></span>
+                                        <input type="text" :name="`items[${index}][name]`" x-model="row.name" class="w-full p-2 bg-gray-950 border border-gray-700 rounded-lg text-xs text-white focus:ring-1 focus:ring-amber-500 outline-none" placeholder="Item name...">
                                         <input type="hidden" :name="`items[${index}][item_id]`" x-model="row.item_id">
                                     </td>
 
                                     <td class="p-3">
-                                        <input type="date" :name="`items[${index}][expiry_date]`" class="w-full p-1 border rounded text-xs">
+                                        <input type="date" :name="`items[${index}][expiry_date]`" class="w-full p-2 bg-gray-950 border border-gray-700 rounded-lg text-xs text-white focus:ring-1 focus:ring-amber-500 outline-none">
                                     </td>
 
                                     <td class="p-3">
-                                        <input type="number" x-model="row.qty" :name="`items[${index}][qty]`" class="w-full p-1 border rounded text-center text-sm font-bold text-amber-700">
+                                        <input type="number" x-model="row.qty" :name="`items[${index}][qty]`" min="1" class="w-full p-2 bg-gray-950 border border-gray-700 rounded-lg text-center text-xs font-bold text-amber-400 focus:ring-1 focus:ring-amber-500 outline-none">
                                     </td>
 
                                     <td class="p-3">
-                                        <input type="number" step="0.01" x-model="row.rate" :name="`items[${index}][rate]`" class="w-full p-1 border rounded text-right text-sm">
+                                        <input type="number" step="0.01" x-model="row.rate" :name="`items[${index}][rate]`" class="w-full p-2 bg-gray-950 border border-gray-700 rounded-lg text-right text-xs text-white focus:ring-1 focus:ring-amber-500 outline-none">
                                     </td>
 
-                                    <td class="p-3 text-right font-bold text-gray-900">
-                                        <span x-text="(row.qty * row.rate).toFixed(2)"></span>
-                                    </td>
-                                    <td class="p-3 text-center">
-                                        <span :class="row.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'" class="text-xs font-bold px-2 py-0.5 rounded-full" x-text="row.stock !== null ? row.stock : '—'"></span>
+                                    <td class="p-3 text-right font-bold text-white">
+                                        <span x-text="'Rs. ' + (row.qty * row.rate).toFixed(2)"></span>
                                     </td>
 
                                     <td class="p-3 text-center">
-                                        <button type="button" @click="removeRow(index)" class="text-gray-300 hover:text-red-500">
+                                        <span :class="row.stock > 0 ? 'bg-green-900/50 text-green-400 border border-green-700' : 'bg-gray-800 text-gray-500'" class="text-[11px] font-bold px-2 py-0.5 rounded-full" x-text="row.stock !== null ? row.stock : '—'"></span>
+                                    </td>
+
+                                    <td class="p-3 text-center">
+                                        <button type="button" @click="removeRow(index)" class="text-gray-500 hover:text-red-400 transition p-1">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </td>
@@ -210,8 +203,8 @@
                             </template>
 
                             <!-- Live Search Row -->
-                            <tr class="bg-amber-50/50 border-t-2 border-amber-200">
-                                <td class="p-3 text-center"><i class="fas fa-search text-amber-500"></i></td>
+                            <tr class="bg-amber-950/20 border-t border-amber-900/40">
+                                <td class="p-3 text-center"><i class="fas fa-search text-amber-400"></i></td>
                                 <td class="p-3 relative" colspan="7">
                                     <input
                                         type="text"
@@ -219,24 +212,24 @@
                                         @input.debounce.200ms="performSearch()"
                                         @keydown.enter.prevent="selectFirstResult()"
                                         placeholder="🔍 Type product name or barcode to search and add..."
-                                        class="w-full bg-white border border-amber-300 rounded-lg py-2.5 px-4 text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none placeholder-gray-400 text-sm shadow-sm"
+                                        class="w-full bg-gray-950 border border-amber-800 rounded-xl py-2.5 px-4 text-white focus:ring-2 focus:ring-amber-500 outline-none placeholder-gray-500 text-xs shadow-inner"
                                     >
                                     <!-- Dropdown Results -->
                                     <div x-show="searchResults.length > 0"
                                         @click.outside="searchResults = []"
-                                        class="absolute top-14 left-3 w-[95%] bg-white border border-amber-200 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto"
+                                        class="absolute top-14 left-3 w-[95%] bg-gray-900 border border-amber-700 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto"
                                         style="display: none;">
                                         <ul>
                                             <template x-for="item in searchResults" :key="item.id">
-                                                <li @click="addItem(item)" class="p-3 hover:bg-amber-500 hover:text-white cursor-pointer flex justify-between items-center border-b border-gray-100 last:border-0 group transition">
+                                                <li @click="addItem(item)" class="p-3 hover:bg-amber-600 hover:text-white cursor-pointer flex justify-between items-center border-b border-gray-800 last:border-0 group transition text-xs">
                                                     <div class="flex-1 min-w-0 pr-4">
-                                                        <span class="font-bold text-gray-800 group-hover:text-white block truncate text-sm" x-text="item.name"></span>
-                                                        <span class="text-xs text-gray-400 font-mono group-hover:text-amber-100" x-text="item.code"></span>
+                                                        <span class="font-bold text-gray-200 group-hover:text-white block truncate text-xs" x-text="item.name"></span>
+                                                        <span class="text-[10px] text-gray-400 font-mono group-hover:text-amber-100" x-text="item.code"></span>
                                                     </div>
                                                     <div class="text-right whitespace-nowrap">
-                                                        <span class="block font-bold text-amber-600 group-hover:text-white text-sm" x-text="'Rs. ' + item.price"></span>
-                                                        <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded"
-                                                            :class="item.stock_qty > 0 ? 'bg-green-100 text-green-700 group-hover:bg-green-600 group-hover:text-white' : 'bg-red-100 text-red-600'"
+                                                        <span class="block font-bold text-amber-400 group-hover:text-white text-xs" x-text="'Rs. ' + item.price"></span>
+                                                        <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded"
+                                                            :class="item.stock_qty > 0 ? 'bg-green-900/60 text-green-300' : 'bg-red-900/60 text-red-300'"
                                                             x-text="item.stock_qty > 0 ? 'Stock: ' + item.stock_qty : 'Out of Stock'"></span>
                                                     </div>
                                                 </li>
@@ -246,29 +239,29 @@
                                 </td>
                                 <td class="p-3"></td>
                             </tr>
-
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <div class="fixed bottom-0 left-0 w-full bg-white border-t p-4 shadow-[0_-5px_15px_rgba(0,0,0,0.1)] z-40">
+            <!-- Sticky Bottom Bar -->
+            <div class="fixed bottom-0 left-0 w-full bg-gray-900 border-t border-gray-800 p-4 shadow-[0_-5px_25px_rgba(0,0,0,0.5)] z-40">
                 <div class="container mx-auto max-w-[1400px] flex justify-between items-center">
 
                     <div class="w-1/3">
-                        <input type="text" name="memo" placeholder="Remarks (e.g. Delivered via Rider)" class="w-full border-b border-gray-300 focus:border-amber-500 outline-none text-sm py-2">
+                        <input type="text" name="memo" placeholder="Remarks (e.g. Delivered via Rider)" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 outline-none">
                     </div>
 
                     <div class="flex items-center gap-6">
                         <div class="text-right">
-                            <span class="block text-[10px] font-bold text-gray-400 uppercase">Total Credit</span>
-                            <span class="block text-2xl font-bold text-amber-600" x-text="'Rs. ' + subtotal"></span>
+                            <span class="block text-[10px] font-bold text-gray-400 uppercase">Total Credit Amount</span>
+                            <span class="block text-2xl font-bold text-amber-400 font-mono" x-text="'Rs. ' + subtotal"></span>
                         </div>
 
-                        <div class="h-10 w-px bg-gray-300"></div>
+                        <div class="h-10 w-px bg-gray-800"></div>
 
-                        <button type="submit" class="px-8 py-3 bg-amber-600 text-white font-bold rounded shadow hover:bg-amber-700 transition transform hover:-translate-y-1">
-                            <i class="fas fa-save mr-2"></i> Save Credit Bill
+                        <button type="submit" class="px-8 py-3 bg-amber-600 text-white font-bold rounded-xl shadow-lg hover:bg-amber-700 transition transform active:scale-95 text-xs flex items-center gap-2">
+                            <i class="fas fa-save"></i> Save Credit Bill
                         </button>
                     </div>
                 </div>
@@ -278,226 +271,216 @@
     </div>
 
     <!-- Add Supplier Modal -->
-    <div x-show="showSupplierModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" style="display: none;">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-            <h3 class="text-xl font-bold text-gray-900 mb-4">Add New Supplier</h3>
+    <div x-show="showSupplierModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm" style="display: none;">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 text-white">
+            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <i class="fas fa-user-plus text-amber-400"></i> Add New Supplier
+            </h3>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Company / Name *</label>
-                    <input type="text" x-model="newSupplier.name" class="w-full border rounded p-2 text-gray-900" placeholder="e.g. ABC Distributors">
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Company / Name *</label>
+                    <input type="text" x-model="newSupplier.name" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-xs text-white focus:border-amber-500 outline-none" placeholder="e.g. ABC Distributors">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Phone</label>
-                    <input type="text" x-model="newSupplier.phone" class="w-full border rounded p-2 text-gray-900" placeholder="e.g. 03001234567">
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Phone</label>
+                    <input type="text" x-model="newSupplier.phone" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-xs text-white focus:border-amber-500 outline-none" placeholder="e.g. 03001234567">
                 </div>
             </div>
             <div class="flex justify-end gap-3 mt-6">
-                <button type="button" @click="showSupplierModal = false" class="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100 font-bold">Cancel</button>
-                <button type="button" @click="saveSupplier()" class="px-4 py-2 bg-amber-600 text-white rounded hover:bg-amber-700 font-bold">Save Supplier</button>
+                <button type="button" @click="showSupplierModal = false" class="px-4 py-2 border border-gray-700 rounded-xl text-gray-300 hover:bg-gray-800 text-xs font-bold">Cancel</button>
+                <button type="button" @click="saveSupplier()" class="px-4 py-2 bg-amber-600 text-white rounded-xl hover:bg-amber-700 text-xs font-bold">Save Supplier</button>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        // Build a lookup map of supplier ID -> current_balance
-        const supplierBalances = @json($suppliers->pluck('current_balance', 'id'));
+<script>
+    const supplierBalances = @json($suppliers->pluck('current_balance', 'id'));
 
-        function creditPurchaseForm() {
-            return {
-                supplierId: '',
-                supplierBalance: '0.00',
-                rows: [{
+    function creditPurchaseForm() {
+        return {
+            supplierId: '',
+            supplierBalance: '0.00',
+            rows: [{
+                item_id: '',
+                code: '',
+                name: '',
+                qty: 1,
+                rate: 0,
+                stock: null
+            }],
+            showSupplierModal: false,
+            newSupplier: { name: '', phone: '' },
+            searchQuery: '',
+            searchResults: [],
+
+            init() {},
+
+            onSupplierSelected(detail) {
+                this.supplierId = detail.id || '';
+                this.updateBalance();
+            },
+
+            updateBalance() {
+                if (this.supplierId && supplierBalances[this.supplierId] !== undefined) {
+                    this.supplierBalance = parseFloat(supplierBalances[this.supplierId]).toFixed(2);
+                } else {
+                    this.supplierBalance = '0.00';
+                }
+            },
+
+            async performSearch() {
+                if (this.searchQuery.length < 1) {
+                    this.searchResults = [];
+                    return;
+                }
+                try {
+                    let response = await fetch(`/cash-sales/search?q=${this.searchQuery}`);
+                    this.searchResults = await response.json();
+                } catch (e) {
+                    console.error('Search failed');
+                }
+            },
+
+            addItem(item) {
+                let existing = this.rows.find(r => r.item_id == item.id);
+                if (existing) {
+                    existing.qty++;
+                } else {
+                    let emptyIdx = this.rows.findIndex(r => !r.item_id);
+                    let newRow = {
+                        item_id: item.id,
+                        code: item.code,
+                        name: item.name,
+                        qty: 1,
+                        rate: item.cost_price || 0,
+                        stock: item.stock_qty ?? 0
+                    };
+                    if (emptyIdx !== -1) {
+                        this.rows[emptyIdx] = newRow;
+                    } else {
+                        this.rows.push(newRow);
+                    }
+                }
+                this.searchQuery = '';
+                this.searchResults = [];
+            },
+
+            selectFirstResult() {
+                if (this.searchResults.length > 0) this.addItem(this.searchResults[0]);
+            },
+
+            async saveSupplier() {
+                if (!this.newSupplier.name) {
+                    alert('Supplier name is required.');
+                    return;
+                }
+
+                try {
+                    let response = await fetch('/suppliers/quick-store', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify(this.newSupplier)
+                    });
+
+                    let data = await response.json();
+                    if (data.success) {
+                        this.supplierId = data.supplier.id;
+                        this.updateBalance();
+
+                        this.showSupplierModal = false;
+                        this.newSupplier = { name: '', phone: '' };
+
+                        Swal.fire({
+                            title: 'Added!',
+                            text: 'Supplier saved successfully.',
+                            icon: 'success',
+                            background: '#1f2937',
+                            color: '#fff',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        alert('Failed to save supplier.');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred.');
+                }
+            },
+
+            async fetchProduct(index) {
+                const code = this.rows[index].code ? this.rows[index].code.trim() : '';
+                if (!code) return;
+
+                try {
+                    let response = await fetch(`/cash-sales/search?q=${code}`);
+                    let data = await response.json();
+
+                    if (data.length > 0) {
+                        let item = data.find(i => i.code === code) || data[0];
+                        this.rows[index].item_id = item.id;
+                        this.rows[index].name = item.name;
+                        this.rows[index].rate = item.cost_price || item.price || 0;
+                        this.rows[index].stock = item.stock_qty ?? 0;
+
+                        if (index === this.rows.length - 1) this.addRow();
+                    } else {
+                        Swal.fire({
+                            title: 'New Item!',
+                            text: 'This barcode does not exist yet. You can type the description and cost rate manually!',
+                            icon: 'info',
+                            background: '#1f2937',
+                            color: '#fff',
+                            timer: 3000,
+                            showConfirmButton: false
+                        });
+                        this.rows[index].item_id = 'new';
+                        this.rows[index].name = '';
+                        this.rows[index].rate = 0;
+                        this.rows[index].stock = 0;
+                        if (index === this.rows.length - 1) this.addRow();
+                    }
+                } catch (error) {
+                    console.error("Search failed");
+                }
+            },
+
+            addRow() {
+                this.rows.push({
                     item_id: '',
                     code: '',
                     name: '',
                     qty: 1,
                     rate: 0,
                     stock: null
-                }],
-                showSupplierModal: false,
-                newSupplier: { name: '', phone: '' },
-                searchQuery: '',
-                searchResults: [],
+                });
+            },
 
-                init() {
-                    // Blade-level scripts handle flash messages
-                },
+            removeRow(index) {
+                if (this.rows.length > 1) this.rows.splice(index, 1);
+            },
 
-                onSupplierSelected(detail) {
-                    this.supplierId = detail.id || '';
-                    this.updateBalance();
-                },
-
-                updateBalance() {
-                    if (this.supplierId && supplierBalances[this.supplierId] !== undefined) {
-                        this.supplierBalance = parseFloat(supplierBalances[this.supplierId]).toFixed(2);
-                    } else {
-                        this.supplierBalance = '0.00';
-                    }
-                },
-
-                async performSearch() {
-                    if (this.searchQuery.length < 1) {
-                        this.searchResults = [];
-                        return;
-                    }
-                    try {
-                        let response = await fetch(`/cash-sales/search?q=${this.searchQuery}`);
-                        this.searchResults = await response.json();
-                    } catch (e) {
-                        console.error('Search failed');
-                    }
-                },
-
-                addItem(item) {
-                    // Check if item already in rows, if so increment qty
-                    let existing = this.rows.find(r => r.item_id == item.id);
-                    if (existing) {
-                        existing.qty++;
-                    } else {
-                        // Replace the first empty row, or push new
-                        let emptyIdx = this.rows.findIndex(r => !r.item_id);
-                        let newRow = {
-                            item_id: item.id,
-                            code: item.code,
-                            name: item.name,
-                            qty: 1,
-                            rate: item.cost_price || 0,
-                            stock: item.stock_qty ?? 0
-                        };
-                        if (emptyIdx !== -1) {
-                            this.rows[emptyIdx] = newRow;
-                        } else {
-                            this.rows.push(newRow);
-                        }
-                    }
-                    this.searchQuery = '';
-                    this.searchResults = [];
-                },
-
-                selectFirstResult() {
-                    if (this.searchResults.length > 0) this.addItem(this.searchResults[0]);
-                },
-
-                async saveSupplier() {
-                    if (!this.newSupplier.name) {
-                        alert('Supplier name is required.');
-                        return;
-                    }
-
-                    try {
-                        let response = await fetch('/suppliers/quick-store', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            body: JSON.stringify(this.newSupplier)
-                        });
-
-                        let data = await response.json();
-                        if (data.success) {
-                            let select = document.querySelector('select[name="supplier_id"]');
-                            let option = document.createElement('option');
-                            option.value = data.supplier.id;
-                            option.text = data.supplier.name;
-                            select.add(option);
-                            
-                            this.supplierId = data.supplier.id;
-
-                            this.showSupplierModal = false;
-                            this.newSupplier = { name: '', phone: '' };
-                            
-                            Swal.fire({
-                                title: 'Added!',
-                                text: 'Supplier saved successfully.',
-                                icon: 'success',
-                                background: '#1f2937',
-                                color: '#fff',
-                                timer: 1500,
-                                showConfirmButton: false
-                            });
-                        } else {
-                            alert('Failed to save supplier.');
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        alert('An error occurred.');
-                    }
-                },
-
-                // Real API Fetch
-                async fetchProduct(index) {
-                    const code = this.rows[index].code ? this.rows[index].code.trim() : '';
-                    if (!code) return;
-
-                    try {
-                        let response = await fetch(`/cash-sales/search?q=${code}`);
-                        let data = await response.json();
-
-                        if (data.length > 0) {
-                            // Pick exact match or first item
-                            let item = data.find(i => i.code === code) || data[0];
-                            this.rows[index].item_id = item.id;
-                            this.rows[index].name = item.name;
-                            this.rows[index].rate = item.cost_price || item.price || 0;
-                            this.rows[index].stock = item.stock_qty ?? 0;
-
-                            if (index === this.rows.length - 1) this.addRow();
-                        } else {
-                            Swal.fire({
-                                title: 'New Item!',
-                                text: 'This barcode does not exist yet. You can type the description and cost rate manually!',
-                                icon: 'info',
-                                background: '#6366f1',
-                                color: '#fff',
-                                timer: 3000,
-                                showConfirmButton: false
-                            });
-                            this.rows[index].item_id = 'new';
-                            this.rows[index].name = '';
-                            this.rows[index].rate = 0;
-                            this.rows[index].stock = 0;
-                            if (index === this.rows.length - 1) this.addRow();
-                        }
-                    } catch (error) {
-                        console.error("Search failed");
-                    }
-                },
-
-                addRow() {
-                    this.rows.push({
-                        item_id: '',
-                        code: '',
-                        name: '',
-                        qty: 1,
-                        rate: 0,
-                        stock: null
-                    });
-                },
-
-                removeRow(index) {
-                    if (this.rows.length > 1) this.rows.splice(index, 1);
-                },
-
-                submitForm(e) {
-                    if (!this.supplierId) {
-                        Swal.fire({ title: 'Error', text: 'Please select a supplier', icon: 'error', confirmButtonColor: '#d97706' });
-                        return;
-                    }
-                    if (parseFloat(this.subtotal) <= 0) {
-                        Swal.fire({ title: 'Error', text: 'Total amount cannot be zero — please add items.', icon: 'error', confirmButtonColor: '#d97706' });
-                        return;
-                    }
-                    e.target.submit();
-                },
-
-                get subtotal() {
-                    return this.rows.reduce((acc, row) => acc + (row.qty * row.rate), 0).toFixed(2);
+            submitForm(e) {
+                let validSupplier = document.getElementById('supplierSelect')?.value || this.supplierId;
+                if (!validSupplier) {
+                    Swal.fire({ title: 'Error', text: 'Please select a supplier', icon: 'error', background: '#1f2937', color: '#fff', confirmButtonColor: '#d97706' });
+                    return;
                 }
+                if (parseFloat(this.subtotal) <= 0) {
+                    Swal.fire({ title: 'Error', text: 'Total amount cannot be zero — please add items.', icon: 'error', background: '#1f2937', color: '#fff', confirmButtonColor: '#d97706' });
+                    return;
+                }
+                e.target.submit();
+            },
+
+            get subtotal() {
+                return this.rows.reduce((acc, row) => acc + (row.qty * row.rate), 0).toFixed(2);
             }
         }
-    </script>
-</body>
-
-</html>
+    }
+</script>
+@endsection

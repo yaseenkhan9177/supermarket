@@ -508,7 +508,7 @@
 
                         <p class="register-link">
                             Don't have a store account?
-                            <a href="{{ route('store.register.form') }}">Register Now →</a>
+                            <a href="{{ route('signup') }}">Register Now →</a>
                         </p>
 
                     </form>

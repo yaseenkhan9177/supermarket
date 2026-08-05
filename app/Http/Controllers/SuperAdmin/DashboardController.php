@@ -20,21 +20,27 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $totalAll     = Tenant::count();
-        $totalActive  = Tenant::where('status', 'active')->count();
-        $totalPending = Tenant::where('status', 'pending')->count();
-        $totalReject  = Tenant::where('status', 'rejected')->count();
+        $totalAll       = Tenant::count();
+        $totalActive    = Tenant::where('status', 'active')->count();
+        $totalPending   = Tenant::where('status', 'pending')->count();
+        $totalSuspended = Tenant::where('status', 'suspended')->count();
+        $totalExpired   = Tenant::where('status', 'expired')->orWhere(function($q) {
+            $q->where('status', 'active')->whereNotNull('paid_until')->where('paid_until', '<', now()->toDateString());
+        })->count();
+        $totalRejected  = Tenant::where('status', 'rejected')->count();
 
         $stats = [
-            'total_active_stores' => $totalActive,
-            'total_revenue'       => 0, // extend as needed
-            'pending_setups'      => $totalPending,
-            'total_tenants'       => $totalAll,
-            'system_status'       => 'Healthy',
+            'total_tenants'   => $totalAll,
+            'total_active'    => $totalActive,
+            'total_pending'   => $totalPending,
+            'total_suspended' => $totalSuspended,
+            'total_expired'   => $totalExpired,
+            'total_rejected'  => $totalRejected,
+            'system_status'   => 'Healthy',
         ];
 
         // Monthly growth (last 6 months)
-        $months      = [];
+        $months        = [];
         $monthlyCounts = [];
         for ($i = 5; $i >= 0; $i--) {
             $date = now()->subMonths($i);
@@ -50,9 +56,11 @@ class DashboardController extends Controller
         ];
 
         $statusChart = [
-            'active'   => $totalActive,
-            'rejected' => $totalReject,
-            'pending'  => $totalPending,
+            'active'    => $totalActive,
+            'pending'   => $totalPending,
+            'suspended' => $totalSuspended,
+            'expired'   => $totalExpired,
+            'rejected'  => $totalRejected,
         ];
 
         $recentTenants = Tenant::with('user')->latest()->limit(5)->get();
@@ -68,6 +76,8 @@ class DashboardController extends Controller
             $s = $request->search;
             $query->where(function ($q) use ($s) {
                 $q->where('store_name', 'like', "%{$s}%")
+                  ->orWhere('owner_name', 'like', "%{$s}%")
+                  ->orWhere('owner_email', 'like', "%{$s}%")
                   ->orWhereHas('user', function($q2) use ($s) {
                       $q2->where('name', 'like', "%{$s}%")
                          ->orWhere('email', 'like', "%{$s}%");
@@ -75,7 +85,21 @@ class DashboardController extends Controller
             });
         }
 
-        // Stores don't have a status column currently, so we skip status filter.
+        if ($request->filled('status')) {
+            $status = $request->status;
+            if ($status === 'expired') {
+                $query->where(function($q) {
+                    $q->where('status', 'expired')
+                      ->orWhere(function($q2) {
+                          $q2->where('status', 'active')
+                             ->whereNotNull('paid_until')
+                             ->where('paid_until', '<', now()->toDateString());
+                      });
+                });
+            } else {
+                $query->where('status', $status);
+            }
+        }
 
         $tenants = $query->latest()->paginate(15);
         return view('super_admin.tenants', compact('tenants'));
@@ -89,84 +113,201 @@ class DashboardController extends Controller
 
     public function storeRequestShow($id)
     {
-        $tenant = Tenant::findOrFail($id);
+        $tenant = Tenant::with('user')->findOrFail($id);
         return view('super_admin.requests.show', compact('tenant'));
     }
 
-    public function approveStore($id)
+    public function showTenant($id)
+    {
+        $tenant = Tenant::with('user')->findOrFail($id);
+        return view('super_admin.tenant_detail', compact('tenant'));
+    }
+
+    /**
+     * Approve a pending store registration.
+     *
+     * This method is IDEMPOTENT / RESUMABLE:
+     * - Step 1: Check if the tenant's physical database already exists on the DB server.
+     *   If it does (from a prior partial attempt), SKIP CreateDatabaseCpanel and go
+     *   straight to MigrateDatabase. This prevents the "database already exists" crash
+     *   when retrying after a failed migration.
+     * - Step 2: MigrateDatabase failure is caught separately and recorded in
+     *   provisioning_error so the Super Admin UI surfaces exactly what broke.
+     * - Steps 3-5: User activation, tenant DB store seeding, and status update.
+     */
+    public function approveStore(Request $request, $id)
     {
         $tenant = Tenant::findOrFail($id);
 
         if ($tenant->status !== 'pending') {
-            return back()->with('error', 'Store is not pending approval.');
+            return back()->with('error', 'Store is not in pending approval state.');
         }
+
+        // ── Step 1: DB existence check — skip creation if already provisioned ────────
+        $dbName          = $tenant->database_name;
+        $databaseExists  = false;
 
         try {
-            // Check if database needs to be created
-            if (!$tenant->database()->manager()->databaseExists($tenant->database()->getName())) {
-                $tenant->database()->make();
+            $databaseExists = DB::connection('mysql')
+                ->select("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ?", [$dbName]) !== [];
+        } catch (\Exception $e) {
+            Log::warning("approveStore: could not query information_schema for tenant {$tenant->id}: " . $e->getMessage());
+        }
+
+        if (! $databaseExists) {
+            // Fresh tenant — run full DB provisioning via CPanel/local driver
+            try {
+                \App\Jobs\Tenancy\CreateDatabaseCpanel::dispatchSync($tenant);
+            } catch (\Exception $e) {
+                $errorMsg = "DB provisioning failed for tenant {$tenant->id}: " . $e->getMessage();
+                Log::error($errorMsg);
+
+                $tenant->provisioning_error = $errorMsg;
+                $tenant->save();
+
+                return back()->with('error', "Database creation failed: " . $e->getMessage() . " — No changes were made. Click Approve again to retry.");
             }
+        } else {
+            // DB already exists from a prior partial attempt — resume from migration step
+            Log::info("approveStore: physical database '{$dbName}' already exists for tenant {$tenant->id} — skipping DB creation, resuming from migration.");
+        }
 
-            // Create central user
-            $user = User::create([
-                'name'       => $tenant->owner_name,
-                'email'      => $tenant->owner_email,
-                'phone'      => $tenant->owner_phone,
-                'role'       => 'owner',
-                'tenant_id'  => $tenant->id,
-                'is_active'  => true,
-                'password'   => bcrypt('password'),
-            ]);
+        // ── Step 2: Run tenant schema migrations ─────────────────────────────────────
+        try {
+            \Stancl\Tenancy\Jobs\MigrateDatabase::dispatchSync($tenant);
+        } catch (\Exception $e) {
+            $errorMsg = "Migration failed for tenant {$tenant->id} (DB '{$dbName}'): " . $e->getMessage();
+            Log::error($errorMsg);
 
-            if (\App\Models\SpatieRole::where('name', 'owner')->exists()) {
-                $user->assignRole('owner');
-            }
-
-            // Initialize tenancy and create Store
-            tenancy()->initialize($tenant);
-
-            Store::create([
-                'name'          => $tenant->store_name,
-                'business_type' => 'Retail',
-                'user_id'       => $user->id,
-            ]);
-
-            tenancy()->end();
-
-            $tenant->status = 'active';
+            // Persist the error so the Super Admin can see exactly what broke in the UI.
+            // Tenant stays 'pending' — clicking Approve again will skip DB creation
+            // and retry migrations directly (since the DB now exists).
+            $tenant->provisioning_error = $errorMsg;
             $tenant->save();
 
-            Log::info("Store Approved: Email sent to {$tenant->owner_email} with credentials.");
-
-            return redirect()->route('super.requests.index')
-                ->with('success', "Store \"{$tenant->store_name}\" approved and database created successfully!");
-        } catch (\Exception $e) {
-            Log::error("Store Approval Failed: " . $e->getMessage());
-            return back()->with('error', 'Failed to approve store: ' . $e->getMessage());
+            return back()->with('error',
+                "Database was created but migrations failed: " . $e->getMessage()
+                . " — The store is still pending. Click Approve again to retry migrations."
+            );
         }
+
+        // ── Step 3: Activate or create central owner user ─────────────────────────────
+        try {
+            $user = User::where('tenant_id', $tenant->id)->where('role', 'owner')->first();
+            if ($user) {
+                $user->is_active = true;
+                $user->save();
+            } else {
+                $user = User::create([
+                    'name'      => $tenant->owner_name,
+                    'email'     => $tenant->owner_email,
+                    'phone'     => $tenant->owner_phone,
+                    'role'      => 'owner',
+                    'tenant_id' => $tenant->id,
+                    'is_active' => true,
+                    'password'  => Hash::make(Str::random(16)), // random — owner sets own password
+                ]);
+                if (\App\Models\SpatieRole::where('name', 'owner')->exists()) {
+                    $user->assignRole('owner');
+                }
+            }
+        } catch (\Exception $e) {
+            $errorMsg = "User activation failed for tenant {$tenant->id}: " . $e->getMessage();
+            Log::error($errorMsg);
+            $tenant->provisioning_error = $errorMsg;
+            $tenant->save();
+            return back()->with('error', "Migrations succeeded but user activation failed: " . $e->getMessage());
+        }
+
+        // ── Step 4: Seed Store record inside the tenant database ──────────────────────
+        try {
+            tenancy()->initialize($tenant);
+            if (!Store::where('user_id', $user->id)->exists()) {
+                Store::create([
+                    'name'          => $tenant->store_name,
+                    'business_type' => 'Retail',
+                    'user_id'       => $user->id,
+                ]);
+            }
+            tenancy()->end();
+        } catch (\Exception $e) {
+            // Non-fatal — store record can be created later; don't block approval
+            Log::warning("approveStore: tenant store seed notice for {$tenant->id}: " . $e->getMessage());
+            tenancy()->end();
+        }
+
+        // ── Step 5: Mark tenant active, clear any prior provisioning error ────────────
+        $days          = (int) $request->input('paid_days', 30);
+        $paidUntilDate = $request->filled('paid_until')
+            ? $request->input('paid_until')
+            : now()->addDays($days)->toDateString();
+
+        $tenant->status             = 'active';
+        $tenant->paid_until         = $paidUntilDate;
+        $tenant->approved_at        = now();
+        $tenant->approved_by        = Auth::guard('super_admin')->id();
+        $tenant->provisioning_error = null; // clear any prior stuck-state error
+        $tenant->save();
+
+        Log::info("Store Approved: {$tenant->store_name} ({$tenant->id}) by Super Admin " . Auth::guard('super_admin')->id());
+
+        return redirect()->route('super.tenants')
+            ->with('success', "Store \"{$tenant->store_name}\" approved and database provisioned! Active until {$paidUntilDate}.");
     }
 
     public function rejectStore(Request $request, $id)
     {
+        $request->validate([
+            'rejection_reason' => 'required|string|max:1000',
+        ]);
+
         $tenant = Tenant::findOrFail($id);
-        $tenant->status = 'rejected';
+        $tenant->status           = 'rejected';
+        $tenant->rejected_at      = now();
+        $tenant->rejection_reason = $request->rejection_reason;
         $tenant->save();
 
-        $reason = $request->input('reason', 'No reason provided');
-        Log::info("Store {$tenant->id} rejected. Reason: {$reason}");
+        Log::info("Store {$tenant->id} rejected. Reason: {$request->rejection_reason}");
 
-        return redirect()->route('super.requests.index')
+        return redirect()->route('super.tenants')
             ->with('success', "Store \"{$tenant->store_name}\" request rejected.");
+    }
+
+    public function updatePaidUntil(Request $request, $id)
+    {
+        $request->validate([
+            'paid_until' => 'required|date',
+        ]);
+
+        $tenant = Tenant::findOrFail($id);
+        $tenant->paid_until = $request->paid_until;
+
+        // If status was expired and new paid_until is today or in the future, set to active
+        if ($tenant->status === 'expired' && \Carbon\Carbon::parse($request->paid_until)->gte(now()->startOfDay())) {
+            $tenant->status = 'active';
+        }
+
+        $tenant->save();
+
+        return back()->with('success', "Updated payment date for \"{$tenant->store_name}\" to {$request->paid_until}.");
     }
 
     public function suspendTenant($id)
     {
         $tenant = Tenant::findOrFail($id);
-        $tenant->status = $tenant->status === 'active' ? 'suspended' : 'active';
+        $tenant->status = 'suspended';
         $tenant->save();
 
-        $msg = $tenant->status === 'active' ? 'activated' : 'suspended';
-        return back()->with('success', "Store \"{$tenant->store_name}\" has been {$msg}.");
+        return back()->with('success', "Store \"{$tenant->store_name}\ font-semibold has been suspended.");
+    }
+
+    public function unsuspendTenant($id)
+    {
+        $tenant = Tenant::findOrFail($id);
+        $tenant->status = 'active';
+        $tenant->save();
+
+        return back()->with('success', "Store \"{$tenant->store_name}\" status set to active.");
     }
 
     public function loginAsOwner($id)

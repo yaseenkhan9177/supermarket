@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('tenants', function (Blueprint $table) {
-            if (!Schema::hasColumn('tenants', 'data')) {
-                $table->json('data')->nullable();
+            if (!Schema::hasColumn('tenants', 'provisioning_error')) {
+                $table->text('provisioning_error')->nullable()->after('rejection_reason');
             }
         });
     }
@@ -24,7 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('tenants', function (Blueprint $table) {
-            $table->dropColumn('data');
+            if (Schema::hasColumn('tenants', 'provisioning_error')) {
+                $table->dropColumn('provisioning_error');
+            }
         });
     }
 };

@@ -18,9 +18,14 @@ class InitializeTenancyBySession
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Skip initialization for super admin routes and central auth routes
-        // (register/login/logout must always run against the central DB)
-        if ($request->is('super*') || $request->is('register', 'login', 'logout')) {
+        // Skip initialization for super admin routes and central auth/public routes.
+        // These must always run against the central DB regardless of session state.
+        if (
+            $request->is('super*') ||
+            $request->is('platform-admin*') ||
+            $request->is('signup', 'signup/*') ||   // public registration flow — central DB only
+            $request->is('register', 'login', 'logout')
+        ) {
             return $next($request);
         }
 

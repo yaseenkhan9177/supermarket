@@ -1,94 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('layouts.admin')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
-    <title>Process Return | OwnStore</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: {
-                        brand: { DEFAULT: '#DC2626', dark: '#991B1B', light: '#FEE2E2' }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        [x-cloak] { display: none !important; }
+@section('navbar_subtitle', 'Customer Sales Returns (Process Refund)')
 
-        /* Smooth transitions */
-        .bill-card { transition: all 0.2s ease; }
-        .bill-card:hover { transform: translateY(-1px); }
+@section('content')
+<style>
+    [x-cloak] { display: none !important; }
+    .bill-card { transition: all 0.2s ease; }
+    .bill-card:hover { transform: translateY(-1px); }
+    .condition-btn { transition: all 0.15s ease; }
+    .condition-btn.active-restock { background: #D1FAE5; color: #065F46; border-color: #059669; }
+    .condition-btn.active-damaged { background: #FEE2E2; color: #991B1B; border-color: #DC2626; }
+    .spinner { border: 2px solid #f3f4f6; border-top: 2px solid #DC2626; border-radius: 50%; width: 16px; height: 16px; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .thin-scroll::-webkit-scrollbar { width: 4px; }
+    .thin-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+    .thin-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 2px; }
+</style>
 
-        /* Condition toggle */
-        .condition-btn { transition: all 0.15s ease; }
-        .condition-btn.active-restock { background: #D1FAE5; color: #065F46; border-color: #059669; }
-        .condition-btn.active-damaged { background: #FEE2E2; color: #991B1B; border-color: #DC2626; }
-
-        /* Pulse on add to cart */
-        @keyframes cartPulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        .cart-pulse { animation: cartPulse 0.3s ease; }
-
-        /* Search spinner */
-        .spinner { border: 2px solid #f3f4f6; border-top: 2px solid #DC2626; border-radius: 50%; width: 16px; height: 16px; animation: spin 0.7s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Scrollbar */
-        .thin-scroll::-webkit-scrollbar { width: 4px; }
-        .thin-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
-        .thin-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 2px; }
-    </style>
-</head>
-
-<body class="bg-slate-100 font-sans text-gray-800" x-data="returnsApp()" x-init="init()">
-
-    <!-- ====================================================================
-         TOP NAV BAR
-    ================================================================== -->
-    <nav class="bg-white border-b border-gray-200 px-6 py-3 shadow-sm sticky top-0 z-50">
-        <div class="max-w-[1500px] mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-white shadow">
-                    <i class="fas fa-undo-alt text-base"></i>
-                </div>
-                <div>
-                    <h1 class="text-lg font-extrabold text-gray-900 leading-none">Process Return</h1>
-                    <p class="text-xs text-gray-500 font-medium mt-0.5">Search bills · select items · confirm refund</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('refunds.index') }}"
-                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-                    <i class="fas fa-list text-xs"></i> All Returns
-                </a>
-                <a href="{{ url()->previous() }}"
-                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-gray-800 text-white rounded-lg hover:bg-black transition">
-                    <i class="fas fa-arrow-left text-xs"></i> Back
-                </a>
-            </div>
-        </div>
-    </nav>
-
+<div class="max-w-[1500px] mx-auto text-gray-800" x-data="returnsApp()" x-init="init()">
     <!-- Flash messages -->
     @if(session('error'))
-    <div class="max-w-[1500px] mx-auto px-6 pt-4">
-        <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg flex items-center gap-3">
-            <i class="fas fa-exclamation-circle text-red-500"></i>
+    <div class="mb-4">
+        <div class="bg-red-900/50 border border-red-500 text-red-200 p-4 rounded-xl flex items-center gap-3">
+            <i class="fas fa-exclamation-circle text-red-400"></i>
             <span>{{ session('error') }}</span>
+        </div>
+    </div>
+    @endif
+    @if(session('success'))
+    <div class="mb-4">
+        <div class="bg-emerald-900/50 border border-emerald-500 text-emerald-200 p-4 rounded-xl flex items-center gap-3">
+            <i class="fas fa-check-circle text-emerald-400"></i>
+            <span>{{ session('success') }}</span>
         </div>
     </div>
     @endif
@@ -96,7 +39,7 @@
     <!-- ====================================================================
          MAIN LAYOUT — Left panel (search) + Right panel (cart)
     ================================================================== -->
-    <div class="max-w-[1500px] mx-auto px-4 py-5 flex gap-5 h-[calc(100vh-72px)]">
+    <div class="flex gap-5 h-[calc(100vh-140px)]">
 
         <!-- ================================================================
              LEFT PANEL — Search & Bill Selection
@@ -201,22 +144,33 @@
 
                             <!-- Item rows -->
                             <template x-for="item in (billItems[bill.source + '-' + bill.id] || [])" :key="item.line_item_id">
-                                <div class="flex items-center gap-3 px-5 py-3 border-b border-gray-50 hover:bg-slate-50 transition">
+                                <div class="flex items-center gap-3 px-5 py-3 border-b border-gray-100 hover:bg-slate-50 transition" :class="item.available_qty <= 0 ? 'bg-gray-50/70 opacity-75' : ''">
                                     <!-- Checkbox -->
                                     <input type="checkbox"
                                            :id="'item-' + bill.source + '-' + item.line_item_id"
-                                           class="w-4 h-4 text-red-600 rounded border-gray-300 cursor-pointer"
+                                           class="w-4 h-4 text-red-600 rounded border-gray-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                           :disabled="item.available_qty <= 0"
                                            :checked="isInCart(item, bill)"
                                            @change="toggleCartItem($event, item, bill)" />
 
                                     <!-- Item details -->
                                     <label :for="'item-' + bill.source + '-' + item.line_item_id"
                                            class="flex-1 cursor-pointer">
-                                        <p class="text-sm font-semibold text-gray-800" x-text="item.item_name"></p>
+                                        <p class="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                            <span x-text="item.item_name"></span>
+                                            <template x-if="item.available_qty <= 0">
+                                                <span class="px-2 py-0.5 text-[10px] font-extrabold bg-red-100 text-red-700 rounded-full border border-red-200 uppercase tracking-wider">Fully Returned</span>
+                                            </template>
+                                        </p>
                                         <p class="text-xs text-gray-500 mt-0.5">
                                             Qty bought: <span class="font-bold text-gray-700" x-text="item.quantity"></span>
+                                            <template x-if="item.already_returned_qty > 0">
+                                                <span class="text-red-600 font-bold ml-1">(<span x-text="item.already_returned_qty"></span> already returned)</span>
+                                            </template>
                                             &nbsp;·&nbsp;
                                             Rate: Rs. <span x-text="parseFloat(item.rate).toFixed(2)"></span>
+                                            &nbsp;·&nbsp;
+                                            Available to return: <span class="font-bold text-emerald-700" x-text="item.available_qty"></span>
                                         </p>
                                     </label>
 
@@ -224,10 +178,10 @@
                                     <div x-show="isInCart(item, bill)" class="flex items-center gap-2" x-cloak>
                                         <label class="text-xs text-gray-500 font-medium">Return qty:</label>
                                         <input type="number"
-                                               :value="getCartItem(item, bill)?.return_qty || 1"
+                                               :value="getCartItem(item, bill)?.return_qty || item.available_qty"
                                                @change="updateCartQty($event, item, bill)"
                                                min="0.01"
-                                               :max="item.quantity"
+                                               :max="item.available_qty"
                                                step="1"
                                                class="w-20 text-center text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-red-500 focus:outline-none" />
                                     </div>
@@ -551,12 +505,17 @@
 
                 addToCart(item, bill) {
                     if (this.isInCart(item, bill)) return;
+                    const maxAvail = item.available_qty !== undefined ? item.available_qty : item.quantity;
+                    if (maxAvail <= 0) {
+                        alert('This item has already been fully returned.');
+                        return;
+                    }
                     this.cart.push({
                         key:          this.cartKey(item, bill),
                         product_id:   item.product_id,
                         line_item_id: item.line_item_id,
                         item_name:    item.item_name,
-                        return_qty:   item.quantity,  // default to full qty, cashier can reduce
+                        return_qty:   maxAvail,  // default to available qty
                         rate:         item.rate,
                         condition:    'restock',       // default to restock
                         bill_id:      bill.id,
@@ -581,8 +540,17 @@
                     const key = this.cartKey(item, bill);
                     const entry = this.cart.find(c => c.key === key);
                     if (entry) {
-                        const val = parseFloat(event.target.value) || 1;
-                        entry.return_qty = Math.min(val, item.quantity);
+                        let val = parseFloat(event.target.value) || 0;
+                        const maxAvail = item.available_qty !== undefined ? item.available_qty : item.quantity;
+                        if (val > maxAvail) {
+                            alert(`Cannot return more than available quantity (${maxAvail})`);
+                            val = maxAvail;
+                            event.target.value = val;
+                        } else if (val <= 0) {
+                            val = 0.01;
+                            event.target.value = val;
+                        }
+                        entry.return_qty = val;
                     }
                 },
 
@@ -674,6 +642,5 @@
             };
         }
     </script>
-
-</body>
-</html>
+</div>
+@endsection

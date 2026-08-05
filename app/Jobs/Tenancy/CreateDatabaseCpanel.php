@@ -29,6 +29,13 @@ class CreateDatabaseCpanel implements ShouldQueue
     {
         event(new CreatingDatabase($this->tenant));
 
+        // Note: the status === 'pending' guard was removed from here.
+        // The TenantCreated event pipeline is now guarded at the listener level
+        // (TenancyServiceProvider closure), so this job is only invoked either:
+        //   (a) explicitly via dispatchSync() in approveStore() — should always run, or
+        //   (b) by the pipeline for non-pending tenants — also should always run.
+        // Keeping the pending guard here caused approveStore() to silently skip DB
+        // creation (tenant is still 'pending' during provisioning, status flips at Step 5).
         if ($this->tenant->getInternal('create_database') === false) {
             return false;
         }

@@ -118,7 +118,16 @@
                     @forelse($sales as $sale)
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition group">
                         <td class="px-6 py-4 font-mono font-bold text-slate-700 dark:text-slate-300">
-                            {{ $sale->invoice_no }}
+                            <div>{{ $sale->invoice_no }}</div>
+                            @php
+                                $retQty = $sale->refundItems ? $sale->refundItems->sum('quantity') : 0;
+                                $retAmt = $sale->refundItems ? $sale->refundItems->sum('net_amount') : 0;
+                            @endphp
+                            @if($retQty > 0)
+                                <span class="inline-flex items-center px-2 py-0.5 mt-1 rounded-full text-[10px] font-extrabold bg-red-100 text-red-700 border border-red-300">
+                                    <i class="fas fa-undo mr-1 text-[9px]"></i> Returned: {{ $retQty }} item(s) (Rs. {{ number_format($retAmt, 2) }})
+                                </span>
+                            @endif
                         </td>
                         <td class="px-6 py-4 text-slate-600 dark:text-slate-400">
                             {{ $sale->created_at->format('d M, Y') }} <span class="text-xs opacity-50">{{ $sale->created_at->format('h:i A') }}</span>

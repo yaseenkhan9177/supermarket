@@ -63,9 +63,17 @@
                             <p class="text-slate-300">{{ $request->created_at->diffForHumans() }}</p>
                         </td>
                         <td class="px-6 py-4">
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-100 uppercase">
-                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>Pending
-                            </span>
+                            <div class="flex flex-col gap-1">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-100 uppercase">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>Pending
+                                </span>
+                                @if($request->provisioning_error)
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200 uppercase"
+                                          title="{{ $request->provisioning_error }}">
+                                        <i class="fas fa-exclamation-triangle text-xs"></i> Prov. Failed
+                                    </span>
+                                @endif
+                            </div>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-end gap-2">
@@ -85,15 +93,16 @@
                                     </button>
                                 </form>
 
-                                {{-- Quick Reject --}}
-                                <form action="{{ route('super.requests.reject', $request->id) }}" method="POST" class="inline"
-                                      onsubmit="return confirm('Reject store request from \"{{ addslashes($request->owner_name) }}\"?')">
-                                    @csrf
-                                    <button type="submit"
-                                        class="px-3 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors shadow-sm shadow-rose-500/20">
-                                        <i class="fas fa-times mr-1"></i>Reject
-                                    </button>
-                                </form>
+                                {{-- Quick Reject — opens shared modal to collect reason before posting --}}
+                                <button type="button"
+                                    onclick="openRejectModal(
+                                        '{{ route('super.requests.reject', $request->id) }}',
+                                        '{{ addslashes($request->store_name) }}',
+                                        '{{ addslashes($request->owner_name) }}'
+                                    )"
+                                    class="px-3 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors shadow-sm shadow-rose-500/20">
+                                    <i class="fas fa-times mr-1"></i>Reject
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -119,4 +128,91 @@
         @endif
     </div>
 </div>
+
+{{-- ===== Quick Reject Modal (shared across all rows) ===== --}}
+<div id="quickRejectModal"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center p-4"
+     role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
+
+    {{-- Backdrop --}}
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeRejectModal()"></div>
+
+    {{-- Panel --}}
+    <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+
+        {{-- Header --}}
+        <div class="px-6 pt-6 pb-4 border-b border-slate-100">
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-times-circle text-rose-500"></i>
+                    </div>
+                    <div>
+                        <h3 id="qrModalTitle" class="text-base font-bold text-slate-800">Reject Store Request</h3>
+                        <p id="qrModalSubtitle" class="text-xs text-slate-400 mt-0.5"></p>
+                    </div>
+                </div>
+                <button onclick="closeRejectModal()" class="text-slate-400 hover:text-slate-600 transition-colors mt-0.5">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        {{-- Body --}}
+        <form id="quickRejectForm" method="POST" class="px-6 py-5 space-y-4">
+            @csrf
+            <div>
+                <label for="qr_rejection_reason" class="block text-xs font-semibold text-slate-600 mb-1.5">
+                    Rejection Reason <span class="text-rose-500">*</span>
+                </label>
+                <textarea
+                    id="qr_rejection_reason"
+                    name="rejection_reason"
+                    rows="4"
+                    required
+                    maxlength="1000"
+                    placeholder="Provide a clear reason for rejecting this store request…"
+                    class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent resize-none"></textarea>
+                <p class="text-xs text-slate-400 mt-1">This reason is logged and kept on record for audit purposes.</p>
+            </div>
+
+            <div class="flex gap-3 justify-end pt-2">
+                <button type="button" onclick="closeRejectModal()"
+                    class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="px-5 py-2 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-colors shadow-sm">
+                    <i class="fas fa-times mr-1.5"></i>Confirm Rejection
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openRejectModal(actionUrl, storeName, ownerName) {
+    const modal   = document.getElementById('quickRejectModal');
+    const form    = document.getElementById('quickRejectForm');
+    const reason  = document.getElementById('qr_rejection_reason');
+    const subtitle = document.getElementById('qrModalSubtitle');
+
+    form.action = actionUrl;
+    subtitle.textContent = storeName + ' — ' + ownerName;
+    reason.value = '';
+
+    modal.classList.remove('hidden');
+    reason.focus();
+}
+
+function closeRejectModal() {
+    document.getElementById('quickRejectModal').classList.add('hidden');
+}
+
+// Close on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeRejectModal();
+});
+</script>
+
 @endsection

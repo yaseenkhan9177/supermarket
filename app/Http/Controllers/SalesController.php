@@ -224,7 +224,7 @@ class SalesController extends Controller
         ];
 
         // 2. Filter Logic
-        $query = Sale::with(['user', 'customer'])->latest();
+        $query = Sale::with(['user', 'customer', 'refundItems'])->latest();
 
         if ($request->filled('from_date')) {
             $query->whereDate('sale_date', '>=', $request->from_date);

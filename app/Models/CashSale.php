@@ -38,4 +38,9 @@ class CashSale extends Model
     {
         return $this->belongsTo(User::class, 'salesman_id');
     }
+
+    public function refundItems()
+    {
+        return $this->hasMany(RefundItem::class, 'original_bill_id')->where('sale_source', 'cash_sale');
+    }
 }

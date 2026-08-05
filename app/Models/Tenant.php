@@ -22,11 +22,20 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         'database_name',
         'subscription_plan',
         'valid_until',
+        'paid_until',
+        'approved_at',
+        'approved_by',
+        'rejected_at',
+        'rejection_reason',
+        'provisioning_error',
         'data',
     ];
 
     protected $casts = [
         'valid_until' => 'date',
+        'paid_until' => 'date',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
     ];
 
     /**
@@ -47,6 +56,12 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             'database_name',
             'subscription_plan',
             'valid_until',
+            'paid_until',
+            'approved_at',
+            'approved_by',
+            'rejected_at',
+            'rejection_reason',
+            'provisioning_error',
         ];
     }
 

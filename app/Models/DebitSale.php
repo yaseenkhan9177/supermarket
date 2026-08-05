@@ -37,4 +37,9 @@ class DebitSale extends Model
     {
         return $this->hasMany(DebitSaleItem::class);
     }
+
+    public function refundItems()
+    {
+        return $this->hasMany(RefundItem::class, 'original_bill_id')->where('sale_source', 'debit_sale');
+    }
 }

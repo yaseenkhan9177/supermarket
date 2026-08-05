@@ -27,21 +27,32 @@ Route::get('/', function () {
 })->name('welcome');
 
 use App\Http\Controllers\StoreAuthController;
+use App\Http\Controllers\PublicSignupController;
 
-// Environment-aware registration route: only active when APP_ENV=local
-Route::get('/register-store', function () {
-    if (!app()->environment('local')) {
-        return 'Registration temporarily closed';
-    }
-    return app(StoreAuthController::class)->showRegistrationForm();
-})->name('store.register.form');
+// Public Tenant Signup
+Route::get('/signup', [PublicSignupController::class, 'showForm'])->name('signup');
+Route::post('/signup', [PublicSignupController::class, 'submit'])->name('signup.submit');
+Route::get('/signup/success', [PublicSignupController::class, 'success'])->name('signup.success');
 
-Route::post('/register-store', function () {
-    if (!app()->environment('local')) {
-        return 'Registration temporarily closed';
-    }
-    return app(StoreAuthController::class)->register(request());
-})->name('store.register');
+
+// ── SUPERSEDED 2026-08-05: /register-store dev shortcut replaced by /signup (PublicSignupController).
+// These routes bypassed the pending-approval flow (set status='active', auto-logged user in).
+// The /signup route now handles all new store registrations. These can be permanently deleted
+// once confirmed unused. StoreAuthController@register and @showRegistrationForm are left in place.
+//
+// Route::get('/register-store', function () {
+//     if (!app()->environment('local')) {
+//         return 'Registration temporarily closed';
+//     }
+//     return app(StoreAuthController::class)->showRegistrationForm();
+// })->name('store.register.form');
+//
+// Route::post('/register-store', function () {
+//     if (!app()->environment('local')) {
+//         return 'Registration temporarily closed';
+//     }
+//     return app(StoreAuthController::class)->register(request());
+// })->name('store.register');
 
 Route::get('/login', [StoreAuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [StoreAuthController::class, 'login']);
@@ -430,6 +441,25 @@ Route::middleware(['auth:web', 'role:owner'])->group(function () {
 use App\Http\Controllers\SuperAdmin\AuthController as SuperAuthController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperDashboardController;
 
+// Platform Admin routes (/platform-admin & /super)
+Route::prefix('platform-admin')->group(function () {
+    Route::get('/login', [SuperAuthController::class, 'showLoginForm'])->name('platform.login');
+    Route::post('/login', [SuperAuthController::class, 'login'])->name('platform.login.submit');
+    Route::post('/logout', [SuperAuthController::class, 'logout'])->name('platform.logout');
+
+    Route::middleware(['auth:super_admin'])->group(function () {
+        Route::get('/', function() { return redirect()->route('super.dashboard'); });
+        Route::get('/dashboard', [SuperDashboardController::class, 'index'])->name('platform.dashboard');
+        Route::get('/tenants', [SuperDashboardController::class, 'tenants'])->name('platform.tenants');
+        Route::get('/tenants/{id}', [SuperDashboardController::class, 'showTenant'])->name('platform.tenants.show');
+        Route::post('/tenants/{id}/approve', [SuperDashboardController::class, 'approveStore'])->name('platform.tenants.approve');
+        Route::post('/tenants/{id}/reject', [SuperDashboardController::class, 'rejectStore'])->name('platform.tenants.reject');
+        Route::post('/tenants/{id}/update-paid-until', [SuperDashboardController::class, 'updatePaidUntil'])->name('platform.tenants.updatePaidUntil');
+        Route::post('/tenants/{id}/suspend', [SuperDashboardController::class, 'suspendTenant'])->name('platform.tenants.suspend');
+        Route::post('/tenants/{id}/unsuspend', [SuperDashboardController::class, 'unsuspendTenant'])->name('platform.tenants.unsuspend');
+    });
+});
+
 Route::prefix('super')->group(function () {
     Route::get('/login', [SuperAuthController::class, 'showLoginForm'])->name('super.login');
     Route::post('/login', [SuperAuthController::class, 'login'])->name('super.login.submit');
@@ -449,7 +479,10 @@ Route::prefix('super')->group(function () {
         Route::post('/requests/{id}/reject', [SuperDashboardController::class, 'rejectStore'])->name('super.requests.reject');
 
         Route::get('/tenants', [SuperDashboardController::class, 'tenants'])->name('super.tenants');
+        Route::get('/tenants/{id}', [SuperDashboardController::class, 'showTenant'])->name('super.tenants.show');
+        Route::post('/tenants/{id}/update-paid-until', [SuperDashboardController::class, 'updatePaidUntil'])->name('super.tenants.updatePaidUntil');
         Route::post('/tenants/{id}/suspend', [SuperDashboardController::class, 'suspendTenant'])->name('super.tenants.suspend');
+        Route::post('/tenants/{id}/unsuspend', [SuperDashboardController::class, 'unsuspendTenant'])->name('super.tenants.unsuspend');
         Route::post('/tenants/{id}/login-as', [SuperDashboardController::class, 'loginAsOwner'])->name('super.tenants.loginAs');
         Route::post('/tenants/{id}/backup', [SuperDashboardController::class, 'backupTenant'])->name('super.tenants.backup');
 

@@ -24,17 +24,24 @@ class TenancyServiceProvider extends ServiceProvider
             // Tenant events
             Events\CreatingTenant::class => [],
             Events\TenantCreated::class => [
-                JobPipeline::make([
-                    \App\Jobs\Tenancy\CreateDatabaseCpanel::class,
-                    Jobs\MigrateDatabase::class,
-                    // Jobs\SeedDatabase::class,
+                // Guard: only run the provisioning pipeline for tenants that are NOT pending.
+                // Pending tenants are created by PublicSignupController — their DB is provisioned
+                // later by approveStore() via dispatchSync(). Running the pipeline for pending
+                // tenants would pass null/false into CreateDatabaseCpanel::__construct() (TypeError).
+                function (Events\TenantCreated $event) {
+                    if ($event->tenant->status === 'pending' || $event->tenant->getInternal('create_database') === false) {
+                        return; // abort — no provisioning for pending tenants
+                    }
 
-                    // Your own jobs to prepare the tenant.
-                    // Provision API keys, create S3 buckets, anything you want!
-
-                ])->send(function (Events\TenantCreated $event) {
-                    return $event->tenant;
-                })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
+                    // Non-pending tenant created directly (e.g. seeder/admin) — run the pipeline.
+                    JobPipeline::make([
+                        \App\Jobs\Tenancy\CreateDatabaseCpanel::class,
+                        Jobs\MigrateDatabase::class,
+                        // Jobs\SeedDatabase::class,
+                    ])->send(function (Events\TenantCreated $event) {
+                        return $event->tenant;
+                    })->shouldBeQueued(false)->toListener()($event);
+                },
             ],
             Events\SavingTenant::class => [],
             Events\TenantSaved::class => [],

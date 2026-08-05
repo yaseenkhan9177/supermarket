@@ -45,4 +45,9 @@ class Sale extends Model
     {
         return $this->belongsTo(Customer::class);
     }
+
+    public function refundItems()
+    {
+        return $this->hasMany(RefundItem::class, 'original_bill_id');
+    }
 }
