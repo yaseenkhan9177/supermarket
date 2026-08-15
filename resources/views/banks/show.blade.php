@@ -1,114 +1,107 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('layouts.admin')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $bank->account_title }} - Statement | OwnStore PRO</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+@section('title', $bank->account_title . ' - Bank Statement')
+@section('navbar_subtitle', 'Bank Account Statement')
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
+@section('content')
+<div class="space-y-6">
 
-<body class="bg-gray-100 font-sans text-gray-800">
+    {{-- ACCOUNTS MODULE SUB-NAVBAR --}}
+    <div class="bg-slate-900/80 backdrop-blur-md p-2 rounded-2xl border border-slate-800 shadow-lg flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1">
+            <a href="{{ route('banks.index') }}" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-slate-800 text-slate-300 hover:text-white">
+                <i class="fas fa-arrow-left"></i> Back to Banks & Cash
+            </a>
+        </div>
+        <button onclick="window.print()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2">
+            <i class="fas fa-print"></i> Print Statement
+        </button>
+    </div>
 
-    <nav class="bg-emerald-800 border-b border-emerald-700 px-6 py-3 shadow-sm sticky top-0 z-50 mb-8 text-white">
-        <div class="container mx-auto max-w-[1400px] flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <a href="/banks" class="text-emerald-200 hover:text-white transition">
-                    <i class="fas fa-arrow-left text-xl"></i>
-                </a>
-                <div class="flex flex-col">
-                    <h1 class="text-xl font-extrabold text-white leading-none">
-                        {{ $bank->account_title }}
-                    </h1>
-                    <span class="text-xs text-emerald-200 font-medium mt-0.5">
-                        {{ $bank->bank_name }} | {{ $bank->account_number }}
-                    </span>
-                </div>
+    {{-- STATEMENT HEADER CARD --}}
+    <div class="bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-xl flex flex-wrap justify-between items-center gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center text-xl shadow-inner">
+                <i class="fas fa-university"></i>
             </div>
-            <div class="bg-emerald-900/50 px-4 py-2 rounded-lg border border-emerald-600">
-                <span class="text-xs text-emerald-300 uppercase font-bold block">Current Balance</span>
-                <span class="text-xl font-mono font-bold text-white">Rs. {{ number_format($bank->current_balance, 2) }}</span>
+            <div>
+                <h2 class="text-xl font-extrabold text-white tracking-tight">{{ $bank->account_title }}</h2>
+                <div class="flex items-center gap-3 text-xs text-slate-400 mt-1">
+                    <span><i class="fas fa-landmark mr-1"></i>{{ $bank->bank_name }}</span>
+                    <span><i class="fas fa-hashtag mr-1"></i>Acc No: {{ $bank->account_number ?: 'N/A' }}</span>
+                    <span><i class="fas fa-code mr-1 font-mono"></i>GL: {{ $bank->gl_code }}</span>
+                </div>
             </div>
         </div>
-    </nav>
 
-    <div class="container mx-auto px-6 max-w-[1400px] pb-32">
+        <div class="bg-slate-950 px-5 py-3 rounded-2xl border border-slate-800 text-right">
+            <span class="text-[10px] text-slate-400 uppercase font-bold block">Current Balance</span>
+            <span class="text-2xl font-extrabold font-mono tracking-tight {{ $bank->current_balance < 0 ? 'text-rose-400' : 'text-emerald-400' }}">
+                Rs. {{ number_format($bank->current_balance, 2) }}
+            </span>
+        </div>
+    </div>
 
-        <div class="bg-white p-4 rounded-xl shadow mb-6 flex justify-between items-center">
-            <div class="flex gap-4">
-                <div>
-                    <label class="text-[10px] font-bold text-gray-400 uppercase">Start Date</label>
-                    <input type="date" class="border border-gray-300 rounded p-1 text-sm">
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-gray-400 uppercase">End Date</label>
-                    <input type="date" class="border border-gray-300 rounded p-1 text-sm">
-                </div>
-                <button class="bg-emerald-600 text-white px-4 py-1 rounded text-sm font-bold mt-4">Filter</button>
-            </div>
-            <button class="text-emerald-600 hover:text-emerald-800 font-bold text-sm">
-                <i class="fas fa-print mr-1"></i> Print Statement
-            </button>
+    {{-- STATEMENT FILTER & TABLE --}}
+    <div class="bg-slate-900 rounded-2xl border border-slate-800 shadow-xl overflow-hidden mb-12">
+        <div class="bg-slate-950 px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+            <h3 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+                <i class="fas fa-list-alt text-indigo-400"></i> Account Statement Transactions
+            </h3>
+            <span class="text-xs text-slate-500 font-mono">Opening Balance: Rs. {{ number_format($bank->opening_balance, 2) }}</span>
         </div>
 
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase">
-                        <th class="p-4 w-32">Date</th>
-                        <th class="p-4 w-32">Ref No</th>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-300">
+                <thead class="bg-slate-950/80 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-800">
+                    <tr>
+                        <th class="p-4">Date</th>
+                        <th class="p-4">Ref No</th>
                         <th class="p-4">Description / Narration</th>
-                        <th class="p-4 w-32 text-right text-green-600">Deposit (In)</th>
-                        <th class="p-4 w-32 text-right text-red-600">Withdraw (Out)</th>
-                        <th class="p-4 w-40 text-right">Balance</th>
+                        <th class="p-4 text-right">Deposit (In)</th>
+                        <th class="p-4 text-right">Withdraw (Out)</th>
+                        <th class="p-4 text-right">Running Balance (Rs)</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
-                    <tr class="bg-yellow-50">
-                        <td class="p-4 text-xs font-mono text-gray-500">-</td>
-                        <td class="p-4 text-xs font-mono text-gray-500">-</td>
-                        <td class="p-4 font-bold text-gray-700">Opening Balance</td>
-                        <td class="p-4 text-right font-mono text-gray-400">-</td>
-                        <td class="p-4 text-right font-mono text-gray-400">-</td>
-                        <td class="p-4 text-right font-mono font-bold text-gray-800">{{ number_format($bank->opening_balance, 2) }}</td>
+                <tbody class="divide-y divide-slate-800">
+                    <tr class="bg-slate-950/40">
+                        <td class="p-4 text-xs font-mono text-slate-500">-</td>
+                        <td class="p-4 text-xs font-mono text-slate-500">-</td>
+                        <td class="p-4 font-bold text-white text-xs">Opening Balance</td>
+                        <td class="p-4 text-right font-mono text-slate-500">-</td>
+                        <td class="p-4 text-right font-mono text-slate-500">-</td>
+                        <td class="p-4 text-right font-mono font-bold text-emerald-400 text-xs">
+                            Rs. {{ number_format($bank->opening_balance, 2) }}
+                        </td>
                     </tr>
 
                     @php $running_balance = $bank->opening_balance; @endphp
                     @foreach([
-                    ['date'=>'2026-01-20', 'ref'=>'SAL-101', 'desc'=>'Daily Cash Sales Deposit', 'in'=>50000, 'out'=>0],
-                    ['date'=>'2026-01-21', 'ref'=>'CHQ-998', 'desc'=>'Payment to Supplier (Nestle)', 'in'=>0, 'out'=>12000],
-                    ['date'=>'2026-01-22', 'ref'=>'TRF-001', 'desc'=>'Transfer from HBL', 'in'=>25000, 'out'=>0],
+                        ['date'=>'2026-01-20', 'ref'=>'SAL-101', 'desc'=>'Daily Cash Sales Deposit', 'in'=>50000, 'out'=>0],
+                        ['date'=>'2026-01-21', 'ref'=>'CHQ-998', 'desc'=>'Payment to Supplier (Nestle)', 'in'=>0, 'out'=>12000],
+                        ['date'=>'2026-01-22', 'ref'=>'TRF-001', 'desc'=>'Transfer from HBL', 'in'=>25000, 'out'=>0],
                     ] as $txn)
                     @php
-                    $running_balance += $txn['in'] - $txn['out'];
+                        $running_balance += $txn['in'] - $txn['out'];
                     @endphp
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="p-4 text-sm text-gray-600">{{ $txn['date'] }}</td>
-                        <td class="p-4 text-xs font-mono text-blue-600">{{ $txn['ref'] }}</td>
-                        <td class="p-4 text-sm font-medium text-gray-800">{{ $txn['desc'] }}</td>
-
-                        <td class="p-4 text-right font-mono text-sm {{ $txn['in'] > 0 ? 'text-green-600 font-bold' : 'text-gray-300' }}">
-                            {{ $txn['in'] > 0 ? number_format($txn['in'], 2) : '-' }}
+                    <tr class="hover:bg-slate-800/50 transition">
+                        <td class="p-4 text-xs font-mono text-slate-300">{{ $txn['date'] }}</td>
+                        <td class="p-4 text-xs font-mono font-bold text-indigo-400">{{ $txn['ref'] }}</td>
+                        <td class="p-4 text-xs text-white">{{ $txn['desc'] }}</td>
+                        <td class="p-4 text-right font-mono font-bold text-xs text-emerald-400">
+                            {{ $txn['in'] > 0 ? 'Rs. ' . number_format($txn['in'], 2) : '-' }}
                         </td>
-
-                        <td class="p-4 text-right font-mono text-sm {{ $txn['out'] > 0 ? 'text-red-600 font-bold' : 'text-gray-300' }}">
-                            {{ $txn['out'] > 0 ? number_format($txn['out'], 2) : '-' }}
+                        <td class="p-4 text-right font-mono font-bold text-xs text-rose-400">
+                            {{ $txn['out'] > 0 ? 'Rs. ' . number_format($txn['out'], 2) : '-' }}
                         </td>
-
-                        <td class="p-4 text-right font-mono font-bold text-gray-900 bg-gray-50">
-                            {{ number_format($running_balance, 2) }}
+                        <td class="p-4 text-right font-mono font-bold text-xs text-white">
+                            Rs. {{ number_format($running_balance, 2) }}
                         </td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
-
     </div>
-
-</body>
-
-</html>
+</div>
+@endsection

@@ -47,7 +47,16 @@
                 </div>
                 Payment
             </h3>
-            <span class="text-xs text-blue-400 font-bold block mb-4">Channel: {{ $activeWalletName }}</span>
+            <div class="mb-4">
+                <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Deposit To Wallet</label>
+                <select name="wallet_id" x-model="wallet_id" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-xs focus:border-yellow-500 outline-none font-bold">
+                    @foreach($wallets as $wallet)
+                        <option value="{{ $wallet->id }}" {{ $wallet->id == $defaultWalletId ? 'selected' : '' }}>
+                            {{ $wallet->name }} ({{ $wallet->type }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
             <div class="flex justify-between items-center mb-3">
                 <span class="text-xs text-slate-400 font-bold uppercase">Return Adj (Rs)</span>
                 <input type="number" x-model="return_adjustment" placeholder="0" class="w-24 bg-slate-950 border border-slate-700 rounded p-1 text-right text-white text-xs focus:border-blue-500 outline-none">
@@ -236,6 +245,7 @@
 <script>
     function cashSaleInvoice() {
         return {
+            wallet_id: '{{ $defaultWalletId }}',
             customer_id: '',
             salesman_id: '{{ Auth::id() }}',
             invoice_no: '{{ $nextInvoice }}',
@@ -354,6 +364,7 @@
                 }
                 let payload = {
                     invoice_no: this.invoice_no,
+                    wallet_id: this.wallet_id,
                     customer_id: this.customer_id,
                     salesman_id: this.salesman_id,
                     date: this.date,

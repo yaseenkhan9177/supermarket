@@ -7,18 +7,43 @@ use App\Models\Account;
 
 class AccountController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Fetch accounts for the view
-        $accounts = Account::orderBy('code')->get();
-        // Calculate totals for the overview widget
+        $query = Account::orderBy('code');
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('code', 'LIKE', "%{$search}%")
+                  ->orWhere('category', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $accounts = $query->get();
+
+        $totalAccounts = Account::count();
         $totalAssets = Account::where('type', 'Asset')->sum('current_balance');
         $totalLiabilities = Account::where('type', 'Liability')->sum('current_balance');
         $totalEquity = Account::where('type', 'Equity')->sum('current_balance');
-        // Simple Net Equity calc (Asset - Liability) for display if needed, or just sum of Equity accounts
+        $totalIncome = Account::where('type', 'Income')->sum('current_balance');
+        $totalExpense = Account::where('type', 'Expense')->sum('current_balance');
         $netEquity = $totalAssets - $totalLiabilities;
 
-        return view('accounts.index', compact('accounts', 'totalAssets', 'totalLiabilities', 'netEquity'));
+        return view('accounts.index', compact(
+            'accounts',
+            'totalAccounts',
+            'totalAssets',
+            'totalLiabilities',
+            'totalEquity',
+            'totalIncome',
+            'totalExpense',
+            'netEquity'
+        ));
     }
 
     public function store(Request $request)
@@ -45,5 +70,15 @@ class AccountController extends Controller
         }
 
         return back()->with('success', $msg);
+    }
+
+    public function destroy($id)
+    {
+        $acc = Account::findOrFail($id);
+        if ($acc->is_system) {
+            return back()->with('error', 'System accounts cannot be deleted.');
+        }
+        $acc->delete();
+        return back()->with('success', 'Account deleted successfully.');
     }
 }

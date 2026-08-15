@@ -277,6 +277,13 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
     Route::post('/import/commit', [\App\Http\Controllers\UnifiedImportController::class, 'commit'])->name('import.commit');
     Route::get('/import/sample', [\App\Http\Controllers\UnifiedImportController::class, 'downloadSample'])->name('import.sample');
 
+    // ── Chart of Accounts Management ─────────────────────────────────────────
+    Route::group(['prefix' => 'accounts', 'as' => 'accounts.'], function () {
+        Route::get('/', [\App\Http\Controllers\AccountController::class, 'index'])->name('index');
+        Route::post('/store', [\App\Http\Controllers\AccountController::class, 'store'])->name('store');
+        Route::delete('/{id}', [\App\Http\Controllers\AccountController::class, 'destroy'])->name('destroy');
+    });
+
     // ── Chart of Accounts CSV Import ──────────────────────────────────────────
     Route::get('/accounts/import',          [\App\Http\Controllers\ChartOfAccountsImportController::class, 'showUpload'])->name('accounts.import.show');
     Route::post('/accounts/import/preview', [\App\Http\Controllers\ChartOfAccountsImportController::class, 'parsePreview'])->name('accounts.import.preview');

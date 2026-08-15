@@ -47,12 +47,7 @@ class ReportController extends Controller
 
     public function accounts(Request $request)
     {
-        $accounts = Account::all();
-
-        // Calculate totals dynamically if needed, or rely on model 'balance'
-        $totalAssets = $accounts->where('type', 'Asset')->sum('balance'); // Example logic
-
-        return view('store.reports.accounts', compact('accounts'));
+        return app(\App\Http\Controllers\AccountController::class)->index($request);
     }
 
     /**

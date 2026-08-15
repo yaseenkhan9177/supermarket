@@ -137,11 +137,13 @@
 
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Credit AC (Source)</label>
-                            <select name="paid_from_account" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm text-gray-300">
-                                <option>010000: CASH ACCOUNT / DRAWER</option>
-                                <option>010001: MAIN SAFE</option>
-                                <option>020001: MEEZAN BANK</option>
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Credit AC / Wallet (Source)</label>
+                            <select name="wallet_id" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm text-gray-300">
+                                @foreach($wallets as $wallet)
+                                    <option value="{{ $wallet->id }}">
+                                        {{ $wallet->name }} ({{ $wallet->type }})
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
 

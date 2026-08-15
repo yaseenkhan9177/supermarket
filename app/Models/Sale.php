@@ -23,6 +23,7 @@ class Sale extends Model
         'status',
         'paid_amount', // Added
         'change_amount', // Added
+        'wallet_id',
     ];
 
     protected $casts = [
@@ -44,6 +45,11 @@ class Sale extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function wallet()
+    {
+        return $this->belongsTo(Wallet::class);
     }
 
     public function refundItems()

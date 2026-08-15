@@ -9,10 +9,40 @@ use Illuminate\Support\Facades\DB;
 
 class JournalController extends Controller
 {
-    public function create()
+    public function create(Request $request)
     {
-        // In real app: $accounts = Account::all();
-        return view('journals.create');
+        $accounts = \App\Models\Account::orderBy('code')->get();
+
+        $query = Journal::with(['entries', 'user'])->latest('date')->latest('id');
+
+        if ($request->filled('from_date')) {
+            $query->whereDate('date', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('date', '<=', $request->to_date);
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('journal_no', 'LIKE', "%{$search}%")
+                  ->orWhere('memo', 'LIKE', "%{$search}%");
+            });
+        }
+        if ($request->filled('account_code')) {
+            $code = $request->account_code;
+            $query->whereHas('entries', function ($q) use ($code) {
+                $q->where('account_code', $code);
+            });
+        }
+
+        $summaryQuery = clone $query;
+        $totalTransactions = $summaryQuery->count();
+        $totalDebit = $summaryQuery->sum('total_debit');
+        $totalCredit = $summaryQuery->sum('total_credit');
+
+        $journals = $query->paginate(15)->withQueryString();
+
+        return view('journals.create', compact('accounts', 'journals', 'totalTransactions', 'totalDebit', 'totalCredit'));
     }
 
     public function store(Request $request)

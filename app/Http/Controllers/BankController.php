@@ -9,9 +9,17 @@ use Illuminate\Support\Facades\DB;
 
 class BankController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return view('banks.index');
+        $wallets = \App\Models\Wallet::all();
+        $bankAccounts = BankAccount::all();
+
+        $totalCash = $wallets->where('type', 'counter')->sum('balance');
+        $totalBank = $bankAccounts->sum('current_balance') + $wallets->whereIn('type', ['bank', 'wallet'])->sum('balance');
+        $totalFunds = $totalCash + $totalBank;
+        $activeCount = $wallets->where('is_active', true)->count() + $bankAccounts->count();
+
+        return view('banks.index', compact('wallets', 'bankAccounts', 'totalCash', 'totalBank', 'totalFunds', 'activeCount'));
     }
 
     public function store(Request $request)

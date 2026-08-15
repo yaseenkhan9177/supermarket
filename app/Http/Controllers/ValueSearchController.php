@@ -9,7 +9,25 @@ class ValueSearchController extends Controller
 {
     public function index()
     {
-        return view('values.index');
+        $totalAssets = \App\Models\Account::where('type', 'Asset')->sum('current_balance');
+        $totalCash = \App\Models\Wallet::where('type', 'counter')->sum('balance');
+        $totalBank = \App\Models\BankAccount::sum('current_balance') + \App\Models\Wallet::whereIn('type', ['bank', 'wallet'])->sum('balance');
+        $totalReceivables = DB::table('debit_sales')->sum(DB::raw('net_total - paid_amount'));
+        $totalExpenses = DB::table('payments')->sum('amount_paid');
+        $totalSalesIncome = DB::table('cash_sales')->sum('grand_total') + DB::table('debit_sales')->sum('net_total');
+        $totalLiabilities = \App\Models\Account::where('type', 'Liability')->sum('current_balance');
+        $netBalance = $totalAssets - $totalLiabilities;
+
+        return view('values.index', compact(
+            'totalAssets',
+            'totalCash',
+            'totalBank',
+            'totalReceivables',
+            'totalExpenses',
+            'totalSalesIncome',
+            'totalLiabilities',
+            'netBalance'
+        ));
     }
 
     public function search(Request $request)
@@ -67,7 +85,7 @@ class ValueSearchController extends Controller
                 'receipt_date as date',
                 'receipt_no as ref',
                 DB::raw("'Receipt' as type"),
-                'party_name as description',
+                DB::raw("COALESCE(deposit_account, 'Receipt Account') as description"),
                 'amount as amount',
                 'id'
             );

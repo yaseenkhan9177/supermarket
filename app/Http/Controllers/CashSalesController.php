@@ -24,10 +24,12 @@ class CashSalesController extends Controller
         // Generate Invoice No (e.g., CS-2026-0001)
         $nextInvoice = 'CS-' . date('Y') . '-' . str_pad(Sale::count() + 1, 4, '0', STR_PAD_LEFT);
 
+        $wallets = \App\Models\Wallet::where('is_active', true)->get();
         $activeWallet = \App\Models\Wallet::where('is_active', true)->first();
+        $defaultWalletId = $activeWallet ? $activeWallet->id : null;
         $activeWalletName = $activeWallet ? $activeWallet->name : 'Shop Counter';
 
-        return view('cash-sales.create', compact('customers', 'salesmen', 'nextInvoice', 'activeWalletName'));
+        return view('cash-sales.create', compact('customers', 'salesmen', 'nextInvoice', 'activeWalletName', 'wallets', 'defaultWalletId'));
     }
 
     // 2. Search Items API
@@ -57,6 +59,7 @@ class CashSalesController extends Controller
         $request->validate([
             'rows'        => 'required|array|min:1',
             'grand_total' => 'required|numeric',
+            'wallet_id'   => 'required|exists:wallets,id',
         ]);
 
         try {
@@ -69,6 +72,7 @@ class CashSalesController extends Controller
                 $sale = Sale::create([
                     'invoice_no'        => $request->invoice_no,
                     'customer_id'       => $request->customer_id,
+                    'wallet_id'         => $request->wallet_id,
                     'user_id'           => $request->salesman_id ?? Auth::id(),
                     'sale_date'         => $request->date ?? now(),
                     'subtotal'          => 0,
@@ -133,10 +137,8 @@ class CashSalesController extends Controller
                 ]);
 
                 // D. Adjust Active Wallet Balance
-                $activeWallet = \App\Models\Wallet::where('is_active', true)->first();
-                if ($activeWallet) {
-                    $activeWallet->adjustBalance($grandTotal);
-                }
+                $wallet = \App\Models\Wallet::findOrFail($request->wallet_id);
+                $wallet->adjustBalance($grandTotal);
 
                 // E. Write Customer Ledger Entry (only if a real customer is attached)
                 //    Cash sales are paid immediately — do NOT increment customer balance.

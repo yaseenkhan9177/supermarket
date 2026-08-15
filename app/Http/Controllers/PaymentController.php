@@ -36,8 +36,8 @@ class PaymentController extends Controller
     public function create()
     {
         $users = \App\Models\User::all();
-        // You might also want to fetch a list of suppliers or expense accounts here
-        return view('payments.create', compact('users'));
+        $wallets = \App\Models\Wallet::where('is_active', true)->get();
+        return view('payments.create', compact('users', 'wallets'));
     }
 
     public function store(Request $request)
@@ -45,16 +45,20 @@ class PaymentController extends Controller
         $request->validate([
             'paid_to_account' => 'required|string',
             'amount_paid' => 'required|numeric|min:0.01',
-            'payment_date' => 'required|date'
+            'payment_date' => 'required|date',
+            'wallet_id' => 'required|exists:wallets,id',
         ]);
 
         try {
             DB::transaction(function () use ($request) {
+                $wallet = \App\Models\Wallet::findOrFail($request->wallet_id);
+
                 Payment::create([
                     'payment_no' => $request->payment_no,
                     'payment_date' => $request->payment_date,
                     'paid_to_account' => $request->paid_to_account,
-                    'paid_from_account' => $request->paid_from_account,
+                    'paid_from_account' => $wallet->name,
+                    'wallet_id' => $wallet->id,
                     'amount_paid' => $request->amount_paid,
                     'discount_received' => $request->discount_received ?? 0,
                     'cheque_no' => $request->cheque_no,
@@ -63,10 +67,8 @@ class PaymentController extends Controller
                     'user_id' => $request->user_id ?? auth()->id(), // Fallback to current user
                 ]);
 
-                // Note: If you have a Supplier Balance to update, do it here:
-                // if($request->supplier_id) { 
-                //    Supplier::find($request->supplier_id)->decrement('balance', $request->amount_paid);
-                // }
+                // Expenses decrease wallet balance (negative amount passed)
+                $wallet->adjustBalance(-abs((float) $request->amount_paid));
             });
 
             return back()->with('success', 'Payment Recorded Successfully!');
