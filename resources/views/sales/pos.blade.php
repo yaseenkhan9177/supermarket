@@ -1,6 +1,8 @@
+@php $defaultTab = 'sales'; @endphp
 @extends('layouts.admin')
 
 @section('title', 'POS Terminal')
+
 
 @section('content')
 

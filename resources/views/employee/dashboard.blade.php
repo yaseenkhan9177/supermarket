@@ -1,4 +1,4 @@
-@extends('layouts.employee')
+@extends('layouts.admin')
 
 @section('content')
 <div class="flex-1 p-8 overflow-y-auto" x-data="{ priceCheckOpen: false }">

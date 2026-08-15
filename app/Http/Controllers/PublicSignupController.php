@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -62,6 +63,10 @@ class PublicSignupController extends Controller
             'is_active' => false,
             'password'  => Hash::make($request->password),
         ]);
+
+        if (empty($user->tenant_id)) {
+            Log::warning("PublicSignupController::submit: User ID {$user->id} ({$user->email}) created without tenant_id!");
+        }
 
         if (\App\Models\SpatieRole::where('name', 'owner')->exists()) {
             $user->assignRole('owner');

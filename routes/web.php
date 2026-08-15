@@ -57,6 +57,9 @@ Route::get('/signup/success', [PublicSignupController::class, 'success'])->name(
 Route::get('/login', [StoreAuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [StoreAuthController::class, 'login']);
 Route::post('/logout', [StoreAuthController::class, 'logout'])->name('logout');
+Route::get('/admin/login', function () {
+    return redirect()->route('login');
+});
 
 // ============================================================================
 // EMPLOYEE GUARD ROUTES (employee auth — untouched by Spatie RBAC)

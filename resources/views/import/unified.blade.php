@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Unified Import — Customers, Suppliers, Staff & GL Accounts')
 

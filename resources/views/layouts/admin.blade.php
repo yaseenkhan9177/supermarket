@@ -113,7 +113,8 @@
     :class="{ 'dark': isDark }">
 
     <!-- TOP NAVBAR -->
-    @include('layouts.partials.navbar')
+    @include('layouts.partials.main-navbar', ['defaultTab' => $defaultTab ?? 'general'])
+
 
     <!-- CONTENT WRAPPER -->
     <div class="flex-grow container mx-auto px-6 max-w-[1400px] py-4 sm:py-6">

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
@@ -58,6 +59,10 @@ class StoreAuthController extends Controller
             'is_active' => true,
             'password'  => Hash::make($request->password),
         ]);
+
+        if (empty($user->tenant_id)) {
+            Log::warning("StoreAuthController::register: User ID {$user->id} ({$user->email}) created without tenant_id!");
+        }
 
         // Assign Spatie owner role centrally
         if (\App\Models\SpatieRole::where('name', 'owner')->exists()) {
