@@ -1615,7 +1615,7 @@ class AppServiceProvider extends ServiceProvider
                         </div>
 
                         {{-- KPI Card 3: Low Stock --}}
-                        <a href="{{ route('items.index') }}" class="pos-kpi-card stock">
+                        <a href="{{ route('stock.low-stock') }}" class="pos-kpi-card stock">
                             <div class="pos-kpi-header">
                                 <span class="pos-kpi-title">Low Stock Alert</span>
                                 <div class="pos-kpi-icon-wrap">
@@ -1641,7 +1641,7 @@ class AppServiceProvider extends ServiceProvider
                         </a>
 
                         {{-- KPI Card 4: Expiring Soon --}}
-                        <a href="{{ route('items.index') }}" class="pos-kpi-card expiring">
+                        <a href="{{ route('supplier-returns.index') }}" class="pos-kpi-card expiring">
                             <div class="pos-kpi-header">
                                 <span class="pos-kpi-title">Expiring Soon</span>
                                 <div class="pos-kpi-icon-wrap">
@@ -2741,18 +2741,24 @@ class AppServiceProvider extends ServiceProvider
                     try {
                         // Try min_stock_level column (added in later migration)
                         return (int) \Illuminate\Support\Facades\DB::table('items')
-                            ->whereNotNull('min_stock_level')
-                            ->where('min_stock_level', '>', 0)
-                            ->where('on_hand', '>', 0)
-                            ->whereColumn('on_hand', '<', 'min_stock_level')
+                            ->where(function ($q) {
+                                $q->where(function ($inner) {
+                                    $inner->whereNotNull('min_stock_level')
+                                          ->where('min_stock_level', '>', 0)
+                                          ->whereColumn('on_hand', '<', 'min_stock_level');
+                                })->orWhere('on_hand', '<=', 0);
+                            })
                             ->count();
                     } catch (\Throwable $e) {
                         // Fall back to min_stock column
                         try {
                             return (int) \Illuminate\Support\Facades\DB::table('items')
-                                ->where('min_stock', '>', 0)
-                                ->where('on_hand', '>', 0)
-                                ->whereColumn('on_hand', '<', 'min_stock')
+                                ->where(function ($q) {
+                                    $q->where(function ($inner) {
+                                        $inner->where('min_stock', '>', 0)
+                                              ->whereColumn('on_hand', '<', 'min_stock');
+                                    })->orWhere('on_hand', '<=', 0);
+                                })
                                 ->count();
                         } catch (\Throwable $e2) {
                             return 0;
@@ -2761,14 +2767,13 @@ class AppServiceProvider extends ServiceProvider
                 })(),
 
                 // ----------------------------------------------------------------
-                // KPI: Expiring batches within 7 days
+                // KPI: Expiring batches within 7 days (and expired in stock)
                 // ----------------------------------------------------------------
                 'expiringCount' => (function() {
                     try {
                         return (int) \Illuminate\Support\Facades\DB::table('batches')
                             ->whereNotNull('expires_at')
-                            ->where('expires_at', '>=', today()->toDateString())
-                            ->where('expires_at', '<=', today()->addDays(7)->toDateString())
+                            ->where('expires_at', '<=', today()->addDays(7)->endOfDay())
                             ->where('quantity_available', '>', 0)
                             ->count();
                     } catch (\Throwable $e) { return 0; }
