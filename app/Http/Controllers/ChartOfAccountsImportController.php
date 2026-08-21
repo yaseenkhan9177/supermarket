@@ -193,10 +193,13 @@ class ChartOfAccountsImportController extends Controller
                 // Limit / Credit limit
                 $creditLimitVal = $this->numericCell($row, $colMap, 'limit', 0);
 
-                // Balance mapping logic (stbalance first, fallback to credit - debit)
+                // Balance mapping logic (stbalance first, then balance, fallback to credit - debit)
                 $stBalanceVal = $this->numericCell($row, $colMap, 'stbalance', 0);
+                $balColVal    = $this->numericCell($row, $colMap, 'balance', 0);
                 if ($stBalanceVal != 0) {
                     $balanceVal = $stBalanceVal;
+                } elseif ($balColVal != 0) {
+                    $balanceVal = $balColVal;
                 } else {
                     $cr = $this->numericCell($row, $colMap, 'credit', 0);
                     $dr = $this->numericCell($row, $colMap, 'debit', 0);

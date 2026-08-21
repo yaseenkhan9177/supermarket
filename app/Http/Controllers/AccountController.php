@@ -3,35 +3,35 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Account;
+use App\Models\GeneralLedgerAccount;
 
 class AccountController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Account::orderBy('code');
+        $query = GeneralLedgerAccount::orderBy('gl_code');
 
         if ($request->filled('type')) {
-            $query->where('type', $request->type);
+            $query->where('account_type', strtoupper($request->type));
         }
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('code', 'LIKE', "%{$search}%")
-                  ->orWhere('category', 'LIKE', "%{$search}%");
+                  ->orWhere('gl_code', 'LIKE', "%{$search}%")
+                  ->orWhere('gl_type', 'LIKE', "%{$search}%");
             });
         }
 
         $accounts = $query->get();
 
-        $totalAccounts = Account::count();
-        $totalAssets = Account::where('type', 'Asset')->sum('current_balance');
-        $totalLiabilities = Account::where('type', 'Liability')->sum('current_balance');
-        $totalEquity = Account::where('type', 'Equity')->sum('current_balance');
-        $totalIncome = Account::where('type', 'Income')->sum('current_balance');
-        $totalExpense = Account::where('type', 'Expense')->sum('current_balance');
+        $totalAccounts = GeneralLedgerAccount::count();
+        $totalAssets = GeneralLedgerAccount::where('account_type', 'ASSETS')->sum('current_balance');
+        $totalLiabilities = GeneralLedgerAccount::where('account_type', 'LIABILITIES')->sum('current_balance');
+        $totalEquity = GeneralLedgerAccount::where('account_type', 'EQUITY')->sum('current_balance');
+        $totalIncome = GeneralLedgerAccount::where('account_type', 'INCOME')->sum('current_balance');
+        $totalExpense = GeneralLedgerAccount::where('account_type', 'EXPENSE')->sum('current_balance');
         $netEquity = $totalAssets - $totalLiabilities;
 
         return view('accounts.index', compact(
@@ -49,24 +49,27 @@ class AccountController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'code' => 'required|unique:accounts,code,' . $request->id,
+            'gl_code' => 'required|unique:general_ledger_accounts,gl_code,' . $request->id,
             'name' => 'required',
-            'type' => 'required'
+            'account_type' => 'required'
         ]);
 
+        $data = $request->except(['id']);
+        $data['account_type'] = strtoupper($request->account_type);
+
+        if (empty($data['gl_type'])) {
+            $data['gl_type'] = substr(trim($request->gl_code), 0, 2);
+        }
+
         if ($request->id) {
-            $acc = Account::find($request->id);
-            if ($acc->is_system && $request->code !== $acc->code) {
-                return back()->with('error', 'Cannot change code of a system account.');
-            }
-            $acc->update($request->all());
-            $msg = 'Account Updated Successfully';
+            $acc = GeneralLedgerAccount::find($request->id);
+            $acc->update($data);
+            $msg = 'GL Account Updated Successfully';
         } else {
-            // For new accounts, set current balance = opening balance initially
-            $data = $request->except(['id']);
+            $data['opening_balance'] = $request->opening_balance ?? 0;
             $data['current_balance'] = $request->opening_balance ?? 0;
-            Account::create($data);
-            $msg = 'Account Created Successfully';
+            GeneralLedgerAccount::create($data);
+            $msg = 'GL Account Created Successfully';
         }
 
         return back()->with('success', $msg);
@@ -74,10 +77,7 @@ class AccountController extends Controller
 
     public function destroy($id)
     {
-        $acc = Account::findOrFail($id);
-        if ($acc->is_system) {
-            return back()->with('error', 'System accounts cannot be deleted.');
-        }
+        $acc = GeneralLedgerAccount::findOrFail($id);
         $acc->delete();
         return back()->with('success', 'Account deleted successfully.');
     }

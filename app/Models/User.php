@@ -3,15 +3,45 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * Global scope that restricts all User queries to the currently
+ * initialized tenant's users (central-DB architecture with tenant_id column).
+ *
+ * Applied automatically on every User query whenever tenancy is active.
+ * Use User::withoutGlobalScope(TenantUserScope::class) in the rare
+ * super-admin contexts that intentionally need cross-tenant access.
+ */
+class TenantUserScope implements Scope
+{
+    public function apply(Builder $builder, \Illuminate\Database\Eloquent\Model $model): void
+    {
+        if (tenancy()->initialized && tenancy()->tenant !== null) {
+            $builder->where('tenant_id', tenancy()->tenant->id);
+        }
+    }
+}
+
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
+
+    /**
+     * Register global scopes for this model.
+     * TenantUserScope ensures every query is automatically filtered to the
+     * currently active tenant's users when tenancy is initialized.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new TenantUserScope());
+    }
 
     /**
      * Force the central database connection.

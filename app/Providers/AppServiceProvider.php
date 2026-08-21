@@ -95,6 +95,7 @@ class AppServiceProvider extends ServiceProvider
                     display: flex;
                     align-items: center;
                     gap: 16px;
+                    flex-shrink: 0;
                 }
                 .pos-logo {
                     display: flex;
@@ -534,8 +535,264 @@ class AppServiceProvider extends ServiceProvider
                 @keyframes ping { 75%,100%{transform:scale(2);opacity:0} }
                 @keyframes bounce { 0%,100%{transform:translateY(-25%);animation-timing-function:cubic-bezier(0.8,0,1,1)} 50%{transform:translateY(0);animation-timing-function:cubic-bezier(0,0,0.2,1)} }
 
+                /* === GLOBAL SEARCH BAR STYLES === */
+                .pos-global-search {
+                    position: relative;
+                    flex: 1 1 auto;
+                    min-width: 220px;
+                    max-width: 400px;
+                    margin: 0 16px;
+                }
+                .pos-search-box {
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                    background-color: var(--pos-surface-2);
+                    border: 1px solid var(--pos-border);
+                    border-radius: 10px;
+                    padding: 0 10px;
+                    height: 36px;
+                    transition: all 0.2s ease;
+                }
+                .pos-search-box:hover {
+                    border-color: rgba(55, 138, 221, 0.4);
+                }
+                .pos-search-box.focused {
+                    border-color: var(--pos-blue);
+                    box-shadow: 0 0 0 3px rgba(55, 138, 221, 0.15);
+                    background-color: var(--pos-surface);
+                }
+                .pos-search-icon {
+                    font-size: 12px;
+                    color: var(--pos-text-muted);
+                    margin-right: 8px;
+                    transition: color 0.2s ease;
+                }
+                .pos-search-input {
+                    flex: 1;
+                    background: transparent;
+                    border: none;
+                    outline: none;
+                    color: var(--pos-text);
+                    font-size: 13px;
+                    width: 100%;
+                }
+                .pos-search-input::placeholder {
+                    color: var(--pos-text-muted);
+                    font-size: 12px;
+                }
+                .pos-search-kbd {
+                    background-color: rgba(255, 255, 255, 0.08);
+                    border: 1px solid var(--pos-border);
+                    border-radius: 4px;
+                    padding: 2px 6px;
+                    font-size: 10px;
+                    color: var(--pos-text-muted);
+                    font-family: monospace;
+                    letter-spacing: 0.5px;
+                }
+                .pos-light-mode .pos-search-kbd {
+                    background-color: rgba(0, 0, 0, 0.05);
+                }
+                .pos-search-clear {
+                    background: none;
+                    border: none;
+                    color: var(--pos-text-muted);
+                    cursor: pointer;
+                    padding: 4px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 11px;
+                    border-radius: 50%;
+                }
+                .pos-search-clear:hover {
+                    color: var(--pos-text);
+                    background-color: rgba(255, 255, 255, 0.1);
+                }
+
+                /* === DROPDOWN PANEL === */
+                .pos-search-dropdown {
+                    position: absolute;
+                    top: calc(100% + 8px);
+                    left: 0;
+                    right: 0;
+                    min-width: 440px;
+                    max-width: 580px;
+                    max-height: 480px;
+                    overflow-y: auto;
+                    background-color: var(--pos-surface);
+                    border: 1px solid var(--pos-border);
+                    border-radius: 14px;
+                    box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--pos-border);
+                    backdrop-filter: blur(16px);
+                    -webkit-backdrop-filter: blur(16px);
+                    z-index: 100;
+                    scrollbar-width: thin;
+                    scrollbar-color: var(--pos-border) transparent;
+                }
+                .pos-search-dropdown::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .pos-search-dropdown::-webkit-scrollbar-thumb {
+                    background-color: var(--pos-border);
+                    border-radius: 3px;
+                }
+                .pos-search-state {
+                    padding: 28px 20px;
+                    text-align: center;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .pos-search-state-title {
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: var(--pos-text);
+                    margin-top: 8px;
+                }
+                .pos-search-state-desc {
+                    font-size: 11px;
+                    color: var(--pos-text-muted);
+                    margin-top: 4px;
+                    max-width: 320px;
+                }
+                .pos-search-results {
+                    padding: 8px;
+                }
+                .pos-search-group {
+                    margin-bottom: 8px;
+                }
+                .pos-search-group:last-child {
+                    margin-bottom: 0;
+                }
+                .pos-search-group-header {
+                    display: flex;
+                    align-items: center;
+                    font-size: 10px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: var(--pos-text-muted);
+                    padding: 6px 10px;
+                }
+                .pos-search-count-badge {
+                    margin-left: auto;
+                    font-size: 9px;
+                    background-color: var(--pos-surface-2);
+                    padding: 1px 6px;
+                    border-radius: 9999px;
+                    border: 1px solid var(--pos-border);
+                }
+                .pos-search-group-items {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                }
+                .pos-search-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 8px 10px;
+                    border-radius: 8px;
+                    text-decoration: none;
+                    color: var(--pos-text);
+                    transition: all 0.12s ease;
+                    border: 1px solid transparent;
+                }
+                .pos-search-item:hover, .pos-search-item.pos-item-active {
+                    background-color: var(--pos-surface-2);
+                    border-color: var(--pos-border);
+                }
+                .pos-item-icon {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 13px;
+                    flex-shrink: 0;
+                    border-width: 1px;
+                }
+                .pos-item-content {
+                    flex: 1;
+                    min-width: 0;
+                }
+                .pos-item-title {
+                    font-size: 13px;
+                    font-weight: 600;
+                    line-height: 1.3;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .pos-item-subtitle {
+                    font-size: 11px;
+                    color: var(--pos-text-muted);
+                    line-height: 1.3;
+                    margin-top: 2px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .pos-item-badge {
+                    font-size: 9px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    padding: 2px 8px;
+                    border-radius: 6px;
+                    border-width: 1px;
+                    white-space: nowrap;
+                }
+                .pos-item-arrow {
+                    font-size: 10px;
+                    color: var(--pos-text-muted);
+                    opacity: 0;
+                    transition: opacity 0.15s ease, transform 0.15s ease;
+                }
+                .pos-search-item:hover .pos-item-arrow, .pos-search-item.pos-item-active .pos-item-arrow {
+                    opacity: 1;
+                    transform: translateX(2px);
+                }
+                .pos-search-footer {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 8px 12px;
+                    border-top: 1px solid var(--pos-border);
+                    background-color: var(--pos-surface-2);
+                    border-bottom-left-radius: 14px;
+                    border-bottom-right-radius: 14px;
+                    font-size: 11px;
+                    color: var(--pos-text-muted);
+                }
+                .pos-search-footer-hints {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-size: 10px;
+                }
+                .pos-search-footer-hints kbd {
+                    background-color: var(--pos-surface);
+                    border: 1px solid var(--pos-border);
+                    border-radius: 3px;
+                    padding: 1px 4px;
+                    font-family: monospace;
+                }
+
                 /* === RESPONSIVE BREAKPOINTS === */
                 @media (max-width: 1024px) {
+                    .pos-global-search {
+                        max-width: 260px;
+                        min-width: 160px;
+                        margin: 0 8px;
+                    }
+                    .pos-search-dropdown {
+                        min-width: 320px;
+                    }
                     .pos-grid-kpis { grid-template-columns: repeat(2, 1fr); }
                     .pos-grid-alerts { grid-template-columns: repeat(2, 1fr); }
                     .pos-chart-grid-2 { grid-template-columns: 1fr; }
@@ -544,11 +801,21 @@ class AppServiceProvider extends ServiceProvider
                     .pos-quick-actions-grid { grid-template-columns: repeat(2, 1fr); }
                 }
 
-                @media (max-width: 640px) {
+                @media (max-width: 768px) {
                     .pos-nav-inner { padding: 0 8px; }
                     .pos-nav-tabs { display: none; }
+                    .pos-global-search.desktop-search { display: none; }
                     .pos-mobile-toggle { display: block; }
                     .pos-mobile-nav { display: block; }
+                    .pos-search-dropdown {
+                        position: fixed;
+                        top: 56px;
+                        left: 8px;
+                        right: 8px;
+                        min-width: 0;
+                        max-width: none;
+                        max-height: calc(100vh - 80px);
+                    }
                     .pos-grid-kpis { grid-template-columns: 1fr; }
                     .pos-grid-alerts { grid-template-columns: 1fr; }
                     .pos-quick-actions-grid { grid-template-columns: repeat(2, 1fr); }
@@ -586,7 +853,7 @@ class AppServiceProvider extends ServiceProvider
                     <div class="pos-container">
                         <div class="pos-nav-inner">
                             <div class="pos-nav-left">
-                                <a href="#" class="pos-logo">
+                                <a href="{{ route('dashboard') }}" class="pos-logo">
                                     <div class="pos-logo-icon">
                                         <i class="fas fa-shopping-basket"></i>
                                     </div>
@@ -594,6 +861,14 @@ class AppServiceProvider extends ServiceProvider
                                         {{ $storeName }} <span class="pos-logo-pro">PRO</span>
                                     </span>
                                 </a>
+
+                                <a href="{{ route('dashboard') }}" class="pos-gradient-btn pos-tab-btn" style="text-decoration: none;" title="Dashboard">
+                                    <div class="pos-gradient-inner" style="display: flex; align-items: center; gap: 6px;">
+                                        <i class="fas fa-home" style="font-size: 12px; color: var(--pos-blue);"></i>
+                                        <span>Dashboard</span>
+                                    </div>
+                                </a>
+
                                 <div class="pos-nav-tabs">
                                     <template x-for="tab in ['General', 'Sales', 'Purchase', 'Accounts', 'Reports']">
                                         <button @click="activeTab = tab.toLowerCase()" class="pos-gradient-btn pos-tab-btn" :class="activeTab === tab.toLowerCase() ? 'active-tab' : ''">
@@ -601,6 +876,276 @@ class AppServiceProvider extends ServiceProvider
                                                 <span x-text="tab"></span>
                                             </div>
                                         </button>
+                                    </template>
+                                </div>
+                            </div>
+
+                            {{-- ============================================================ --}}
+                            {{-- GLOBAL SEARCH BAR (DESKTOP)                                 --}}
+                            {{-- ============================================================ --}}
+                            <div class="pos-global-search desktop-search"
+                                 x-data="{
+                                    query: '',
+                                    results: {},
+                                    totalResults: 0,
+                                    isOpen: false,
+                                    isLoading: false,
+                                    selectedIndex: -1,
+                                    flatItems: [],
+                                    errorMessage: '',
+                                    searchTimeout: null,
+
+                                    init() {
+                                        window.addEventListener('keydown', (e) => {
+                                            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                                                e.preventDefault();
+                                                this.openAndFocus();
+                                            }
+                                            if (e.key === 'Escape' && this.isOpen) {
+                                                this.close();
+                                            }
+                                        });
+                                    },
+
+                                    openAndFocus() {
+                                        this.isOpen = true;
+                                        this.$nextTick(() => {
+                                            this.$refs.searchInput?.focus();
+                                            this.$refs.searchInput?.select();
+                                        });
+                                    },
+
+                                    handleInput() {
+                                        clearTimeout(this.searchTimeout);
+                                        this.errorMessage = '';
+                                        const q = this.query.trim();
+                                        if (q.length < 2) {
+                                            this.results = {};
+                                            this.totalResults = 0;
+                                            this.flatItems = [];
+                                            this.selectedIndex = -1;
+                                            this.isLoading = false;
+                                            return;
+                                        }
+
+                                        this.isLoading = true;
+                                        this.isOpen = true;
+
+                                        this.searchTimeout = setTimeout(() => {
+                                            this.fetchResults(q);
+                                        }, 300);
+                                    },
+
+                                    async fetchResults(q) {
+                                        try {
+                                            const res = await fetch(`{{ route('global.search') }}?q=${encodeURIComponent(q)}`, {
+                                                headers: {
+                                                    'Accept': 'application/json',
+                                                    'X-Requested-With': 'XMLHttpRequest'
+                                                }
+                                            });
+
+                                            if (!res.ok) {
+                                                throw new Error('Search request failed');
+                                            }
+
+                                            const data = await res.json();
+                                            if (this.query.trim() !== q) return;
+
+                                            this.results = data.categories || {};
+                                            this.totalResults = data.total || 0;
+                                            
+                                            const flat = [];
+                                            Object.values(this.results).forEach(cat => {
+                                                if (cat.items && Array.isArray(cat.items)) {
+                                                    cat.items.forEach(item => flat.push(item));
+                                                }
+                                            });
+                                            this.flatItems = flat;
+                                            this.selectedIndex = flat.length > 0 ? 0 : -1;
+                                            this.isLoading = false;
+                                        } catch (err) {
+                                            console.error('Global search error:', err);
+                                            this.errorMessage = 'Unable to search right now. Please try again.';
+                                            this.results = {};
+                                            this.totalResults = 0;
+                                            this.flatItems = [];
+                                            this.isLoading = false;
+                                        }
+                                    },
+
+                                    selectNext() {
+                                        if (this.flatItems.length === 0) return;
+                                        this.selectedIndex = (this.selectedIndex + 1) % this.flatItems.length;
+                                        this.scrollToSelected();
+                                    },
+
+                                    selectPrev() {
+                                        if (this.flatItems.length === 0) return;
+                                        this.selectedIndex = (this.selectedIndex - 1 + this.flatItems.length) % this.flatItems.length;
+                                        this.scrollToSelected();
+                                    },
+
+                                    selectCurrent() {
+                                        if (this.selectedIndex >= 0 && this.flatItems[this.selectedIndex]) {
+                                            const item = this.flatItems[this.selectedIndex];
+                                            if (item.url) {
+                                                window.location.href = item.url;
+                                            }
+                                        }
+                                    },
+
+                                    scrollToSelected() {
+                                        this.$nextTick(() => {
+                                            const el = this.$refs.dropdownPanel?.querySelector(`[data-index=\'${this.selectedIndex}\']`);
+                                            if (el) {
+                                                el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                                            }
+                                        });
+                                    },
+
+                                    close() {
+                                        this.isOpen = false;
+                                        this.selectedIndex = -1;
+                                    },
+
+                                    clear() {
+                                        this.query = '';
+                                        this.results = {};
+                                        this.totalResults = 0;
+                                        this.flatItems = [];
+                                        this.selectedIndex = -1;
+                                    }
+                                 }"
+                                 @click.outside="close()">
+                                
+                                <!-- Search Input Box -->
+                                <div class="pos-search-box" :class="{ 'focused': isOpen }">
+                                    <i class="fas fa-search pos-search-icon" :class="{ 'text-blue-500': isOpen }"></i>
+                                    <input 
+                                        x-ref="searchInput"
+                                        type="text" 
+                                        x-model="query" 
+                                        @input="handleInput()"
+                                        @focus="isOpen = true; if(query.trim().length >= 2 && Object.keys(results).length === 0) handleInput();"
+                                        @keydown.down.prevent="selectNext()"
+                                        @keydown.up.prevent="selectPrev()"
+                                        @keydown.enter.prevent="selectCurrent()"
+                                        @keydown.escape="close()"
+                                        placeholder="Search anything..." 
+                                        class="pos-search-input"
+                                        autocomplete="off"
+                                        spellcheck="false">
+                                    
+                                    <!-- Loading Spinner -->
+                                    <template x-if="isLoading">
+                                        <i class="fas fa-spinner fa-spin pos-search-spinner text-blue-500"></i>
+                                    </template>
+
+                                    <!-- Clear Button -->
+                                    <template x-if="!isLoading && query.length > 0">
+                                        <button type="button" @click="clear(); $refs.searchInput.focus()" class="pos-search-clear">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </template>
+
+                                    <!-- Keyboard Shortcut Hint -->
+                                    <template x-if="!isLoading && query.length === 0">
+                                        <kbd class="pos-search-kbd">Ctrl K</kbd>
+                                    </template>
+                                </div>
+
+                                <!-- Dropdown Result Container -->
+                                <div 
+                                    x-ref="dropdownPanel"
+                                    x-show="isOpen && (query.trim().length >= 2 || isLoading || errorMessage)"
+                                    x-transition:enter="transition ease-out duration-150"
+                                    x-transition:enter-start="opacity-0 translate-y-1 scale-95"
+                                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                    x-transition:leave="transition ease-in duration-100"
+                                    x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                                    x-transition:leave-end="opacity-0 translate-y-1 scale-95"
+                                    class="pos-search-dropdown"
+                                    style="display: none;">
+                                    
+                                    <!-- Loading State -->
+                                    <template x-if="isLoading && Object.keys(results).length === 0">
+                                        <div class="pos-search-state">
+                                            <div class="pos-search-loader">
+                                                <i class="fas fa-circle-notch fa-spin text-blue-500 text-xl"></i>
+                                            </div>
+                                            <div class="pos-search-state-title">Searching across system...</div>
+                                            <div class="pos-search-state-desc">Looking for matching customers, products, invoices, and records.</div>
+                                        </div>
+                                    </template>
+
+                                    <!-- Error State -->
+                                    <template x-if="errorMessage">
+                                        <div class="pos-search-state text-red-400">
+                                            <i class="fas fa-exclamation-triangle text-xl mb-2"></i>
+                                            <div class="pos-search-state-title" x-text="errorMessage"></div>
+                                        </div>
+                                    </template>
+
+                                    <!-- Empty State -->
+                                    <template x-if="!isLoading && !errorMessage && totalResults === 0 && query.trim().length >= 2">
+                                        <div class="pos-search-state">
+                                            <div class="pos-search-empty-icon mb-2">
+                                                <i class="fas fa-magnifying-glass text-gray-500 text-2xl"></i>
+                                            </div>
+                                            <div class="pos-search-state-title">No results found for \"<span class=\"text-blue-400 font-semibold\" x-text=\"query\"></span>\"</div>
+                                            <div class="pos-search-state-desc">Try searching by name, phone, invoice number, barcode, or reference.</div>
+                                        </div>
+                                    </template>
+
+                                    <!-- Results Grouped by Category -->
+                                    <template x-if="!isLoading && totalResults > 0">
+                                        <div class="pos-search-results">
+                                            <template x-for="(category, catKey) in results" :key="catKey">
+                                                <div x-show="category.items && category.items.length > 0" class="pos-search-group">
+                                                    <div class="pos-search-group-header">
+                                                        <i :class="category.icon" class="mr-1.5 opacity-70"></i>
+                                                        <span x-text="category.label"></span>
+                                                        <span class="pos-search-count-badge" x-text="category.items.length"></span>
+                                                    </div>
+
+                                                    <div class="pos-search-group-items">
+                                                        <template x-for="(item, itemIdx) in category.items" :key="catKey + '-' + item.id">
+                                                            <a 
+                                                                :href="item.url"
+                                                                :data-index="flatItems.findIndex(f => f.url === item.url && f.title === item.title)"
+                                                                :class="{ 'pos-item-active': selectedIndex === flatItems.findIndex(f => f.url === item.url && f.title === item.title) }"
+                                                                @mouseenter="selectedIndex = flatItems.findIndex(f => f.url === item.url && f.title === item.title)"
+                                                                class="pos-search-item">
+                                                                <div class="pos-item-icon" :class="item.badge_color || 'bg-blue-500/10 text-blue-400 border-blue-500/20'">
+                                                                    <i :class="item.icon || 'fas fa-circle-dot'"></i>
+                                                                </div>
+                                                                <div class="pos-item-content">
+                                                                    <div class="pos-item-title" x-text="item.title"></div>
+                                                                    <div class="pos-item-subtitle" x-text="item.subtitle"></div>
+                                                                </div>
+                                                                <div class="pos-item-badge" :class="item.badge_color || 'bg-blue-500/10 text-blue-400 border-blue-500/20'" x-text="item.badge"></div>
+                                                                <i class="fas fa-chevron-right pos-item-arrow"></i>
+                                                            </a>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+
+                                    <!-- Footer -->
+                                    <template x-if="totalResults > 0">
+                                        <div class="pos-search-footer">
+                                            <div class="pos-search-footer-info">
+                                                Found <span class="font-bold text-blue-400" x-text="totalResults"></span> results
+                                            </div>
+                                            <div class="pos-search-footer-hints">
+                                                <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+                                                <span><kbd>↵</kbd> select</span>
+                                                <span><kbd>ESC</kbd> close</span>
+                                            </div>
+                                        </div>
                                     </template>
                                 </div>
                             </div>
@@ -632,7 +1177,148 @@ class AppServiceProvider extends ServiceProvider
 
                     {{-- Collapsible mobile menu --}}
                     <div x-show="mobileMenuOpen" class="pos-mobile-nav" style="display: none;">
+                        {{-- Mobile search bar --}}
+                        <div class="pos-global-search mb-3"
+                             x-data="{
+                                query: '',
+                                results: {},
+                                totalResults: 0,
+                                isOpen: false,
+                                isLoading: false,
+                                selectedIndex: -1,
+                                flatItems: [],
+                                errorMessage: '',
+                                searchTimeout: null,
+
+                                handleInput() {
+                                    clearTimeout(this.searchTimeout);
+                                    this.errorMessage = '';
+                                    const q = this.query.trim();
+                                    if (q.length < 2) {
+                                        this.results = {};
+                                        this.totalResults = 0;
+                                        this.flatItems = [];
+                                        this.selectedIndex = -1;
+                                        this.isLoading = false;
+                                        return;
+                                    }
+
+                                    this.isLoading = true;
+                                    this.isOpen = true;
+
+                                    this.searchTimeout = setTimeout(() => {
+                                        this.fetchResults(q);
+                                    }, 300);
+                                },
+
+                                async fetchResults(q) {
+                                    try {
+                                        const res = await fetch(`{{ route('global.search') }}?q=${encodeURIComponent(q)}`, {
+                                            headers: {
+                                                'Accept': 'application/json',
+                                                'X-Requested-With': 'XMLHttpRequest'
+                                            }
+                                        });
+
+                                        if (!res.ok) throw new Error('Search failed');
+
+                                        const data = await res.json();
+                                        if (this.query.trim() !== q) return;
+
+                                        this.results = data.categories || {};
+                                        this.totalResults = data.total || 0;
+                                        
+                                        const flat = [];
+                                        Object.values(this.results).forEach(cat => {
+                                            if (cat.items && Array.isArray(cat.items)) {
+                                                cat.items.forEach(item => flat.push(item));
+                                            }
+                                        });
+                                        this.flatItems = flat;
+                                        this.selectedIndex = flat.length > 0 ? 0 : -1;
+                                        this.isLoading = false;
+                                    } catch (err) {
+                                        this.errorMessage = 'Unable to search right now.';
+                                        this.results = {};
+                                        this.totalResults = 0;
+                                        this.isLoading = false;
+                                    }
+                                },
+
+                                clear() {
+                                    this.query = '';
+                                    this.results = {};
+                                    this.totalResults = 0;
+                                    this.isOpen = false;
+                                }
+                             }">
+                            <div class="pos-search-box">
+                                <i class="fas fa-search pos-search-icon"></i>
+                                <input 
+                                    type="text" 
+                                    x-model="query" 
+                                    @input="handleInput()"
+                                    placeholder="Search anything..." 
+                                    class="pos-search-input">
+                                <template x-if="isLoading">
+                                    <i class="fas fa-spinner fa-spin pos-search-spinner text-blue-500"></i>
+                                </template>
+                                <template x-if="!isLoading && query.length > 0">
+                                    <button type="button" @click="clear()" class="pos-search-clear">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </template>
+                            </div>
+
+                            <div x-show="isOpen && (query.trim().length >= 2 || isLoading || errorMessage)" class="pos-search-dropdown" style="display: none;">
+                                <template x-if="isLoading && Object.keys(results).length === 0">
+                                    <div class="pos-search-state">
+                                        <i class="fas fa-circle-notch fa-spin text-blue-500 text-lg"></i>
+                                        <div class="pos-search-state-title">Searching...</div>
+                                    </div>
+                                </template>
+                                <template x-if="!isLoading && totalResults === 0 && query.trim().length >= 2">
+                                    <div class="pos-search-state">
+                                        <div class="pos-search-state-title">No results found for \"<span class=\"text-blue-400\" x-text=\"query\"></span>\"</div>
+                                    </div>
+                                </template>
+                                <template x-if="!isLoading && totalResults > 0">
+                                    <div class="pos-search-results">
+                                        <template x-for="(category, catKey) in results" :key="catKey">
+                                            <div x-show="category.items && category.items.length > 0" class="pos-search-group">
+                                                <div class="pos-search-group-header">
+                                                    <i :class="category.icon" class="mr-1"></i>
+                                                    <span x-text="category.label"></span>
+                                                </div>
+                                                <div class="pos-search-group-items">
+                                                    <template x-for="item in category.items" :key="catKey + '-' + item.id">
+                                                        <a :href="item.url" class="pos-search-item">
+                                                            <div class="pos-item-icon" :class="item.badge_color || 'bg-blue-500/10 text-blue-400 border-blue-500/20'">
+                                                                <i :class="item.icon || 'fas fa-circle-dot'"></i>
+                                                            </div>
+                                                            <div class="pos-item-content">
+                                                                <div class="pos-item-title" x-text="item.title"></div>
+                                                                <div class="pos-item-subtitle" x-text="item.subtitle"></div>
+                                                            </div>
+                                                        </a>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
                         <div class="pos-mobile-nav-inner">
+                            <a href="{{ route('dashboard') }}"
+                               class="pos-gradient-btn pos-tab-btn"
+                               style="padding: 1px; margin: 2px; text-decoration: none;"
+                               title="Dashboard">
+                                <div class="pos-gradient-inner" style="padding: 6px 12px; display: flex; align-items: center; gap: 5px;">
+                                    <i class="fas fa-home" style="font-size: 11px; color: var(--pos-blue);"></i>
+                                    <span style="font-size:11px;">Dashboard</span>
+                                </div>
+                            </a>
                             <template x-for="tab in ['General', 'Sales', 'Purchase', 'Accounts', 'Reports']">
                                 <button @click="activeTab = tab.toLowerCase(); mobileMenuOpen = false"
                                         class="pos-gradient-btn pos-tab-btn"

@@ -88,44 +88,44 @@
 
     {{-- ACCOUNT TYPE CATEGORY CARDS --}}
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-        <div @click="filterType('Asset')" class="bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 p-3.5 rounded-2xl cursor-pointer transition group">
+        <div @click="filterType('ASSETS')" class="bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 p-3.5 rounded-2xl cursor-pointer transition group">
             <div class="flex justify-between items-center mb-1">
                 <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Asset</span>
-                <span class="text-[10px] font-mono bg-slate-950 text-slate-400 px-2 py-0.5 rounded border border-slate-800" x-text="getTypeCount('Asset')"></span>
+                <span class="text-[10px] font-mono bg-slate-950 text-slate-400 px-2 py-0.5 rounded border border-slate-800" x-text="getTypeCount('ASSETS')"></span>
             </div>
-            <div class="text-sm font-extrabold text-white font-mono" x-text="'Rs. ' + getTypeTotal('Asset')"></div>
+            <div class="text-sm font-extrabold text-white font-mono" x-text="'Rs. ' + getTypeTotal('ASSETS')"></div>
         </div>
 
-        <div @click="filterType('Liability')" class="bg-slate-900/90 border border-slate-800 hover:border-rose-500/50 p-3.5 rounded-2xl cursor-pointer transition group">
+        <div @click="filterType('LIABILITIES')" class="bg-slate-900/90 border border-slate-800 hover:border-rose-500/50 p-3.5 rounded-2xl cursor-pointer transition group">
             <div class="flex justify-between items-center mb-1">
                 <span class="text-[10px] font-bold text-rose-400 uppercase tracking-wider">Liability</span>
-                <span class="text-[10px] font-mono bg-slate-950 text-slate-400 px-2 py-0.5 rounded border border-slate-800" x-text="getTypeCount('Liability')"></span>
+                <span class="text-[10px] font-mono bg-slate-950 text-slate-400 px-2 py-0.5 rounded border border-slate-800" x-text="getTypeCount('LIABILITIES')"></span>
             </div>
-            <div class="text-sm font-extrabold text-white font-mono" x-text="'Rs. ' + getTypeTotal('Liability')"></div>
+            <div class="text-sm font-extrabold text-white font-mono" x-text="'Rs. ' + getTypeTotal('LIABILITIES')"></div>
         </div>
 
-        <div @click="filterType('Equity')" class="bg-slate-900/90 border border-slate-800 hover:border-blue-500/50 p-3.5 rounded-2xl cursor-pointer transition group">
+        <div @click="filterType('EQUITY')" class="bg-slate-900/90 border border-slate-800 hover:border-blue-500/50 p-3.5 rounded-2xl cursor-pointer transition group">
             <div class="flex justify-between items-center mb-1">
                 <span class="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Equity</span>
-                <span class="text-[10px] font-mono bg-slate-950 text-slate-400 px-2 py-0.5 rounded border border-slate-800" x-text="getTypeCount('Equity')"></span>
+                <span class="text-[10px] font-mono bg-slate-950 text-slate-400 px-2 py-0.5 rounded border border-slate-800" x-text="getTypeCount('EQUITY')"></span>
             </div>
-            <div class="text-sm font-extrabold text-white font-mono" x-text="'Rs. ' + getTypeTotal('Equity')"></div>
+            <div class="text-sm font-extrabold text-white font-mono" x-text="'Rs. ' + getTypeTotal('EQUITY')"></div>
         </div>
 
-        <div @click="filterType('Income')" class="bg-slate-900/90 border border-slate-800 hover:border-purple-500/50 p-3.5 rounded-2xl cursor-pointer transition group">
+        <div @click="filterType('INCOME')" class="bg-slate-900/90 border border-slate-800 hover:border-purple-500/50 p-3.5 rounded-2xl cursor-pointer transition group">
             <div class="flex justify-between items-center mb-1">
                 <span class="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Income</span>
-                <span class="text-[10px] font-mono bg-slate-950 text-slate-400 px-2 py-0.5 rounded border border-slate-800" x-text="getTypeCount('Income')"></span>
+                <span class="text-[10px] font-mono bg-slate-950 text-slate-400 px-2 py-0.5 rounded border border-slate-800" x-text="getTypeCount('INCOME')"></span>
             </div>
-            <div class="text-sm font-extrabold text-white font-mono" x-text="'Rs. ' + getTypeTotal('Income')"></div>
+            <div class="text-sm font-extrabold text-white font-mono" x-text="'Rs. ' + getTypeTotal('INCOME')"></div>
         </div>
 
-        <div @click="filterType('Expense')" class="bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 p-3.5 rounded-2xl cursor-pointer transition group">
+        <div @click="filterType('EXPENSE')" class="bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 p-3.5 rounded-2xl cursor-pointer transition group">
             <div class="flex justify-between items-center mb-1">
                 <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Expense</span>
-                <span class="text-[10px] font-mono bg-slate-950 text-slate-400 px-2 py-0.5 rounded border border-slate-800" x-text="getTypeCount('Expense')"></span>
+                <span class="text-[10px] font-mono bg-slate-950 text-slate-400 px-2 py-0.5 rounded border border-slate-800" x-text="getTypeCount('EXPENSE')"></span>
             </div>
-            <div class="text-sm font-extrabold text-white font-mono" x-text="'Rs. ' + getTypeTotal('Expense')"></div>
+            <div class="text-sm font-extrabold text-white font-mono" x-text="'Rs. ' + getTypeTotal('EXPENSE')"></div>
         </div>
     </div>
 
@@ -135,17 +135,17 @@
             
             <div class="lg:col-span-6 relative">
                 <i class="fas fa-search absolute left-3.5 top-3 text-slate-500 text-xs"></i>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search account name, GL code, category..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:border-indigo-500 outline-none">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search account name, GL code, type..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:border-indigo-500 outline-none">
             </div>
 
             <div class="lg:col-span-4">
                 <select name="type" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-indigo-500 outline-none">
                     <option value="">All Account Types</option>
-                    <option value="Asset" {{ request('type') == 'Asset' ? 'selected' : '' }}>Asset</option>
-                    <option value="Liability" {{ request('type') == 'Liability' ? 'selected' : '' }}>Liability</option>
-                    <option value="Equity" {{ request('type') == 'Equity' ? 'selected' : '' }}>Equity</option>
-                    <option value="Income" {{ request('type') == 'Income' ? 'selected' : '' }}>Income</option>
-                    <option value="Expense" {{ request('type') == 'Expense' ? 'selected' : '' }}>Expense</option>
+                    <option value="ASSETS" {{ strtoupper(request('type')) == 'ASSETS' ? 'selected' : '' }}>Asset</option>
+                    <option value="LIABILITIES" {{ strtoupper(request('type')) == 'LIABILITIES' ? 'selected' : '' }}>Liability</option>
+                    <option value="EQUITY" {{ strtoupper(request('type')) == 'EQUITY' ? 'selected' : '' }}>Equity</option>
+                    <option value="INCOME" {{ strtoupper(request('type')) == 'INCOME' ? 'selected' : '' }}>Income</option>
+                    <option value="EXPENSE" {{ strtoupper(request('type')) == 'EXPENSE' ? 'selected' : '' }}>Expense</option>
                 </select>
             </div>
 
@@ -176,7 +176,7 @@
                         <th class="p-4">Account Name</th>
                         <th class="p-4">GL Code</th>
                         <th class="p-4">Type</th>
-                        <th class="p-4">Category / Group</th>
+                        <th class="p-4">Prefix / Group</th>
                         <th class="p-4 text-right">Current Balance (Rs)</th>
                         <th class="p-4 text-center">Status</th>
                         <th class="p-4 text-center">Actions</th>
@@ -188,13 +188,13 @@
                             <td class="p-4">
                                 <div class="flex items-center gap-3">
                                     <div class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-indigo-400 group-hover:border-indigo-500/50 transition">
-                                        @if($acc->type == 'Asset')
+                                        @if($acc->account_type == 'ASSETS')
                                             <i class="fas fa-wallet text-emerald-400 text-xs"></i>
-                                        @elseif($acc->type == 'Liability')
+                                        @elseif($acc->account_type == 'LIABILITIES')
                                             <i class="fas fa-file-invoice text-rose-400 text-xs"></i>
-                                        @elseif($acc->type == 'Equity')
+                                        @elseif($acc->account_type == 'EQUITY')
                                             <i class="fas fa-piggy-bank text-blue-400 text-xs"></i>
-                                        @elseif($acc->type == 'Income')
+                                        @elseif($acc->account_type == 'INCOME')
                                             <i class="fas fa-hand-holding-usd text-purple-400 text-xs"></i>
                                         @else
                                             <i class="fas fa-receipt text-amber-400 text-xs"></i>
@@ -202,30 +202,27 @@
                                     </div>
                                     <div>
                                         <span class="font-bold text-white block text-xs">{{ $acc->name }}</span>
-                                        @if($acc->is_system)
-                                            <span class="text-[9px] text-indigo-400 font-mono uppercase tracking-wider"><i class="fas fa-lock text-[8px] mr-1"></i>System Account</span>
-                                        @endif
                                     </div>
                                 </div>
                             </td>
 
                             <td class="p-4 font-mono text-xs font-bold text-indigo-400">
-                                {{ $acc->code }}
+                                {{ $acc->gl_code }}
                             </td>
 
                             <td class="p-4 text-xs">
                                 <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border
-                                    {{ $acc->type == 'Asset' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : '' }}
-                                    {{ $acc->type == 'Liability' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : '' }}
-                                    {{ $acc->type == 'Equity' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : '' }}
-                                    {{ $acc->type == 'Income' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : '' }}
-                                    {{ $acc->type == 'Expense' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : '' }}">
-                                    {{ $acc->type }}
+                                    {{ $acc->account_type == 'ASSETS' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : '' }}
+                                    {{ $acc->account_type == 'LIABILITIES' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : '' }}
+                                    {{ $acc->account_type == 'EQUITY' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : '' }}
+                                    {{ $acc->account_type == 'INCOME' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : '' }}
+                                    {{ $acc->account_type == 'EXPENSE' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : '' }}">
+                                    {{ ucfirst(strtolower($acc->account_type)) }}
                                 </span>
                             </td>
 
                             <td class="p-4 text-xs text-slate-400">
-                                {{ $acc->category ?: 'General' }}
+                                {{ $acc->gl_type ?: 'General' }}
                             </td>
 
                             <td class="p-4 text-right font-mono font-bold text-xs {{ $acc->current_balance < 0 ? 'text-rose-400' : 'text-emerald-400' }}">
@@ -233,34 +230,26 @@
                             </td>
 
                             <td class="p-4 text-center">
-                                @if($acc->is_system)
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-800 text-slate-400 border border-slate-700">
-                                        Protected
-                                    </span>
-                                @else
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                        Active
-                                    </span>
-                                @endif
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                    Active
+                                </span>
                             </td>
 
                             <td class="p-4 text-center">
                                 <div class="flex items-center justify-center gap-1.5">
-                                    <a href="{{ route('general-ledger.index') }}?account_code={{ $acc->code }}" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 text-xs font-bold transition flex items-center gap-1" title="View Ledger">
+                                    <a href="{{ route('general-ledger.index') }}?account_code={{ $acc->gl_code }}" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 text-xs font-bold transition flex items-center gap-1" title="View Ledger">
                                         <i class="fas fa-book-open text-xs"></i> Ledger
                                     </a>
                                     <button @click="editAccount({{ json_encode($acc) }})" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs transition" title="Edit">
                                         <i class="fas fa-pen text-xs"></i>
                                     </button>
-                                    @if(!$acc->is_system)
-                                        <form action="{{ route('accounts.destroy', $acc->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this account?')" class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-rose-900/50 text-slate-400 hover:text-rose-400 border border-slate-700 text-xs transition" title="Delete">
-                                                <i class="fas fa-trash-alt text-xs"></i>
-                                            </button>
-                                        </form>
-                                    @endif
+                                    <form action="{{ route('accounts.destroy', $acc->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this account?')" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-rose-900/50 text-slate-400 hover:text-rose-400 border border-slate-700 text-xs transition" title="Delete">
+                                            <i class="fas fa-trash-alt text-xs"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
@@ -303,24 +292,24 @@
                 <div class="p-6 space-y-4 text-xs text-slate-300">
                     <div>
                         <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Account Type *</label>
-                        <select name="type" x-model="form.type" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-indigo-500 outline-none">
-                            <option value="Asset">Asset</option>
-                            <option value="Liability">Liability</option>
-                            <option value="Equity">Equity</option>
-                            <option value="Income">Income</option>
-                            <option value="Expense">Expense</option>
+                        <select name="account_type" x-model="form.account_type" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-indigo-500 outline-none">
+                            <option value="ASSETS">Asset</option>
+                            <option value="LIABILITIES">Liability</option>
+                            <option value="EQUITY">Equity</option>
+                            <option value="INCOME">Income</option>
+                            <option value="EXPENSE">Expense</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Category / Group</label>
-                        <input type="text" name="category" x-model="form.category" placeholder="e.g. Current Assets, Operating Expenses" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-indigo-500 outline-none">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Prefix / Type Code</label>
+                        <input type="text" name="gl_type" x-model="form.gl_type" placeholder="e.g. 01, 02, 08" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-indigo-500 outline-none">
                     </div>
 
                     <div class="grid grid-cols-3 gap-3">
                         <div class="col-span-1">
                             <label class="block text-xs font-bold text-slate-400 uppercase mb-1">GL Code *</label>
-                            <input type="text" name="code" x-model="form.code" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs font-mono font-bold text-white focus:border-indigo-500 outline-none">
+                            <input type="text" name="gl_code" x-model="form.gl_code" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs font-mono font-bold text-white focus:border-indigo-500 outline-none">
                         </div>
                         <div class="col-span-2">
                             <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Account Name *</label>
@@ -381,19 +370,19 @@
             accounts: initialAccounts,
             form: {
                 id: '',
-                code: '',
+                gl_code: '',
                 name: '',
-                type: 'Asset',
-                category: '',
+                account_type: 'ASSETS',
+                gl_type: '',
                 opening_balance: 0
             },
 
             getTypeCount(type) {
-                return this.accounts.filter(a => a.type === type).length;
+                return this.accounts.filter(a => a.account_type === type).length;
             },
 
             getTypeTotal(type) {
-                const sum = this.accounts.filter(a => a.type === type).reduce((acc, a) => acc + (parseFloat(a.current_balance) || 0), 0);
+                const sum = this.accounts.filter(a => a.account_type === type).reduce((acc, a) => acc + (parseFloat(a.current_balance) || 0), 0);
                 return sum.toLocaleString('en-US', { minimumFractionDigits: 2 });
             },
 
@@ -409,10 +398,10 @@
             openModal() {
                 this.form = {
                     id: '',
-                    code: Math.floor(100000 + Math.random() * 900000).toString(),
+                    gl_code: Math.floor(100000 + Math.random() * 900000).toString(),
                     name: '',
-                    type: 'Asset',
-                    category: '',
+                    account_type: 'ASSETS',
+                    gl_type: '01',
                     opening_balance: 0
                 };
                 this.isModalOpen = true;

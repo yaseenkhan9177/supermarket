@@ -10,9 +10,14 @@ class UserAccessController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Fetch Users and Employees
+        // TenantUserScope on User model automatically scopes to the current tenant.
         $users = User::with('userPermissions')->get();
-        $employees = \App\Models\Employee::with('userPermissions')->get();
+
+        // Employee also lives in the central DB — scope explicitly by tenant_id.
+        $tenantId = tenancy()->initialized ? tenancy()->tenant->id : null;
+        $employees = \App\Models\Employee::with('userPermissions')
+            ->when($tenantId, fn ($q) => $q->where('tenant_id', $tenantId))
+            ->get();
 
         // 2. Merge them into a single collection for the roster
         // We add a 'type' attribute to distinguish them in the view/URL

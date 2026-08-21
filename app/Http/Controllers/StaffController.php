@@ -19,6 +19,8 @@ class StaffController extends Controller
         $staff = User::with('roles')
             ->orderByDesc('id')
             ->get();
+        // TenantUserScope (User model global scope) automatically adds
+        // WHERE tenant_id = <current_tenant_id> — no explicit filter needed.
 
         return view('staff.index', compact('staff'));
     }
@@ -53,6 +55,7 @@ class StaffController extends Controller
             'role'      => $request->role,   // legacy string column kept in sync
             'is_active' => $request->boolean('is_active', true),
             'avatar'    => null,
+            'tenant_id' => tenancy()->initialized ? tenancy()->tenant->id : null,
         ]);
 
         $user->assignRole($request->role);

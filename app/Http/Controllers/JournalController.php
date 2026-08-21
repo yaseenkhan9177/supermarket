@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Journal;
 use App\Models\JournalEntry;
+use App\Models\GeneralLedgerAccount;
 use Illuminate\Support\Facades\DB;
 
 class JournalController extends Controller
 {
     public function create(Request $request)
     {
-        $accounts = \App\Models\Account::orderBy('code')->get();
+        $accounts = GeneralLedgerAccount::orderBy('gl_code')->get();
 
         $query = Journal::with(['entries', 'user'])->latest('date')->latest('id');
 

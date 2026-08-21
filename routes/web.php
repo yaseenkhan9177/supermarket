@@ -121,6 +121,9 @@ Route::middleware(['auth:web,employee'])->group(function () {
     Route::get('/api/customers/{id}', [App\Http\Controllers\SalesController::class, 'apiCustomer']);
     Route::get('/api/supplier/{id}/credit', [\App\Http\Controllers\SupplierController::class, 'getCredit'])->name('api.supplier.credit');
 
+    // Global Search API Route (Accessible to all authenticated staff, controller filters by role)
+    Route::get('/search', [\App\Http\Controllers\GlobalSearchController::class, 'search'])->name('global.search');
+
     // Tax Charge Types quick-add
     Route::post('/tax-charge-types', [\App\Http\Controllers\TaxChargeTypeController::class, 'store'])->name('tax-charge-types.store');
 
@@ -382,9 +385,6 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
         Route::get('/audit-log', [\App\Http\Controllers\Store\AuditLogController::class, 'index'])->name('audit-log');
         Route::get('/profit-loss', [\App\Http\Controllers\Store\ProfitLossController::class, 'index'])->name('profit-loss');
     });
-
-    // Global Search API Route
-    Route::get('/search', [\App\Http\Controllers\GlobalSearchController::class, 'search'])->name('global.search');
 
     // Backup Direct Download Route (Owner / Admin)
     Route::get('/settings/backup/download', [\App\Http\Controllers\Store\BackupController::class, 'download'])->name('settings.backup.download');

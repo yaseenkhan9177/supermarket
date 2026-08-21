@@ -39,6 +39,13 @@
             </div>
 
             <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Store Address</label>
+                <textarea name="store_address" rows="2"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-indigo-500 transition resize-none"
+                    placeholder="e.g. Shop #12, Commercial Area, Main Boulevard">{{ old('store_address') }}</textarea>
+            </div>
+
+            <div>
                 <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Desired Subdomain</label>
                 <div class="flex items-center">
                     <input type="text" name="subdomain" value="{{ old('subdomain') }}" required 

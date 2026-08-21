@@ -7,6 +7,7 @@ use App\Models\SuperAdmin;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -219,7 +220,7 @@ class DashboardController extends Controller
             return back()->with('error', "Migrations succeeded but user activation failed: " . $e->getMessage());
         }
 
-        // ── Step 4: Seed Store record inside the tenant database ──────────────────────
+        // ── Step 4: Seed Store and CompanySetting records inside the tenant database ─
         try {
             tenancy()->initialize($tenant);
             if (!Store::where('user_id', $user->id)->exists()) {
@@ -229,10 +230,21 @@ class DashboardController extends Controller
                     'user_id'       => $user->id,
                 ]);
             }
+
+            CompanySetting::updateOrCreate(
+                ['id' => 1],
+                [
+                    'business_name' => $tenant->store_name,
+                    'address'       => $tenant->address,
+                    'phone'         => $tenant->owner_phone,
+                    'email'         => $tenant->owner_email,
+                ]
+            );
+
             tenancy()->end();
         } catch (\Exception $e) {
-            // Non-fatal — store record can be created later; don't block approval
-            Log::warning("approveStore: tenant store seed notice for {$tenant->id}: " . $e->getMessage());
+            // Non-fatal — store/settings record can be created later; don't block approval
+            Log::warning("approveStore: tenant store/settings seed notice for {$tenant->id}: " . $e->getMessage());
             tenancy()->end();
         }
 

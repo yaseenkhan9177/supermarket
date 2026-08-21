@@ -113,8 +113,8 @@
                     <option value="">All Accounts</option>
                     @if(count($accounts) > 0)
                         @foreach($accounts as $acc)
-                            <option value="{{ $acc->code }}" {{ request('account_code') == $acc->code ? 'selected' : '' }}>
-                                {{ $acc->code }} - {{ $acc->name }}
+                            <option value="{{ $acc->gl_code }}" {{ request('account_code') == $acc->gl_code ? 'selected' : '' }}>
+                                {{ $acc->gl_code }} - {{ $acc->name }} ({{ $acc->account_type }})
                             </option>
                         @endforeach
                     @else
@@ -289,7 +289,7 @@
                                                     <option value="">-- Select Account --</option>
                                                     @if(count($accounts) > 0)
                                                         @foreach($accounts as $acc)
-                                                            <option value="{{ $acc->code }}">{{ $acc->code }} - {{ $acc->name }} ({{ $acc->type }})</option>
+                                                            <option value="{{ $acc->gl_code }}">{{ $acc->gl_code }} - {{ $acc->name }} ({{ $acc->account_type }})</option>
                                                         @endforeach
                                                     @else
                                                         <optgroup label="Assets">
@@ -479,16 +479,9 @@
                 return this.rows.reduce((sum, row) => sum + (parseFloat(row.credit) || 0), 0);
             },
 
+            accountsMap: @json($accounts->pluck('name', 'gl_code')),
             getAccountName(code) {
-                const map = {
-                    '1010': 'Cash on Hand',
-                    '1020': 'Bank - Meezan',
-                    '1200': 'Accounts Receivable',
-                    '2010': 'Accounts Payable',
-                    '5010': 'Rent Expense',
-                    '5020': 'Electricity Expense'
-                };
-                return map[code] || 'Ledger Account';
+                return this.accountsMap[code] || 'Ledger Account';
             },
 
             validateAndSubmit(e) {

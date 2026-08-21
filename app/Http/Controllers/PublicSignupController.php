@@ -19,14 +19,15 @@ class PublicSignupController extends Controller
     public function submit(Request $request)
     {
         $request->validate([
-            'store_name'  => ['required', 'string', 'max:255'],
-            'owner_name'  => ['required', 'string', 'max:255'],
-            'owner_phone' => ['required', 'string', 'max:20'],
+            'store_name'    => ['required', 'string', 'max:255'],
+            'store_address' => ['nullable', 'string', 'max:500'],
+            'owner_name'    => ['required', 'string', 'max:255'],
+            'owner_phone'   => ['required', 'string', 'max:20'],
             // Explicitly target the central DB connection — the unique check must never
             // run against a tenant DB, even if a stale tenant_id exists in the session.
-            'owner_email' => ['required', 'string', 'email', 'max:255', 'unique:mysql.users,email', 'unique:mysql.tenants,owner_email'],
-            'subdomain'   => ['required', 'string', 'alpha_dash', 'max:50'],
-            'password'    => ['required', 'string', 'min:8', 'confirmed'],
+            'owner_email'   => ['required', 'string', 'email', 'max:255', 'unique:mysql.users,email', 'unique:mysql.tenants,owner_email'],
+            'subdomain'     => ['required', 'string', 'alpha_dash', 'max:50'],
+            'password'      => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
         $subdomain = Str::slug($request->subdomain);
@@ -38,6 +39,7 @@ class PublicSignupController extends Controller
         $tenant = Tenant::create([
             'id'                => $tenantId,
             'store_name'        => $request->store_name,
+            'address'           => $request->store_address,
             'owner_name'        => $request->owner_name,
             'owner_email'       => $request->owner_email,
             'owner_phone'       => $request->owner_phone,

@@ -9,13 +9,13 @@ class ValueSearchController extends Controller
 {
     public function index()
     {
-        $totalAssets = \App\Models\Account::where('type', 'Asset')->sum('current_balance');
+        $totalAssets = \App\Models\GeneralLedgerAccount::where('account_type', 'ASSETS')->sum('current_balance');
         $totalCash = \App\Models\Wallet::where('type', 'counter')->sum('balance');
         $totalBank = \App\Models\BankAccount::sum('current_balance') + \App\Models\Wallet::whereIn('type', ['bank', 'wallet'])->sum('balance');
         $totalReceivables = DB::table('debit_sales')->sum(DB::raw('net_total - paid_amount'));
         $totalExpenses = DB::table('payments')->sum('amount_paid');
         $totalSalesIncome = DB::table('cash_sales')->sum('grand_total') + DB::table('debit_sales')->sum('net_total');
-        $totalLiabilities = \App\Models\Account::where('type', 'Liability')->sum('current_balance');
+        $totalLiabilities = \App\Models\GeneralLedgerAccount::where('account_type', 'LIABILITIES')->sum('current_balance');
         $netBalance = $totalAssets - $totalLiabilities;
 
         return view('values.index', compact(
