@@ -37,14 +37,27 @@
             justify-content: space-between;
         }
 
-        .footer {
-            margin-top: 10px;
-            font-size: 10px;
+        @media print {
+            .no-print { display: none !important; }
         }
     </style>
 </head>
 
 <body onload="window.print()">
+
+    <div class="no-print" style="margin-bottom: 12px; text-align: center; background: #f1f5f9; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
+        @if(($sale->status ?? '') !== 'cancelled')
+        <a href="{{ route('sales.edit', $sale->id) }}" style="display: inline-block; text-decoration: none; padding: 5px 10px; font-size: 11px; font-weight: bold; background: #2563eb; color: white; border-radius: 4px; margin-right: 4px;">
+            ✏️ Edit Invoice
+        </a>
+        @endif
+        <a href="{{ route('sales.versions', $sale->id) }}" style="display: inline-block; text-decoration: none; padding: 5px 10px; font-size: 11px; font-weight: bold; background: #4f46e5; color: white; border-radius: 4px; margin-right: 4px;">
+            📜 History ({{ $sale->versions()->count() }})
+        </a>
+        <button onclick="window.print()" style="padding: 5px 10px; font-size: 11px; font-weight: bold; cursor: pointer; background: #0f172a; color: white; border: none; border-radius: 4px;">
+            🖨️ Print
+        </button>
+    </div>
 
     @php
         $companySetting = \App\Models\CompanySetting::first();
@@ -66,9 +79,11 @@
 
     <div style="border-bottom: 1px dashed #000; margin-bottom: 5px; padding-bottom: 5px;">
         Invoice: <strong>{{ $sale->invoice_no }}</strong><br>
-        Date: {{ is_a($sale->created_at, 'DateTimeInterface') ? $sale->created_at->format('d-M-Y h:i A') : \Carbon\Carbon::parse($sale->created_at ?? $sale->sale_date ?? now())->format('d-M-Y h:i A') }}<br>
+        Date: {{ is_a($sale->created_at ?? null, 'DateTimeInterface') ? $sale->created_at->format('d-M-Y h:i A') : \Carbon\Carbon::parse($sale->created_at ?? $sale->sale_date ?? now())->format('d-M-Y h:i A') }}<br>
 
         Customer: <strong>{{ $sale->customer->name ?? 'Walk-in Customer' }}</strong><br>
+        Payment Method: <strong>{{ $sale->payment_mode ?? 'Cash' }}</strong><br>
+        Payment Status: <strong>{{ ($sale->paid_amount ?? 0) >= ($sale->grand_total ?? 0) ? 'Paid' : (($sale->paid_amount ?? 0) > 0 ? 'Partial' : 'Unpaid') }}</strong><br>
 
         Salesman: {{ $sale->user->name ?? 'Staff' }}
     </div>
@@ -86,7 +101,12 @@
         <tbody>
             @foreach($sale->items as $item)
             <tr>
-                <td style="padding-top: 4px;">{{ Str::limit($item->item_name, 15) }}</td>
+                <td style="padding-top: 4px;">
+                    {{ Str::limit($item->item_name, 15) }}
+                    @if(($item->tax_rate ?? 0) > 0)
+                        <span style="font-size: 9px; color: #444;">(T: {{ number_format($item->tax_rate, 0) }}%)</span>
+                    @endif
+                </td>
                 <td style="text-align: center;">{{ $item->qty }}</td>
                 <td style="text-align: right;">{{ number_format($item->total, 2) }}</td>
             </tr>
@@ -101,7 +121,28 @@
         <span>{{ number_format($sale->subtotal, 2) }}</span>
     </div>
 
-    @if($sale->return_adjustment > 0)
+    @if(($sale->discount_total ?? 0) > 0)
+    <div class="item-row" style="color: #555;">
+        <span>Discount</span>
+        <span>-{{ number_format($sale->discount_total, 2) }}</span>
+    </div>
+    @endif
+
+    @if(($sale->tax_total ?? 0) > 0 || ($sale->tax_rate ?? 0) > 0)
+    <div class="item-row">
+        <span>Tax</span>
+        <span>+{{ number_format($sale->tax_total ?? 0, 2) }}</span>
+    </div>
+    @endif
+
+    @if(($sale->additional_charges_total ?? 0) > 0)
+    <div class="item-row">
+        <span>Additional Charges</span>
+        <span>+{{ number_format($sale->additional_charges_total, 2) }}</span>
+    </div>
+    @endif
+
+    @if(($sale->return_adjustment ?? 0) > 0)
     <div class="item-row" style="color: #555;">
         <span>Return Adj</span>
         <span>-{{ number_format($sale->return_adjustment, 2) }}</span>
@@ -119,8 +160,8 @@
     </div>
 
     <div class="item-row">
-        <span>Change</span>
-        <span>{{ number_format($sale->change_amount, 2) }}</span>
+        <span>Change / Due</span>
+        <span>{{ number_format($sale->change_amount ?? max(0, $sale->grand_total - $sale->paid_amount), 2) }}</span>
     </div>
 
     <p class="divider"></p>

@@ -52,6 +52,12 @@ class RoleSeeder extends Seeder
 
             // Staff Management
             'staff.view', 'staff.create', 'staff.edit', 'staff.delete',
+
+            // Expenses
+            'expenses.view', 'expenses.create', 'expenses.edit', 'expenses.delete', 'expenses.export',
+
+            // Expense Categories
+            'expense_categories.manage',
         ];
 
         foreach ($permissions as $permission) {

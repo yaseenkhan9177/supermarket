@@ -20,6 +20,8 @@ class DebitSaleItem extends Model
         'discount_amount',
         'net_amount',
         'department',
+        'tax_rate',
+        'tax_amount',
     ];
 
     public function sale()

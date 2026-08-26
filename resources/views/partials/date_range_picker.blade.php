@@ -1,7 +1,7 @@
 @php
-    $currentPreset = request('preset', 'all_time');
-    $fromDate = request('from_date');
-    $toDate = request('to_date');
+    $currentPreset = request('preset', $defaultPreset ?? 'all_time');
+    $fromDate = request('from_date', $initialFrom ?? '');
+    $toDate = request('to_date', $initialTo ?? '');
 @endphp
 
 <form method="GET" action="{{ $actionUrl ?? request()->url() }}" class="bg-white dark:bg-slate-800/90 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 mb-6" x-data="dateRangePicker('{{ $currentPreset }}', '{{ $fromDate }}', '{{ $toDate }}')">
@@ -11,15 +11,19 @@
         </div>
 
         {{-- Preset Select --}}
-        <div class="w-40">
+        <div class="w-44">
             <select
                 name="preset"
                 x-model="preset"
                 @change="applyPreset()"
                 class="w-full text-xs font-semibold px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             >
+                @if(($showAllTime ?? true))
                 <option value="all_time">All Time</option>
+                @endif
                 <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="last_7_days">Last 7 Days</option>
                 <option value="this_week">This Week</option>
                 <option value="this_month">This Month</option>
                 <option value="last_month">Last Month</option>
@@ -80,15 +84,31 @@ function dateRangePicker(initialPreset, initialFrom, initialTo) {
         toDate: initialTo || '',
         applyPreset() {
             const today = new Date();
-            const formatDate = (d) => d.toISOString().split('T')[0];
+            const formatDate = (d) => {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
 
             if (this.preset === 'today') {
                 this.fromDate = formatDate(today);
                 this.toDate = formatDate(today);
+            } else if (this.preset === 'yesterday') {
+                const y = new Date();
+                y.setDate(y.getDate() - 1);
+                this.fromDate = formatDate(y);
+                this.toDate = formatDate(y);
+            } else if (this.preset === 'last_7_days') {
+                const start = new Date();
+                start.setDate(start.getDate() - 6);
+                this.fromDate = formatDate(start);
+                this.toDate = formatDate(today);
             } else if (this.preset === 'this_week') {
                 const day = today.getDay();
                 const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1);
-                const monday = new Date(today.setDate(diffToMonday));
+                const monday = new Date(today);
+                monday.setDate(diffToMonday);
                 const sunday = new Date(monday);
                 sunday.setDate(monday.getDate() + 6);
                 this.fromDate = formatDate(monday);
@@ -111,3 +131,4 @@ function dateRangePicker(initialPreset, initialFrom, initialTo) {
     }
 }
 </script>
+

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Expense;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -32,14 +33,24 @@ class DashboardController extends Controller
             })->orWhere('on_hand', '<=', 0);
         })->count();
 
+        // 2. Real Expense KPIs
+        $expensesToday     = (float) Expense::whereDate('expense_date', today())->sum('amount');
+        $expensesThisMonth = (float) Expense::whereMonth('expense_date', now()->month)
+            ->whereYear('expense_date', now()->year)
+            ->sum('amount');
+        $expenseCountToday = (int) Expense::whereDate('expense_date', today())->count();
+
         // KPI Cards
         $kpis = [
-            'daily_sales'        => $salesToday,          // Real Data
-            'daily_transactions' => $todaySales->count(), // Real Data
-            'cash_in_hand'       => 32000,                // Still static, can link to GL if needed later
-            'receivables'        => 18500,                // Still static
-            'low_stock_count'    => $lowStockCount,       // Real Data
-            'expiring_count'     => 4,                    // items
+            'daily_sales'          => $salesToday,          // Real Data
+            'daily_transactions'   => $todaySales->count(), // Real Data
+            'cash_in_hand'         => 32000,                // Still static, can link to GL if needed later
+            'receivables'          => 18500,                // Still static
+            'low_stock_count'      => $lowStockCount,       // Real Data
+            'expiring_count'       => 4,                    // items
+            'expenses_today'       => $expensesToday,       // Real Data
+            'expenses_this_month'  => $expensesThisMonth,   // Real Data
+            'expense_count_today'  => $expenseCountToday,   // Real Data
         ];
 
         // Placeholder Data for Charts
@@ -108,6 +119,6 @@ class DashboardController extends Controller
             ['action' => 'Return', 'description' => 'Item returned #REC-009', 'time' => '1 day ago', 'icon' => 'fa-undo', 'color' => 'text-red-600', 'bg' => 'bg-red-100'],
         ];
 
-        return view('dashboard', compact('user', 'store', 'kpis', 'salesData', 'lowStockItems', 'expiringItems', 'chartData', 'recentActivities', 'todaySales'));
+        return view('dashboard', compact('user', 'store', 'kpis', 'salesData', 'lowStockItems', 'expiringItems', 'chartData', 'recentActivities', 'todaySales', 'expensesToday', 'expensesThisMonth'));
     }
 }

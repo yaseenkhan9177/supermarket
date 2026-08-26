@@ -19,6 +19,7 @@ class Item extends Model
         'parse_bar' => 'boolean',
         'open_price' => 'boolean',
         'is_container' => 'boolean',
+        'tax_rate' => 'float',
     ];
 
     public function department(): BelongsTo

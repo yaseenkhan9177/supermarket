@@ -289,11 +289,9 @@ class PurchaseController extends Controller
                     'created_by'    => auth()->id(),
                 ]);
 
-                // ── 9. Deduct from active wallet ──────────────────────────────────
-                $activeWallet = Wallet::where('is_active', true)->first();
-                if ($activeWallet && $netTotal > 0) {
-                    $activeWallet->adjustBalance(-$netTotal);
-                }
+                // Record Financial Transactions, Wallet Deduction, Supplier Payable & GL Entries
+                $accountingService = new \App\Services\AccountingService();
+                $accountingService->recordPurchase($purchase, null, auth()->id());
             });
 
             return back()->with('success', 'Purchase Recorded! Stock Updated.');

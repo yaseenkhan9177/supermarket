@@ -3,7 +3,6 @@
 
 @section('title', 'POS Terminal')
 
-
 @section('content')
 
 <div class="h-[calc(100vh-80px)] flex flex-col md:flex-row gap-6" x-data="posSystem()" @keydown.f2.window="handleF2($event)">
@@ -12,10 +11,7 @@
 
         <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex gap-4 bg-slate-50 dark:bg-slate-950">
             <div class="relative flex-1">
-                <i class="fas fa-search absolute left-4 top-3.5 text-slate-400"></i>
-                <input type="text" x-model="search" id="product-search" autofocus placeholder="Scan barcode or search product..."
-                    @keydown.enter.prevent="selectFirstProduct()"
-                    class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition shadow-sm">
+                <x-smart-product-search @product-selected="addToCart($event.detail)" />
                 <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1"><i class="fas fa-keyboard mr-1"></i> F2: Go to checkout</div>
             </div>
             <select x-model="category" class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-bold text-slate-600 dark:text-slate-300">
@@ -33,8 +29,9 @@
                     <div @click="addToCart(product)"
                         class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition cursor-pointer overflow-hidden group relative">
 
-                        <span class="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-900 text-slate-500 border border-slate-200 dark:border-slate-700 shadow-sm">
-                            <span x-text="product.stock"></span> left
+                        <span class="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm"
+                            :class="isService(product) ? 'text-indigo-500 dark:text-indigo-400' : (productStock(product) > 0 ? 'text-slate-500' : 'text-red-500')">
+                            <span x-text="isService(product) ? 'Service' : (productStock(product) + ' left')"></span>
                         </span>
 
                         <div class="h-32 w-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4 overflow-hidden">
@@ -47,9 +44,9 @@
                         </div>
 
                         <div class="p-3">
-                            <h3 class="font-bold text-slate-700 dark:text-slate-200 text-sm truncate" x-text="product.name"></h3>
+                            <h3 class="font-bold text-slate-700 dark:text-slate-200 text-sm truncate" x-text="product.name || product.description"></h3>
                             <div class="flex justify-between items-center mt-2">
-                                <span class="font-mono font-bold text-blue-600 dark:text-blue-400" x-text="'Rs. ' + Number(product.price).toFixed(2)"></span>
+                                <span class="font-mono font-bold text-blue-600 dark:text-blue-400" x-text="'Rs. ' + Number(product.price || product.sale_rate || product.rate || 0).toFixed(2)"></span>
                                 <div class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center text-xs">
                                     <i class="fas fa-plus"></i>
                                 </div>
@@ -91,38 +88,46 @@
                     </div>
 
                     <div class="flex-1 min-w-0">
-                        <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate" x-text="item.name"></h4>
-                        <p class="text-xs text-slate-500" x-text="'@ ' + Number(item.price).toFixed(2)"></p>
+                        <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate" x-text="item.name || item.description"></h4>
+                        <p class="text-xs text-slate-500" x-text="'@ ' + Number(item.price || item.rate || 0).toFixed(2)"></p>
                     </div>
 
                     <div class="text-right">
-                        <div class="font-bold text-slate-800 dark:text-white" x-text="'Rs. ' + (item.price * item.qty).toFixed(2)"></div>
-                        <button @click="removeItem(index)" class="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition">Remove</button>
+                        <div class="font-bold text-slate-800 dark:text-white" x-text="'Rs. ' + ((Number(item.price || item.rate || 0)) * item.qty).toFixed(2)"></div>
+                        <button @click="removeItem(index)" class="text-slate-300 hover:text-red-500 text-xs transition mt-1 opacity-0 group-hover:opacity-100">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
                 </div>
             </template>
 
-            <div x-show="cart.length === 0" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
-                <i class="fas fa-shopping-basket text-5xl mb-3 opacity-20"></i>
-                <p class="text-sm font-medium">Cart is empty</p>
-                <p class="text-xs opacity-60">Click items to sell</p>
-            </div>
+            <template x-if="cart.length === 0">
+                <div class="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 p-6 text-center">
+                    <i class="fas fa-shopping-basket text-5xl mb-3 text-slate-200 dark:text-slate-800"></i>
+                    <p class="font-bold text-sm">Cart is empty</p>
+                    <p class="text-xs text-slate-400 mt-1">Scan items or click products to start sale</p>
+                </div>
+            </template>
 
         </div>
 
-        <div class="bg-slate-50 dark:bg-slate-950 p-6 border-t border-slate-200 dark:border-slate-800 rounded-b-2xl">
-            <div class="space-y-2 mb-4 text-sm">
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 rounded-b-2xl space-y-3">
+            <div class="space-y-1 text-xs">
                 <div class="flex justify-between text-slate-500">
                     <span>Subtotal</span>
-                    <span class="font-bold" x-text="'Rs. ' + subtotal"></span>
+                    <span class="font-bold text-slate-700 dark:text-slate-300" x-text="'Rs. ' + subtotal"></span>
+                </div>
+                <div class="flex justify-between text-slate-500">
+                    <span>Tax</span>
+                    <span class="font-bold text-slate-700 dark:text-slate-300" x-text="'Rs. ' + taxAmount"></span>
+                </div>
+                <div class="flex justify-between text-slate-500" x-show="parseFloat(additionalChargesTotal) > 0">
+                    <span>Additional Charges</span>
+                    <span class="font-bold text-slate-700 dark:text-slate-300" x-text="'Rs. ' + additionalChargesTotal"></span>
                 </div>
                 <div class="flex justify-between text-slate-500 items-center">
                     <span>Return/Replacement Adj.</span>
                     <input type="number" x-model="returnAdjustment" placeholder="0" class="w-24 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-right text-xs outline-none text-slate-800 dark:text-white">
-                </div>
-                <div class="flex justify-between text-slate-500">
-                    <span>Tax (0%)</span>
-                    <span class="font-bold">Rs. 0.00</span>
                 </div>
                 <div class="flex justify-between text-blue-600 font-bold text-xl pt-2 border-t border-slate-200 dark:border-slate-800 mt-2">
                     <span>Total</span>
@@ -147,25 +152,62 @@
                 <h1 class="text-4xl font-extrabold text-white mt-1" x-text="'Rs. ' + grandTotal"></h1>
             </div>
 
-            <div class="p-8 space-y-6">
+            <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Cash Received</label>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Payment Method</label>
+                    <select x-model="paymentMode" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 font-bold text-slate-800 dark:text-white outline-none">
+                        <option value="Cash">Cash</option>
+                        <option value="Online">Online / Digital</option>
+                        <option value="Bank">Bank Transfer</option>
+                        <option value="Card">Card</option>
+                        <option value="Credit">Credit / Debit</option>
+                    </select>
+                </div>
+
+                <template x-if="wallets && wallets.length > 0">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Receiving Account / Wallet</label>
+                        <select x-model="selectedWalletId" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 font-bold text-slate-800 dark:text-white outline-none">
+                            <option value="">Default Active Wallet</option>
+                            <template x-for="w in wallets" :key="w.id">
+                                <option :value="w.id" x-text="w.name + ' (Bal: Rs. ' + Number(w.balance).toFixed(2) + ')'"></option>
+                            </template>
+                        </select>
+                    </div>
+                </template>
+
+                <template x-if="availableCharges && availableCharges.length > 0">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Apply Additional Charges</label>
+                        <div class="space-y-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-300 dark:border-slate-700">
+                            <template x-for="charge in availableCharges" :key="charge.id">
+                                <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                    <input type="checkbox" :value="charge" x-model="selectedCharges" class="rounded text-blue-600 focus:ring-blue-500">
+                                    <span x-text="charge.name + ' (' + (charge.type === 'percentage' ? charge.value + '%' : 'Rs. ' + charge.value) + ')'"></span>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Cash / Amount Received</label>
                     <div class="relative">
-                        <span class="absolute left-4 top-3.5 text-slate-400 font-bold">Rs.</span>
-                        <input type="number" id="cash-received" x-model="amountReceived" @keydown.enter.prevent="completeSale()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-12 pr-4 py-3 text-xl font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
+                        <span class="absolute left-4 top-3 text-slate-400 font-bold">Rs.</span>
+                        <input type="number" id="cash-received" x-model="amountReceived" @keydown.enter.prevent="completeSale()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-12 pr-4 py-2.5 text-xl font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none">
                     </div>
                 </div>
 
-                <div class="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl flex justify-between items-center border border-slate-200 dark:border-slate-700">
-                    <span class="text-sm font-bold text-slate-500 uppercase">Change Return</span>
-                    <span class="text-2xl font-bold text-slate-800 dark:text-white" :class="change < 0 ? 'text-red-500' : 'text-green-500'" x-text="'Rs. ' + change"></span>
+                <div class="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl flex justify-between items-center border border-slate-200 dark:border-slate-700">
+                    <span class="text-xs font-bold text-slate-500 uppercase">Change Return</span>
+                    <span class="text-xl font-bold text-slate-800 dark:text-white" :class="change < 0 ? 'text-red-500' : 'text-green-500'" x-text="'Rs. ' + change"></span>
                 </div>
 
                 <div class="grid grid-cols-4 gap-2">
-                    <button @click="amountReceived = 500" class="py-2 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 text-sm font-bold hover:bg-blue-50 hover:border-blue-200 transition">500</button>
-                    <button @click="amountReceived = 1000" class="py-2 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 text-sm font-bold hover:bg-blue-50 hover:border-blue-200 transition">1000</button>
-                    <button @click="amountReceived = 5000" class="py-2 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 text-sm font-bold hover:bg-blue-50 hover:border-blue-200 transition">5000</button>
-                    <button @click="amountReceived = Math.ceil(grandTotal)" class="py-2 bg-yellow-100 dark:bg-yellow-900/30 rounded border border-yellow-200 text-sm font-bold text-yellow-700 hover:bg-yellow-200 transition">Exact</button>
+                    <button @click="amountReceived = 500" class="py-2 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 text-xs font-bold hover:bg-blue-50 hover:border-blue-200 transition">500</button>
+                    <button @click="amountReceived = 1000" class="py-2 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 text-xs font-bold hover:bg-blue-50 hover:border-blue-200 transition">1000</button>
+                    <button @click="amountReceived = 5000" class="py-2 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 text-xs font-bold hover:bg-blue-50 hover:border-blue-200 transition">5000</button>
+                    <button @click="amountReceived = Math.ceil(grandTotal)" class="py-2 bg-yellow-100 dark:bg-yellow-900/30 rounded border border-yellow-200 text-xs font-bold text-yellow-700 hover:bg-yellow-200 transition">Exact</button>
                 </div>
             </div>
 
@@ -190,60 +232,81 @@
             isPaymentOpen: false,
             amountReceived: '',
             returnAdjustment: '',
+            paymentMode: 'Cash',
+            selectedWalletId: '',
+            selectedCharges: [],
             cart: [],
 
-            // Inject Laravel Products Here
+            // Inject Laravel Products & Tax Settings & Wallets
             products: @json($items),
+            taxSettings: @json($taxSettings ?? ['tax_enabled' => false, 'tax_rate' => 0.00]),
+            wallets: @json($wallets ?? []),
+            availableCharges: @json($availableCharges ?? []),
 
             get filteredProducts() {
                 const q = (this.search || '').toLowerCase();
                 return this.products.filter(p => {
-                    const name = (p.name || '').toLowerCase();
-                    const code = (p.code || '').toString();
+                    const name = (p.name || p.description || '').toLowerCase();
+                    const code = (p.code || p.barcode || '').toString();
                     const matchesSearch = name.includes(q) || code.includes(this.search || '');
                     const matchesCategory = this.category === 'all' || p.category === this.category;
                     return matchesSearch && matchesCategory;
                 });
             },
 
+            isService(product) {
+                return product && (product.item_type === 'Service' || product.category === 'Service');
+            },
+
+            productStock(product) {
+                if (!product) return 0;
+                return parseFloat(product.on_hand ?? product.stock ?? product.stock_qty ?? 0);
+            },
+
             addToCart(product) {
+                if (!product) return;
+
                 // 1. Play Sound
                 const audio = document.getElementById('beepSound');
-                audio.currentTime = 0;
-                audio.play();
+                if (audio) {
+                    audio.currentTime = 0;
+                    audio.play().catch(() => {});
+                }
 
-                // 2. Logic
+                // 2. Logic (Service items bypass stock check)
                 const existing = this.cart.find(item => item.id === product.id);
+                const isServ = this.isService(product);
+                const availStock = this.productStock(product);
+
                 if (existing) {
-                    if (existing.qty < product.stock) {
+                    if (isServ || existing.qty < availStock) {
                         existing.qty++;
                     } else {
                         alert('Out of stock!');
                     }
                 } else {
-                    if (product.stock > 0) {
+                    if (isServ || availStock > 0) {
                         this.cart.push({
                             ...product,
+                            price: product.price || product.sale_rate || product.rate || 0,
+                            name: product.name || product.description,
                             qty: 1
                         });
                     } else {
                         alert('Out of stock!');
                     }
                 }
-                this.search = ''; // Clear search after add (optional, good for scanners)
-                this.$nextTick(() => {
-                    const searchInput = document.getElementById('product-search');
-                    if (searchInput) searchInput.focus();
-                });
             },
 
             updateQty(index, amount) {
                 const item = this.cart[index];
                 const product = this.products.find(p => p.id === item.id);
+                const isServ = product ? this.isService(product) : (item.item_type === 'Service' || item.category === 'Service');
+                const availStock = product ? this.productStock(product) : parseFloat(item.on_hand ?? item.stock ?? item.stock_qty ?? 0);
 
                 if (item.qty + amount <= 0) {
                     this.removeItem(index);
-                } else if (item.qty + amount > product.stock) {
+                } else if (!isServ && item.qty + amount > availStock) {
                     alert('Cannot exceed available stock!');
                 } else {
                     item.qty += amount;
@@ -261,13 +324,33 @@
             },
 
             get subtotal() {
-                return this.cart.reduce((sum, item) => sum + (Number(item.price) * item.qty), 0).toFixed(2);
+                return this.cart.reduce((sum, item) => sum + (Number(item.price || item.rate || 0) * item.qty), 0).toFixed(2);
+            },
+
+            get taxAmount() {
+                return this.cart.reduce((sum, item) => {
+                    let rate = (item.tax_rate !== null && item.tax_rate !== undefined)
+                        ? parseFloat(item.tax_rate)
+                        : (this.taxSettings && this.taxSettings.tax_enabled ? parseFloat(this.taxSettings.tax_rate) || 0 : 0);
+                    let lineSub = (parseFloat(item.price || item.rate || 0)) * item.qty;
+                    return sum + ((lineSub * rate) / 100);
+                }, 0).toFixed(2);
+            },
+
+            get additionalChargesTotal() {
+                const sub = parseFloat(this.subtotal) || 0;
+                return this.selectedCharges.reduce((sum, charge) => {
+                    let amt = charge.type === 'percentage' ? (sub * parseFloat(charge.value)) / 100 : parseFloat(charge.value);
+                    return sum + (amt || 0);
+                }, 0).toFixed(2);
             },
 
             get grandTotal() {
                 const sub = parseFloat(this.subtotal) || 0;
+                const tax = parseFloat(this.taxAmount) || 0;
+                const charges = parseFloat(this.additionalChargesTotal) || 0;
                 const ret = parseFloat(this.returnAdjustment) || 0;
-                return Math.max(0, sub - ret).toFixed(2);
+                return Math.max(0, sub + tax + charges - ret).toFixed(2);
             },
 
             openPaymentModal() {
@@ -287,7 +370,7 @@
 
             async completeSale() {
                 if (parseFloat(this.amountReceived) < parseFloat(this.grandTotal)) {
-                    alert('Insufficient cash received!');
+                    alert('Insufficient cash/amount received!');
                     return;
                 }
 
@@ -296,7 +379,10 @@
                     cart: this.cart,
                     total: this.grandTotal,
                     amount_received: this.amountReceived,
-                    return_adjustment: parseFloat(this.returnAdjustment) || 0
+                    return_adjustment: parseFloat(this.returnAdjustment) || 0,
+                    payment_mode: this.paymentMode,
+                    wallet_id: this.selectedWalletId,
+                    additional_charges: this.selectedCharges.map(c => c.id)
                 };
 
                 try {
@@ -316,7 +402,7 @@
                     if (result.success) {
                         // 3. Open Receipt in New Popup Window
                         if (result.print_url) {
-                            const PrintWindow = window.open(result.print_url, '_blank', 'width=400,height=600');
+                            window.open(result.print_url, '_blank', 'width=400,height=600');
                         }
 
                         // 4. Reset POS for next customer
@@ -324,18 +410,15 @@
                         this.cart = [];
                         this.isPaymentOpen = false;
                         this.amountReceived = '';
+                        this.selectedCharges = [];
 
-                        // Optional: Reload to update stock visuals if you don't use livewire/sockets
                         window.location.reload();
 
                     } else {
-                        // Handle Laravel Validation Errors or Custom Error Messages
                         let errorMsg = result.message || result.error || 'Unknown error';
-
                         if (result.errors) {
                             errorMsg += '\n' + Object.values(result.errors).flat().join('\n');
                         }
-
                         alert('Error: ' + errorMsg);
                     }
 
@@ -345,14 +428,8 @@
                 }
             },
 
-            selectFirstProduct() {
-                if (this.filteredProducts.length > 0) {
-                    this.addToCart(this.filteredProducts[0]);
-                }
-            },
-
             handleF2(e) {
-                if (this.cart.length > 0 && (this.search || '').trim() === '') {
+                if (this.cart.length > 0) {
                     e.preventDefault();
                     const checkoutBtn = document.getElementById('checkout-btn');
                     if (checkoutBtn) checkoutBtn.focus();
@@ -368,7 +445,6 @@
             opacity: 0;
             transform: scale(0.95);
         }
-
         to {
             opacity: 1;
             transform: scale(1);
@@ -379,7 +455,6 @@
         animation: zoomIn 0.2s ease-out;
     }
 
-    /* Hide number input spinners */
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button {
         -webkit-appearance: none;

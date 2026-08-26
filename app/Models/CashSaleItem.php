@@ -16,7 +16,9 @@ class CashSaleItem extends Model
         'item_name',
         'quantity',
         'rate',
-        'total'
+        'total',
+        'tax_rate',
+        'tax_amount',
     ];
 
     public function sale()

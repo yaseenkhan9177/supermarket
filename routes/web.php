@@ -127,6 +127,9 @@ Route::middleware(['auth:web,employee'])->group(function () {
     // Tax Charge Types quick-add
     Route::post('/tax-charge-types', [\App\Http\Controllers\TaxChargeTypeController::class, 'store'])->name('tax-charge-types.store');
 
+    // Tax Settings Read-only API (for invoice frontend displays)
+    Route::get('/api/tax-settings', [\App\Http\Controllers\TaxSettingsController::class, 'apiGet'])->name('api.tax-settings');
+
     // Delete (universal)
     Route::get('/delete/confirm', [\App\Http\Controllers\DeleteController::class, 'confirm'])->name('delete.confirm');
     Route::post('/delete/destroy', [\App\Http\Controllers\DeleteController::class, 'destroy'])->name('delete.destroy');
@@ -146,6 +149,11 @@ Route::middleware(['auth:web,employee'])->group(function () {
     Route::get('/sales/history', [App\Http\Controllers\SalesController::class, 'history'])->name('sales.history');
     Route::post('/sales/store', [App\Http\Controllers\SalesController::class, 'store'])->name('sales.store');
     Route::get('/sales/{id}/print', [App\Http\Controllers\SalesController::class, 'print'])->name('sales.print');
+    Route::get('/sales/{id}/edit', [App\Http\Controllers\SalesController::class, 'edit'])->name('sales.edit');
+    Route::put('/sales/{id}', [App\Http\Controllers\SalesController::class, 'update'])->name('sales.update');
+    Route::get('/sales/{id}/versions', [App\Http\Controllers\SalesController::class, 'historyVersions'])->name('sales.versions');
+    Route::get('/sales/{id}/versions/{version}', [App\Http\Controllers\SalesController::class, 'showVersion'])->name('sales.version.show');
+    Route::post('/sales/{id}/cancel', [App\Http\Controllers\SalesController::class, 'cancelInvoice'])->name('sales.cancel');
 
     Route::get('/godams', [\App\Http\Controllers\GodamController::class, 'index'])->name('godams.index');
     Route::get('/godams/create', [\App\Http\Controllers\GodamController::class, 'create'])->name('godams.create');
@@ -364,6 +372,27 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
         Route::post('/store', [\App\Http\Controllers\PurchaseReturnController::class, 'store'])->name('store');
     });
 
+    // ─── Expense Management ──────────────────────────────────────────────────
+    Route::prefix('expenses')->name('expenses.')->group(function () {
+        Route::get('/',             [\App\Http\Controllers\Store\ExpenseController::class, 'index'])->name('index');
+        Route::get('/create',       [\App\Http\Controllers\Store\ExpenseController::class, 'create'])->name('create');
+        Route::post('/',            [\App\Http\Controllers\Store\ExpenseController::class, 'store'])->name('store');
+        Route::get('/{id}',         [\App\Http\Controllers\Store\ExpenseController::class, 'show'])->name('show');
+        Route::get('/{id}/edit',    [\App\Http\Controllers\Store\ExpenseController::class, 'edit'])->name('edit');
+        Route::put('/{id}',         [\App\Http\Controllers\Store\ExpenseController::class, 'update'])->name('update');
+        Route::delete('/{id}',      [\App\Http\Controllers\Store\ExpenseController::class, 'destroy'])->name('destroy');
+        Route::get('/{id}/print',   [\App\Http\Controllers\Store\ExpenseController::class, 'printVoucher'])->name('print');
+        Route::get('/export/download', [\App\Http\Controllers\Store\ExpenseController::class, 'export'])->name('export');
+    });
+
+    // ─── Expense Categories ──────────────────────────────────────────────────
+    Route::prefix('expense-categories')->name('expense-categories.')->group(function () {
+        Route::get('/',          [\App\Http\Controllers\Store\ExpenseCategoryController::class, 'index'])->name('index');
+        Route::post('/',         [\App\Http\Controllers\Store\ExpenseCategoryController::class, 'store'])->name('store');
+        Route::put('/{id}',      [\App\Http\Controllers\Store\ExpenseCategoryController::class, 'update'])->name('update');
+        Route::delete('/{id}',   [\App\Http\Controllers\Store\ExpenseCategoryController::class, 'destroy'])->name('destroy');
+    });
+
     // Report Center
     Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/data', [\App\Http\Controllers\ReportController::class, 'data'])->name('reports.data');
@@ -384,6 +413,7 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
         Route::post('/daily-closing', [\App\Http\Controllers\Store\DailyClosingController::class, 'store'])->name('daily-closing.store');
         Route::get('/audit-log', [\App\Http\Controllers\Store\AuditLogController::class, 'index'])->name('audit-log');
         Route::get('/profit-loss', [\App\Http\Controllers\Store\ProfitLossController::class, 'index'])->name('profit-loss');
+        Route::get('/expenses', [\App\Http\Controllers\Store\ExpenseController::class, 'report'])->name('expenses');
     });
 
     // Backup Direct Download Route (Owner / Admin)
@@ -426,6 +456,14 @@ Route::middleware(['auth:web', 'role:owner'])->group(function () {
     // Settings
     Route::get('/settings/general', [GeneralSettingsController::class, 'index'])->name('settings.general');
     Route::post('/settings/update', [\App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
+    Route::get('/settings/tax', [\App\Http\Controllers\TaxSettingsController::class, 'index'])->name('settings.tax');
+    Route::post('/settings/tax', [\App\Http\Controllers\TaxSettingsController::class, 'update'])->name('settings.tax.update');
+    Route::get('/settings/additional-charges', [\App\Http\Controllers\AdditionalChargesController::class, 'index'])->name('settings.additional-charges');
+    Route::post('/settings/additional-charges', [\App\Http\Controllers\AdditionalChargesController::class, 'store'])->name('settings.additional-charges.store');
+    Route::post('/settings/additional-charges/{id}/update', [\App\Http\Controllers\AdditionalChargesController::class, 'update'])->name('settings.additional-charges.update');
+    Route::post('/settings/additional-charges/{id}/delete', [\App\Http\Controllers\AdditionalChargesController::class, 'destroy'])->name('settings.additional-charges.destroy');
+    Route::post('/items/quick-store', [\App\Http\Controllers\ItemController::class, 'quickStore'])->name('items.quick-store');
+    Route::get('/api/additional-charges', [\App\Http\Controllers\AdditionalChargesController::class, 'apiGet']);
     Route::get('/settings/access', [GeneralSettingsController::class, 'access'])->name('settings.access');
     Route::get('/settings/users', [\App\Http\Controllers\UserAccessController::class, 'index'])->name('settings.users');
     Route::post('/settings/users/{id}', [\App\Http\Controllers\UserAccessController::class, 'update'])->name('settings.users.update');

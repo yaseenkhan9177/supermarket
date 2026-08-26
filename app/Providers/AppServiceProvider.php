@@ -846,6 +846,8 @@ class AppServiceProvider extends ServiceProvider
                 :class="darkMode ? '' : 'pos-light-mode'"
                 class="pos-wrapper">
 
+                <x-tax-setup-banner />
+
                 {{-- ============================================================ --}}
                 {{-- BAND 1: SLIM NAV                                             --}}
                 {{-- ============================================================ --}}

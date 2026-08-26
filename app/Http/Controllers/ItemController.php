@@ -814,4 +814,50 @@ class ItemController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+
+    public function quickStore(Request $request)
+    {
+        $validated = $request->validate([
+            'description' => 'required|string|max:255',
+            'code'        => 'nullable|string|max:100',
+            'barcode'     => 'nullable|string|max:100',
+            'cost_rate'   => 'required|numeric|min:0',
+            'price'       => 'required|numeric|min:0',
+            'tax_rate'    => 'nullable|numeric|min:0|max:100',
+            'item_type'   => 'nullable|string|in:Inventory,Service',
+        ]);
+
+        $code = !empty($validated['code']) ? $validated['code'] : (!empty($validated['barcode']) ? $validated['barcode'] : 'ITM-' . strtoupper(Str::random(6)));
+
+        $itemData = [
+            'description' => $validated['description'],
+            'code'        => $code,
+            'cost_rate'   => round((float) $validated['cost_rate'], 2),
+            'sale_rate'   => round((float) $validated['price'], 2),
+            'tax_rate'    => isset($validated['tax_rate']) && $validated['tax_rate'] !== '' ? round((float) $validated['tax_rate'], 2) : null,
+            'item_type'   => $validated['item_type'] ?? 'Inventory',
+            'on_hand'     => 0,
+        ];
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('items', 'barcode')) {
+            $itemData['barcode'] = !empty($validated['barcode']) ? $validated['barcode'] : $code;
+        }
+
+        $item = Item::create($itemData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Product created successfully',
+            'product' => [
+                'id'          => $item->id,
+                'description' => $item->description,
+                'code'        => $item->code,
+                'barcode'     => $item->code,
+                'cost_rate'   => (float) $item->cost_rate,
+                'price'       => (float) $item->price,
+                'tax_rate'    => $item->tax_rate !== null ? (float) $item->tax_rate : null,
+                'item_type'   => $item->item_type,
+            ]
+        ]);
+    }
 }

@@ -14,7 +14,6 @@ class Customer extends Model
         'phone',
         'address',
         'credit_limit',
-        'balance',
         'store_credit',
         'status',
         'written_off_at',

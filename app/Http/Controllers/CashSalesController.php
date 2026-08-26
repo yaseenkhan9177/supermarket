@@ -10,11 +10,19 @@ use App\Models\Customer;
 use App\Models\CustomerLedgerEntry;
 use App\Models\User;
 use App\Services\FifoStockService;
+use App\Services\TaxService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class CashSalesController extends Controller
 {
+    protected TaxService $taxService;
+
+    public function __construct(TaxService $taxService)
+    {
+        $this->taxService = $taxService;
+    }
+
     // 1. Show the Form
     public function create()
     {
@@ -28,22 +36,46 @@ class CashSalesController extends Controller
         $activeWallet = \App\Models\Wallet::where('is_active', true)->first();
         $defaultWalletId = $activeWallet ? $activeWallet->id : null;
         $activeWalletName = $activeWallet ? $activeWallet->name : 'Shop Counter';
+        $taxSettings = $this->taxService->getSettings();
 
-        return view('cash-sales.create', compact('customers', 'salesmen', 'nextInvoice', 'activeWalletName', 'wallets', 'defaultWalletId'));
+        return view('cash-sales.create', compact('customers', 'salesmen', 'nextInvoice', 'activeWalletName', 'wallets', 'defaultWalletId', 'taxSettings'));
     }
 
     // 2. Search Items API
     public function searchItems(Request $request)
     {
-        $query = $request->get('q');
+        $query = $request->get('q', $request->get('query', ''));
 
-        // 🔥 UPDATED: Select 'on_hand' instead of stock_qty to show correct stock in search
-        // Schema mapping: description -> name, sale_rate -> sale_price
+        // Standardized payload: on_hand (canonical), stock_qty, stock, item_type, name, code, barcode, price, etc.
         $items = Item::where('description', 'like', "%{$query}%")
             ->orWhere('code', 'like', "%{$query}%")
-            ->select('id', 'description as name', 'code', 'sale_rate as price', 'on_hand as stock_qty', 'item_type')
-            ->limit(50) // ✅ CHANGED: Increased limit to show more results
-            ->get();
+            ->select(
+                'id',
+                'description',
+                'description as name',
+                'code',
+                'code as barcode',
+                'sale_rate',
+                'sale_rate as price',
+                'sale_rate as sale_price',
+                'sale_rate as rate',
+                'on_hand',
+                'on_hand as stock_qty',
+                'on_hand as stock',
+                'item_type',
+                'item_type as category',
+                'image_path'
+            )
+            ->limit(50)
+            ->get()
+            ->map(function ($item) {
+                $item->on_hand   = (float) ($item->on_hand ?? 0);
+                $item->stock_qty = $item->on_hand;
+                $item->stock     = $item->on_hand;
+                $item->item_type = $item->item_type ?? 'Inventory';
+                return $item;
+            });
+
         return response()->json($items);
     }
 
@@ -128,10 +160,16 @@ class CashSalesController extends Controller
                     }
                 }
 
-                // C. Update Sale header with FIFO-accurate totals
-                $grandTotal = max(0, $calculatedSubtotal - $returnAdj);
+                // C. Authoritative backend Tax & Grand Total calculation
+                $taxResult = $this->taxService->calculate($calculatedSubtotal, 0, $returnAdj);
+                $grandTotal = $taxResult['grand_total'];
+                $taxTotal   = $taxResult['tax_amount'];
+                $taxRate    = $taxResult['tax_rate'];
+
                 $sale->update([
                     'subtotal'      => $calculatedSubtotal,
+                    'tax_rate'      => $taxRate,
+                    'tax_total'     => $taxTotal,
                     'grand_total'   => $grandTotal,
                     'change_amount' => ($request->received_amount ?? 0) - $grandTotal,
                 ]);

@@ -1,83 +1,84 @@
 <x-filament-panels::page>
-    <style>
-        /* --- 1. HIDE DEFAULT FILAMENT UI --- */
-        .fi-topbar,
-        .fi-sidebar,
-        .fi-header {
-            display: none !important;
-        }
-
-        .fi-main {
-            padding: 0 !important;
-            max-width: 100% !important;
-            margin: 0 !important;
-        }
-
-        .fi-body {
-            padding: 0 !important;
-            background: transparent !important;
-        }
-
-        /* --- 2. ANIMATED GRADIENT BORDER --- */
-        @keyframes borderRotate {
-            0% {
-                background-position: 0% 50%;
+    <div class="w-full">
+        <style>
+            /* --- 1. HIDE DEFAULT FILAMENT UI --- */
+            .fi-topbar,
+            .fi-sidebar,
+            .fi-header {
+                display: none !important;
             }
 
-            50% {
-                background-position: 100% 50%;
+            .fi-main {
+                padding: 0 !important;
+                max-width: 100% !important;
+                margin: 0 !important;
             }
 
-            100% {
-                background-position: 0% 50%;
+            .fi-body {
+                padding: 0 !important;
+                background: transparent !important;
             }
-        }
 
-        .gradient-border-wrapper {
-            position: relative;
-            border-radius: 0.75rem;
-            /* rounded-xl */
-            padding: 2px;
-            /* Border width */
-            background: transparent;
-            transition: all 0.3s ease;
-        }
+            /* --- 2. ANIMATED GRADIENT BORDER --- */
+            @keyframes borderRotate {
+                0% {
+                    background-position: 0% 50%;
+                }
 
-        /* On Hover: Show animated gradient */
-        .gradient-border-wrapper:hover {
-            background: linear-gradient(60deg, #6366f1, #ec4899, #8b5cf6, #3b82f6);
-            background-size: 300% 300%;
-            animation: borderRotate 3s ease infinite;
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
-        }
+                50% {
+                    background-position: 100% 50%;
+                }
 
-        /* --- 3. GLASSMORPHISM & UTILS --- */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
+                100% {
+                    background-position: 0% 50%;
+                }
+            }
 
-        .dark .glass-panel {
-            background: rgba(17, 24, 39, 0.7);
-        }
+            .gradient-border-wrapper {
+                position: relative;
+                border-radius: 0.75rem;
+                /* rounded-xl */
+                padding: 2px;
+                /* Border width */
+                background: transparent;
+                transition: all 0.3s ease;
+            }
 
-        /* Smooth Theme Transition */
-        html,
-        body,
-        div,
-        span,
-        button,
-        p {
-            transition-property: background-color, border-color, color, fill, stroke;
-            transition-duration: 300ms;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        }
-    </style>
+            /* On Hover: Show animated gradient */
+            .gradient-border-wrapper:hover {
+                background: linear-gradient(60deg, #6366f1, #ec4899, #8b5cf6, #3b82f6);
+                background-size: 300% 300%;
+                animation: borderRotate 3s ease infinite;
+                box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+            }
 
-    <div class="max-w-7xl mx-auto w-full">
+            /* --- 3. GLASSMORPHISM & UTILS --- */
+            .glass-panel {
+                background: rgba(255, 255, 255, 0.7);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+            }
 
-    <!-- Data Injection -->
+            .dark .glass-panel {
+                background: rgba(17, 24, 39, 0.7);
+            }
+
+            /* Smooth Theme Transition */
+            html,
+            body,
+            div,
+            span,
+            button,
+            p {
+                transition-property: background-color, border-color, color, fill, stroke;
+                transition-duration: 300ms;
+                transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            }
+        </style>
+
+        <div class="max-w-7xl mx-auto w-full">
+
+        <!-- Data Injection -->
     <div id="filament-chart-data" class="hidden"
         data-paid="{{ json_encode($chartData['paid_vs_unpaid']) }}"
         data-debit="{{ json_encode($chartData['daily_debit']) }}"
@@ -324,5 +325,5 @@
             }, 100); // Small delay to ensure rendering
         });
     </script>
-
+    </div>
 </x-filament-panels::page>

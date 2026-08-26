@@ -53,23 +53,27 @@
                     class="p-4 flex justify-between items-center cursor-pointer transition-colors border-b border-slate-200 dark:border-slate-700/50 last:border-0"
                     :class="{
                         'bg-blue-600 text-white': activeSearchIndex === index,
-                        'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700': activeSearchIndex !== index && item.on_hand > 0,
-                        'bg-red-50 dark:bg-red-900/20 opacity-60 cursor-not-allowed': item.on_hand <= 0 && activeSearchIndex !== index,
-                        'bg-red-600 dark:bg-red-900/50 text-white': item.on_hand <= 0 && activeSearchIndex === index
+                        'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700': activeSearchIndex !== index && isAvailable(item),
+                        'bg-red-50 dark:bg-red-900/20 opacity-60 cursor-not-allowed': !isAvailable(item) && activeSearchIndex !== index,
+                        'bg-red-600 dark:bg-red-900/50 text-white': !isAvailable(item) && activeSearchIndex === index
                     }">
                     <div>
                         <div class="font-bold flex items-center gap-2">
                             <span x-text="item.name || item.description"></span>
-                            <span x-show="item.low_stock && item.on_hand > 0" class="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-500 border border-yellow-500/30">LOW STOCK</span>
-                            <span x-show="item.on_hand <= 0" class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-500 border border-red-500/30">OUT OF STOCK</span>
+                            <span x-show="isService(item)" class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">SERVICE</span>
+                            <span x-show="!isService(item) && item.low_stock && itemStock(item) > 0" class="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-500 border border-yellow-500/30">LOW STOCK</span>
+                            <span x-show="!isService(item) && itemStock(item) <= 0" class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-500 border border-red-500/30">OUT OF STOCK</span>
                         </div>
                         <div class="text-xs opacity-70 mt-1">
                             Code: <span class="font-mono" x-html="highlight(item.barcode || item.code)"></span> |
-                            Stock: <span :class="{'text-red-400 font-bold': item.on_hand <= 0, 'text-emerald-400 font-bold': item.on_hand > 0}" x-text="item.on_hand"></span>
+                            <span x-show="isService(item)" class="text-indigo-400 font-bold">Non-Stock</span>
+                            <span x-show="!isService(item)">
+                                Stock: <span :class="{'text-red-400 font-bold': itemStock(item) <= 0, 'text-emerald-400 font-bold': itemStock(item) > 0}" x-text="itemStock(item)"></span>
+                            </span>
                         </div>
                     </div>
                     <div class="text-right">
-                        <div class="font-mono font-bold text-lg" x-text="formatPrice(item.rate || item.sale_rate)"></div>
+                        <div class="font-mono font-bold text-lg" x-text="formatPrice(item.rate || item.sale_rate || item.sale_price || item.price)"></div>
                     </div>
                 </div>
             </template>
@@ -91,6 +95,20 @@
                         this.$refs.searchInput.focus();
                     }
                 });
+            },
+
+            isService(item) {
+                return item && (item.item_type === 'Service' || item.category === 'Service');
+            },
+
+            itemStock(item) {
+                if (!item) return 0;
+                return parseFloat(item.on_hand ?? item.stock_qty ?? item.stock ?? 0);
+            },
+
+            isAvailable(item) {
+                if (!item) return false;
+                return this.isService(item) || this.itemStock(item) > 0;
             },
 
             // Search with debounce (triggered by Alpine's debounce modifier)
@@ -123,13 +141,13 @@
                         }
 
                         // Auto-select if exact barcode match (single result)
-                        if (data.length === 1 && this.searchQuery === data[0].barcode) {
+                        if (data.length === 1 && this.searchQuery === (data[0].barcode || data[0].code)) {
                             this.selectResult(data[0]);
                             return;
                         }
 
-                        // Auto-highlight first in-stock item
-                        this.activeSearchIndex = this.searchResults.findIndex(item => item.on_hand > 0);
+                        // Auto-highlight first available/in-stock item
+                        this.activeSearchIndex = this.searchResults.findIndex(item => this.isAvailable(item));
 
                         // Scroll to active
                         if (this.activeSearchIndex >= 0) {
@@ -155,9 +173,9 @@
 
                 // Auto-select first available item
                 if (this.searchResults.length > 0) {
-                    const firstAvail = this.searchResults.find(i => i.on_hand > 0);
+                    const firstAvail = this.searchResults.find(i => this.isAvailable(i));
                     if (firstAvail) {
-                        console.log('[Search] Auto-selecting first available item:', firstAvail.name);
+                        console.log('[Search] Auto-selecting first available item:', firstAvail.name || firstAvail.description);
                         this.selectResult(firstAvail);
                     } else {
                         console.log('[Search] All results out of stock, dispatching product-not-found');
@@ -175,8 +193,8 @@
 
             // Select product
             selectResult(item) {
-                // Only block out-of-stock selection if allowOutOfStock is false
-                if (item.on_hand <= 0 && !this.allowOutOfStock) {
+                // Only block out-of-stock selection if allowOutOfStock is false and item is not available
+                if (!this.isAvailable(item) && !this.allowOutOfStock) {
                     this.$dispatch('out-of-stock', item);
                     return;
                 }
@@ -208,9 +226,9 @@
                     return;
                 }
 
-                // Find next in-stock item
+                // Find next available item
                 while (nextIndex < this.searchResults.length) {
-                    if (this.searchResults[nextIndex].on_hand > 0) {
+                    if (this.isAvailable(this.searchResults[nextIndex])) {
                         this.activeSearchIndex = nextIndex;
                         this.scrollToActive();
                         return;
@@ -232,9 +250,9 @@
                     return;
                 }
 
-                // Find previous in-stock item
+                // Find previous available item
                 while (prevIndex >= 0) {
-                    if (this.searchResults[prevIndex].on_hand > 0) {
+                    if (this.isAvailable(this.searchResults[prevIndex])) {
                         this.activeSearchIndex = prevIndex;
                         this.scrollToActive();
                         return;

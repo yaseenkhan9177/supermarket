@@ -205,31 +205,7 @@
                             <tr class="bg-indigo-950/20 border-t border-indigo-900/40">
                                 <td class="p-3 text-center"><i class="fas fa-search text-indigo-400"></i></td>
                                 <td class="p-3 relative" colspan="9">
-                                    <input type="text" x-model="searchQuery"
-                                           @input.debounce.200ms="performSearch()"
-                                           @keydown.enter.prevent="selectFirstResult()"
-                                           placeholder="🔍 Type product name or barcode to search..."
-                                           class="w-full bg-gray-950 border border-indigo-800 rounded-xl py-2.5 px-4 text-white focus:ring-2 focus:ring-indigo-500 outline-none placeholder-gray-500 text-xs shadow-inner">
-                                    <div x-show="searchResults.length > 0" @click.outside="searchResults = []"
-                                         class="absolute top-14 left-3 w-[95%] bg-gray-900 border border-indigo-700 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto"
-                                         style="display:none;">
-                                        <ul>
-                                            <template x-for="item in searchResults" :key="item.id">
-                                                <li @click="addItem(item)" class="p-3 hover:bg-indigo-600 hover:text-white cursor-pointer flex justify-between items-center border-b border-gray-800 last:border-0 group transition text-xs">
-                                                    <div class="flex-1 min-w-0 pr-4">
-                                                        <span class="font-bold text-gray-200 group-hover:text-white block truncate text-xs" x-text="item.name"></span>
-                                                        <span class="text-[10px] text-gray-400 font-mono group-hover:text-indigo-200" x-text="item.code"></span>
-                                                    </div>
-                                                    <div class="text-right whitespace-nowrap">
-                                                        <span class="block font-bold text-indigo-400 group-hover:text-white text-xs" x-text="'Rs. ' + item.price"></span>
-                                                        <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded"
-                                                              :class="item.stock_qty > 0 ? 'bg-green-900/60 text-green-300' : 'bg-red-900/60 text-red-300'"
-                                                              x-text="item.stock_qty > 0 ? 'Stock: ' + item.stock_qty : 'Out of Stock'"></span>
-                                                    </div>
-                                                </li>
-                                            </template>
-                                        </ul>
-                                    </div>
+                                    <x-smart-product-search @product-selected="addItem($event.detail)" @product-not-found="openQuickProductModal($event.detail)" placeholder="🔍 Search product by name, code or barcode..." />
                                 </td>
                                 <td></td>
                             </tr>
@@ -525,6 +501,61 @@
                     <i class="fas fa-save mr-1"></i> Save
                 </button>
             </div>
+    <!-- Modal: Quick Add Product -->
+    <div x-show="showQuickProductModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100]" style="display:none;">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl text-white">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3 mb-4">
+                <h3 class="font-bold text-indigo-400 flex items-center gap-2 text-sm">
+                    <i class="fas fa-box-open"></i> Quick Add New Product
+                </h3>
+                <button type="button" @click="showQuickProductModal = false" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase block mb-1">Product Name / Description *</label>
+                    <input type="text" x-model="quickProduct.description" placeholder="e.g. Cooking Oil 1L"
+                           class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-xs text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase block mb-1">Barcode / SKU</label>
+                        <input type="text" x-model="quickProduct.barcode" placeholder="Barcode"
+                               class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-xs text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase block mb-1">Type</label>
+                        <select x-model="quickProduct.item_type" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-xs text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="Inventory">Inventory</option>
+                            <option value="Service">Service</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase block mb-1">Cost Rate *</label>
+                        <input type="number" step="0.01" min="0" x-model="quickProduct.cost_rate" placeholder="Cost"
+                               class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-xs text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase block mb-1">Sale Price *</label>
+                        <input type="number" step="0.01" min="0" x-model="quickProduct.price" placeholder="Price"
+                               class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-xs text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase block mb-1">Tax Rate %</label>
+                        <input type="number" step="0.01" min="0" max="100" x-model="quickProduct.tax_rate" placeholder="Optional"
+                               class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-xs text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" @click="showQuickProductModal = false" class="px-4 py-2 border border-gray-700 rounded-xl text-gray-300 hover:bg-gray-800 text-xs font-bold">Cancel</button>
+                <button type="button" @click="saveQuickProduct()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1">
+                    <i class="fas fa-save"></i> Save Product
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -560,6 +591,52 @@
             discount: 0,
             supplierCredit: 0,
             showSupplierModal: false,
+            showQuickProductModal: false,
+            quickProduct: { description: '', code: '', barcode: '', cost_rate: 0, price: 0, tax_rate: '', item_type: 'Inventory' },
+            openQuickProductModal(detail) {
+                let q = (detail && detail.query) ? detail.query : '';
+                this.quickProduct.description = q;
+                this.quickProduct.code = q;
+                this.quickProduct.barcode = q;
+                this.showQuickProductModal = true;
+            },
+            async saveQuickProduct() {
+                if (!this.quickProduct.description) {
+                    alert('Product name is required.');
+                    return;
+                }
+                try {
+                    let res = await fetch('/items/quick-store', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify(this.quickProduct)
+                    });
+                    let data = await res.json();
+                    if (data.success) {
+                        this.addItem({
+                            id: data.product.id,
+                            code: data.product.code,
+                            name: data.product.description,
+                            cost_price: data.product.cost_rate,
+                            price: data.product.price,
+                            stock_qty: 0
+                        });
+                        this.showQuickProductModal = false;
+                        this.quickProduct = { description: '', code: '', barcode: '', cost_rate: 0, price: 0, tax_rate: '', item_type: 'Inventory' };
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({ title: 'Added!', text: 'Product created successfully.', icon: 'success', background: '#1f2937', color: '#fff', timer: 1500, showConfirmButton: false });
+                        }
+                    } else {
+                        alert(data.message || 'Error creating product.');
+                    }
+                } catch(e) {
+                    console.error('Quick store failed', e);
+                    alert('Failed to create product.');
+                }
+            },
             newSupplier: { name: '', phone: '' },
             searchQuery: '',
             searchResults: [],

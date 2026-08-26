@@ -9,11 +9,19 @@ use App\Models\Item;
 use App\Models\Customer;
 use App\Models\User;
 use App\Services\FifoStockService;
+use App\Services\TaxService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class DebitSalesController extends Controller
 {
+    protected TaxService $taxService;
+
+    public function __construct(TaxService $taxService)
+    {
+        $this->taxService = $taxService;
+    }
+
     // 0. Index (Redirects to Create)
     public function index()
     {
@@ -29,20 +37,46 @@ class DebitSalesController extends Controller
 
         // Generate Invoice No (DS = Debit Sale)
         $nextInvoice = 'DS-' . date('Y') . '-' . str_pad(Sale::count() + 1, 4, '0', STR_PAD_LEFT);
+        $taxSettings = $this->taxService->getSettings();
 
-        return view('debit-sales.create', compact('customers', 'salesmen', 'nextInvoice'));
+        return view('debit-sales.create', compact('customers', 'salesmen', 'nextInvoice', 'taxSettings'));
     }
 
-    // 2. Search API (Same as Cash Sales)
+    // 2. Search API (Same standardized payload as Cash Sales)
     public function searchItems(Request $request)
     {
-        $query = $request->get('q');
-        // Schema Mapping: description -> name, sale_rate -> price
+        $query = $request->get('q', $request->get('query', ''));
+
+        // Standardized payload: on_hand (canonical), stock_qty, stock, item_type, name, code, barcode, price, etc.
         $items = Item::where('description', 'like', "%{$query}%")
             ->orWhere('code', 'like', "%{$query}%")
-            ->select('id', 'description as name', 'code', 'sale_rate as price', 'on_hand as stock_qty', 'item_type')
+            ->select(
+                'id',
+                'description',
+                'description as name',
+                'code',
+                'code as barcode',
+                'sale_rate',
+                'sale_rate as price',
+                'sale_rate as sale_price',
+                'sale_rate as rate',
+                'on_hand',
+                'on_hand as stock_qty',
+                'on_hand as stock',
+                'item_type',
+                'item_type as category',
+                'image_path'
+            )
             ->limit(50)
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                $item->on_hand   = (float) ($item->on_hand ?? 0);
+                $item->stock_qty = $item->on_hand;
+                $item->stock     = $item->on_hand;
+                $item->item_type = $item->item_type ?? 'Inventory';
+                return $item;
+            });
+
         return response()->json($items);
     }
 
@@ -126,10 +160,16 @@ class DebitSalesController extends Controller
                     }
                 }
 
-                // C. Update Sale header with FIFO-accurate totals
-                $grandTotal = $calculatedSubtotal;
+                // C. Authoritative backend Tax & Grand Total calculation
+                $taxResult = $this->taxService->calculate($calculatedSubtotal, 0, 0);
+                $grandTotal = $taxResult['grand_total'];
+                $taxTotal   = $taxResult['tax_amount'];
+                $taxRate    = $taxResult['tax_rate'];
+
                 $sale->update([
                     'subtotal'    => $calculatedSubtotal,
+                    'tax_rate'    => $taxRate,
+                    'tax_total'   => $taxTotal,
                     'grand_total' => $grandTotal,
                 ]);
 

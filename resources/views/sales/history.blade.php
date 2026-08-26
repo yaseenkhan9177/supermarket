@@ -156,10 +156,20 @@
                         <td class="px-6 py-4 text-right font-bold text-slate-800 dark:text-white">
                             Rs. {{ number_format($sale->grand_total, 2) }}
                         </td>
-                        <td class="px-6 py-4 text-center">
-                            <button onclick="printInvoice({{ $sale->id }})" class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition flex items-center justify-center">
-                                <i class="fas fa-print text-xs"></i>
-                            </button>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center justify-center gap-1.5">
+                                @if($sale->status !== 'cancelled')
+                                <a href="{{ route('sales.edit', $sale->id) }}" class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition flex items-center justify-center" title="Edit Invoice">
+                                    <i class="fas fa-edit text-xs"></i>
+                                </a>
+                                @endif
+                                <a href="{{ route('sales.versions', $sale->id) }}" class="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition flex items-center justify-center" title="Version History & Auditing">
+                                    <i class="fas fa-history text-xs"></i>
+                                </a>
+                                <button onclick="printInvoice({{ $sale->id }})" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-700 hover:text-white transition flex items-center justify-center" title="Print Receipt">
+                                    <i class="fas fa-print text-xs"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     @empty

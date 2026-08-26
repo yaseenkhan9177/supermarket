@@ -504,6 +504,9 @@
     :class="darkMode ? '' : 'pos-light-mode'"
     class="pos-wrapper mb-6">
 
+    {{-- First-Time Tax Setup Notification Banner (Store Admin only, unconfigured state) --}}
+    <x-tax-setup-banner />
+
     {{-- ============================================================ --}}
     {{-- BAND 1: SLIM NAV                                             --}}
     {{-- ============================================================ --}}
@@ -1006,6 +1009,14 @@
                         </div>
                         <span class="pos-subnav-label">Access</span>
                     </a>
+                    @if(Auth::user()?->hasRole('owner') || in_array(Auth::user()?->role, ['owner', 'admin', 'Store Admin', 'Owner']))
+                    <a href="{{ route('settings.tax') }}" class="pos-subnav-link">
+                        <div class="pos-subnav-icon" style="background-color: rgba(55,138,221,0.12); color: var(--pos-blue);">
+                            <i class="fas fa-percent text-sm"></i>
+                        </div>
+                        <span class="pos-subnav-label">Tax Settings</span>
+                    </a>
+                    @endif
                     <a href="{{ route('accounts.import.show') }}" class="pos-subnav-link">
                         <div class="pos-subnav-icon" style="background-color: rgba(55,138,221,0.12); color: var(--pos-blue);">
                             <i class="fas fa-file-import text-sm"></i>
@@ -1147,6 +1158,10 @@
 
                 {{-- Accounts Submenu --}}
                 <div x-show="activeTab === 'accounts'" class="pos-subnav-menu" style="display: none;">
+                    <a href="{{ route('expenses.index') }}" class="pos-subnav-link">
+                        <div class="pos-subnav-icon" style="background-color: rgba(239,68,68,0.12); color: #ef4444;"><i class="fas fa-receipt text-sm"></i></div>
+                        <span class="pos-subnav-label">Expenses</span>
+                    </a>
                     <a href="{{ route('journals.create') }}" class="pos-subnav-link">
                         <div class="pos-subnav-icon" style="background-color: rgba(55,138,221,0.12); color: var(--pos-blue);"><i class="fas fa-book text-sm"></i></div>
                         <span class="pos-subnav-label">Journal</span>
@@ -1182,6 +1197,10 @@
                     <a href="{{ route('reports.purchases') }}" class="pos-subnav-link">
                         <div class="pos-subnav-icon" style="background-color: rgba(239,159,39,0.12); color: var(--pos-orange);"><i class="fas fa-shopping-bag text-sm"></i></div>
                         <span class="pos-subnav-label">Purchase Rep</span>
+                    </a>
+                    <a href="{{ route('reports.expenses') }}" class="pos-subnav-link">
+                        <div class="pos-subnav-icon" style="background-color: rgba(239,68,68,0.12); color: #ef4444;"><i class="fas fa-receipt text-sm"></i></div>
+                        <span class="pos-subnav-label">Expense Rep</span>
                     </a>
                     <a href="{{ route('reports.profit-loss') }}" class="pos-subnav-link">
                         <div class="pos-subnav-icon" style="background-color: rgba(16,185,129,0.12); color: var(--pos-green);"><i class="fas fa-file-invoice-dollar text-sm"></i></div>

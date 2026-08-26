@@ -57,11 +57,19 @@
                     @endforeach
                 </select>
             </div>
+            <div class="flex justify-between items-center mb-2 text-xs text-slate-400 font-bold uppercase">
+                <span>Subtotal</span>
+                <span class="font-mono text-slate-300 font-bold" x-text="'Rs. ' + subtotal"></span>
+            </div>
+            <div class="flex justify-between items-center mb-2 text-xs font-bold uppercase" x-show="taxSettings.tax_enabled">
+                <span class="text-blue-400" x-text="'Tax (' + (parseFloat(taxSettings.tax_rate) || 0) + '%)'"></span>
+                <span class="font-mono text-blue-400 font-bold" x-text="'Rs. ' + taxAmount"></span>
+            </div>
             <div class="flex justify-between items-center mb-3">
                 <span class="text-xs text-slate-400 font-bold uppercase">Return Adj (Rs)</span>
                 <input type="number" x-model="return_adjustment" placeholder="0" class="w-24 bg-slate-950 border border-slate-700 rounded p-1 text-right text-white text-xs focus:border-blue-500 outline-none">
             </div>
-            <div class="flex justify-between items-end mb-3">
+            <div class="flex justify-between items-end mb-3 pt-2 border-t border-slate-800">
                 <span class="text-sm text-slate-400 font-bold uppercase">Total</span>
                 <span class="text-3xl lg:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300 tracking-tight" x-text="'Rs. ' + netTotal"></span>
             </div>
@@ -121,8 +129,8 @@
                                     <div class="text-right whitespace-nowrap">
                                         <span class="block font-bold text-green-400 text-base" x-text="'Rs. ' + item.price"></span>
                                         <span class="text-xs uppercase font-bold px-2 py-0.5 rounded-md bg-slate-800 group-hover:bg-blue-500 group-hover:text-white mt-1 inline-block"
-                                            :class="item.stock_qty > 0 ? 'text-yellow-400' : 'text-red-400'"
-                                            x-text="item.stock_qty > 0 ? 'Stock: ' + item.stock_qty : 'Out of Stock'"></span>
+                                            :class="(item.item_type === 'Service' || item.category === 'Service') ? 'text-indigo-400' : (parseFloat(item.on_hand ?? item.stock_qty ?? item.stock ?? 0) > 0 ? 'text-yellow-400' : 'text-red-400')"
+                                            x-text="(item.item_type === 'Service' || item.category === 'Service') ? 'Service' : (parseFloat(item.on_hand ?? item.stock_qty ?? item.stock ?? 0) > 0 ? 'Stock: ' + (item.on_hand ?? item.stock_qty ?? item.stock) : 'Out of Stock')"></span>
                                     </div>
                                 </li>
                             </template>
@@ -260,6 +268,25 @@
             lastSaleId: null,
             showCustomerModal: false,
             newCustomer: { name: '', phone: '', address: '' },
+            taxSettings: @json($taxSettings ?? ['tax_enabled' => false, 'tax_rate' => 0.00]),
+
+            get subtotal() {
+                return this.rows.reduce((sum, row) => sum + (parseFloat(row.qty || 0) * parseFloat(row.price || 0)), 0).toFixed(2);
+            },
+
+            get taxAmount() {
+                if (!this.taxSettings || !this.taxSettings.tax_enabled) return (0).toFixed(2);
+                let rate = parseFloat(this.taxSettings.tax_rate) || 0;
+                let sub = parseFloat(this.subtotal) || 0;
+                return ((sub * rate) / 100).toFixed(2);
+            },
+
+            get netTotal() {
+                const sub = parseFloat(this.subtotal) || 0;
+                const tax = parseFloat(this.taxAmount) || 0;
+                const ret = parseFloat(this.return_adjustment) || 0;
+                return Math.max(0, sub + tax - ret).toFixed(2);
+            },
 
             async saveCustomer() {
                 if (!this.newCustomer.name) {
@@ -277,11 +304,10 @@
                     });
                     let data = await response.json();
                     if (data.success) {
-                        // Find the select element inside the cashSaleInvoice component
                         let select = document.querySelector('select[x-model="customer_id"]');
                         let phoneStr = data.customer.phone ? ' (' + data.customer.phone + ')' : '';
                         let option = new Option(data.customer.name + phoneStr, data.customer.id);
-                        select.add(option);
+                        if (select) select.add(option);
                         this.customer_id = data.customer.id;
                         this.showCustomerModal = false;
                         this.newCustomer = { name: '', phone: '', address: '' };
@@ -292,12 +318,6 @@
                     console.error(err);
                     alert('System error while saving customer.');
                 }
-            },
-
-            get netTotal() {
-                const sub = this.rows.reduce((sum, row) => sum + (row.qty * row.price), 0);
-                const ret = parseFloat(this.return_adjustment) || 0;
-                return Math.max(0, sub - ret).toFixed(2);
             },
 
             async performSearch() {
@@ -316,21 +336,25 @@
 
             addItem(item) {
                 let existing = this.rows.find(r => r.id === item.id);
+                const isServ = item.item_type === 'Service' || item.category === 'Service';
+                const availStock = parseFloat(item.on_hand ?? item.stock_qty ?? item.stock ?? 0);
+
                 if (existing) {
-                    if (existing.qty < item.stock_qty) {
+                    if (isServ || existing.qty < availStock) {
                         existing.qty++;
                     } else {
-                        alert(`Only ${item.stock_qty} left in stock!`);
+                        alert(`Only ${availStock} left in stock!`);
                     }
                 } else {
-                    if (item.stock_qty > 0) {
+                    if (isServ || availStock > 0) {
                         this.rows.push({
                             id: item.id,
                             code: item.code,
                             name: item.name,
                             qty: 1,
                             price: item.price,
-                            stock: item.stock_qty
+                            stock: isServ ? 999999 : availStock,
+                            item_type: item.item_type ?? 'Inventory'
                         });
                     } else {
                         alert('Out of Stock!');

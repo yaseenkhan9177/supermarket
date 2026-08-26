@@ -32,11 +32,31 @@ class CompanySetting extends Model
         'receipt_width'        => 200,
         'number_of_counters'   => 1,
         'outlook_integration'  => false,
+        'tax_enabled'          => false,
+        'tax_rate'             => 0.00,
+        'tax_configured_at'    => null,
+        'tax_configured_by'    => null,
     ];
 
     protected $casts = [
         'outlook_integration' => 'boolean',
+        'tax_enabled'         => 'boolean',
+        'tax_rate'            => 'decimal:2',
+        'tax_configured_at'   => 'datetime',
     ];
+
+    /**
+     * Check whether Store Admin has ever configured tax for this tenant.
+     */
+    public function isTaxConfigured(): bool
+    {
+        return !is_null($this->tax_configured_at);
+    }
+
+    public function taxConfiguredUser()
+    {
+        return $this->belongsTo(User::class, 'tax_configured_by');
+    }
 
     public function activeWallet()
     {
