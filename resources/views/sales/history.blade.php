@@ -5,19 +5,19 @@
 @section('content')
 <div class="max-w-7xl mx-auto space-y-6">
 
-    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white">Transaction History</h1>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white">Transaction History</h1>
             <p class="text-slate-500 text-sm">Monitor your Cash and Debit sales performance.</p>
         </div>
-        <div class="flex gap-2">
-            <a href="{{ route('dashboard') }}" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-bold shadow flex items-center gap-2 text-sm">
+        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+            <a href="{{ route('dashboard') }}" class="bg-gray-600 hover:bg-gray-500 text-white px-3 sm:px-4 py-2 rounded-lg font-bold shadow flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
                 <i class="fas fa-tachometer-alt"></i> Dashboard
             </a>
-            <a href="{{ route('cash-sales.create') }}" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-bold shadow flex items-center gap-2 text-sm">
+            <a href="{{ route('cash-sales.create') }}" class="bg-green-600 hover:bg-green-500 text-white px-3 sm:px-4 py-2 rounded-lg font-bold shadow flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
                 <i class="fas fa-money-bill-wave"></i> Cash Sale
             </a>
-            <a href="{{ route('debit-sales.create') }}" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg font-bold shadow flex items-center gap-2 text-sm">
+            <a href="{{ route('debit-sales.create') }}" class="bg-red-600 hover:bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg font-bold shadow flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
                 <i class="fas fa-hand-holding-usd"></i> Debit Sale
             </a>
         </div>

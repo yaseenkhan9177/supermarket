@@ -182,17 +182,17 @@
                 </div>
             </div>
 
-            <div class="fixed bottom-0 left-0 w-full bg-white border-t p-4 shadow-[0_-5px_15px_rgba(0,0,0,0.1)] z-40">
-                <div class="container mx-auto max-w-[1400px] flex justify-between items-center">
+            <div class="fixed bottom-0 left-0 w-full bg-white border-t p-3 sm:p-4 shadow-[0_-5px_15px_rgba(0,0,0,0.1)] z-40">
+                <div class="container mx-auto max-w-[1400px] flex flex-col sm:flex-row justify-between items-center gap-3">
                     <div class="text-sm text-gray-500">
                         Total Labels to Print: <span class="font-bold text-gray-900" x-text="totalLabels">0</span>
                     </div>
 
-                    <div class="flex gap-4">
-                        <button type="button" @click="queue = []" class="px-6 py-3 bg-gray-200 text-gray-700 font-bold rounded hover:bg-gray-300">
+                    <div class="flex gap-3 w-full sm:w-auto">
+                        <button type="button" @click="queue = []" class="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-gray-200 text-gray-700 font-bold rounded hover:bg-gray-300 text-xs sm:text-sm">
                             Clear All
                         </button>
-                        <button type="submit" class="px-8 py-3 bg-teal-600 text-white font-bold rounded shadow hover:bg-teal-700 transition transform hover:-translate-y-1">
+                        <button type="submit" class="flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-teal-600 text-white font-bold rounded shadow hover:bg-teal-700 transition transform hover:-translate-y-1 text-xs sm:text-sm">
                             <i class="fas fa-print mr-2"></i> Print Labels
                         </button>
                     </div>

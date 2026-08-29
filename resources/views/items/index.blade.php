@@ -4,13 +4,13 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Product Catalog</h1>
-        <div class="flex gap-2">
-            <a href="/items/import-preview" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-bold flex items-center gap-2">
-                <i class="fas fa-file-excel"></i> Import with Preview
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">Product Catalog</h1>
+        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+            <a href="/items/import-preview" class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-bold flex items-center justify-center gap-2 text-sm">
+                <i class="fas fa-file-excel"></i> <span class="hidden xs:inline">Import with Preview</span><span class="xs:hidden">Import</span>
             </a>
-            <a href="/items/create" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold">
+            <a href="/items/create" class="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold flex items-center justify-center gap-2 text-sm">
                 <i class="fas fa-plus"></i> Add Product
             </a>
         </div>
@@ -58,7 +58,8 @@
     </form>
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
-        <table class="w-full text-left border-collapse">
+        <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse min-w-[520px]">
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
                     <th class="p-4 text-xs font-bold text-gray-500 uppercase">Code</th>
@@ -114,6 +115,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>{{-- /overflow-x-auto --}}
         <div class="p-4">
             {{ $items->links() }}
         </div>

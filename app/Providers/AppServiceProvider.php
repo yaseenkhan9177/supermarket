@@ -784,14 +784,31 @@ class AppServiceProvider extends ServiceProvider
                 }
 
                 /* === RESPONSIVE BREAKPOINTS === */
-                @media (max-width: 1024px) {
-                    .pos-global-search {
-                        max-width: 260px;
+                @media (max-width: 1200px) {
+                    .pos-global-search.desktop-search {
+                        max-width: 240px;
                         min-width: 160px;
                         margin: 0 8px;
                     }
-                    .pos-search-dropdown {
-                        min-width: 320px;
+                    .pos-nav-status {
+                        display: none;
+                    }
+                }
+
+                @media (max-width: 1023px) {
+                    .pos-nav-tabs {
+                        display: none !important;
+                    }
+                    .pos-mobile-toggle {
+                        display: flex !important;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .pos-global-search.desktop-search {
+                        display: none !important;
+                    }
+                    .pos-mobile-nav {
+                        display: block;
                     }
                     .pos-grid-kpis { grid-template-columns: repeat(2, 1fr); }
                     .pos-grid-alerts { grid-template-columns: repeat(2, 1fr); }
@@ -801,25 +818,70 @@ class AppServiceProvider extends ServiceProvider
                     .pos-quick-actions-grid { grid-template-columns: repeat(2, 1fr); }
                 }
 
+                @media (min-width: 1024px) {
+                    .pos-mobile-toggle {
+                        display: none !important;
+                    }
+                    .pos-mobile-nav {
+                        display: none !important;
+                    }
+                    .pos-nav-tabs {
+                        display: flex !important;
+                    }
+                }
+
                 @media (max-width: 768px) {
-                    .pos-nav-inner { padding: 0 8px; }
-                    .pos-nav-tabs { display: none; }
-                    .pos-global-search.desktop-search { display: none; }
-                    .pos-mobile-toggle { display: block; }
-                    .pos-mobile-nav { display: block; }
+                    .pos-nav-inner { padding: 0 4px; height: 52px; }
+                    .pos-nav-left, .pos-nav-right { gap: 8px; }
+                    .pos-nav-left .pos-desktop-only-btn { display: none !important; }
+                    .pos-nav-status { display: none !important; }
                     .pos-search-dropdown {
                         position: fixed;
                         top: 56px;
                         left: 8px;
                         right: 8px;
                         min-width: 0;
-                        max-width: none;
-                        max-height: calc(100vh - 80px);
+                        width: calc(100vw - 16px) !important;
+                        max-width: 100vw !important;
+                        max-height: calc(100vh - 70px);
+                    }
+                    .pos-global-search {
+                        margin: 0 0 10px 0 !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        min-width: 0 !important;
                     }
                     .pos-grid-kpis { grid-template-columns: 1fr; }
                     .pos-grid-alerts { grid-template-columns: 1fr; }
                     .pos-quick-actions-grid { grid-template-columns: repeat(2, 1fr); }
                     .pos-greeting-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+                }
+
+                @media (max-width: 480px) {
+                    .pos-container { padding: 0 8px; }
+                    .pos-logo { font-size: 15px; gap: 6px; }
+                    .pos-logo span {
+                        max-width: 130px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        display: inline-block;
+                        vertical-align: middle;
+                    }
+                    .pos-logo-icon { padding: 5px; border-radius: 6px; font-size: 13px; }
+                    .pos-nav-left, .pos-nav-right { gap: 6px; }
+                    .pos-nav-user { padding-left: 6px; }
+                    .pos-subnav-inner { padding: 0 4px; }
+                    .pos-subnav-link { min-width: 56px; padding: 4px 2px; }
+                    .pos-subnav-icon { width: 28px; height: 28px; font-size: 11px; }
+                    .pos-subnav-label { font-size: 9px; }
+                    .pos-subnav-menu { gap: 6px; }
+                }
+
+                @media (max-width: 360px) {
+                    .pos-logo span { max-width: 95px; font-size: 13px; }
+                    .pos-logo-icon { padding: 4px; border-radius: 6px; font-size: 11px; }
+                    .pos-user-avatar { width: 28px; height: 28px; font-size: 10px; }
                 }
             </style>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer></script>
@@ -864,7 +926,7 @@ class AppServiceProvider extends ServiceProvider
                                     </span>
                                 </a>
 
-                                <a href="{{ route('dashboard') }}" class="pos-gradient-btn pos-tab-btn" style="text-decoration: none;" title="Dashboard">
+                                <a href="{{ route('dashboard') }}" class="pos-gradient-btn pos-tab-btn pos-desktop-only-btn" style="text-decoration: none;" title="Dashboard">
                                     <div class="pos-gradient-inner" style="display: flex; align-items: center; gap: 6px;">
                                         <i class="fas fa-home" style="font-size: 12px; color: var(--pos-blue);"></i>
                                         <span>Dashboard</span>

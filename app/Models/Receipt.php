@@ -32,6 +32,16 @@ class Receipt extends Model
         return $this->belongsTo(User::class, 'received_by');
     }
 
+    public function salesman()
+    {
+        return $this->belongsTo(User::class, 'salesman_id');
+    }
+
+    public function account()
+    {
+        return $this->belongsTo(Account::class, 'account_id');
+    }
+
     public function allocations()
     {
         return $this->hasMany(ReceiptAllocation::class);

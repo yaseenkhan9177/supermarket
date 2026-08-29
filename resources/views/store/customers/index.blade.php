@@ -70,13 +70,13 @@
     }
 }">
     {{-- Breadcrumb --}}
-    <div class="flex items-center justify-between mb-8">
-        <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Customers</h1>
-        <div class="flex items-center gap-2">
-            <button @click="showImportModal = true" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">Customers</h1>
+        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <button @click="showImportModal = true" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold">
                 <i class="fas fa-file-import"></i> Import
             </button>
-            <a href="{{ route('customers.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold">
+            <a href="{{ route('customers.create') }}" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold">
                 <i class="fas fa-plus"></i> New Customer
             </a>
         </div>
@@ -100,17 +100,17 @@
 
     {{-- Customers Table --}}
     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
-        <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+        <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                 <i class="fas fa-users text-indigo-500"></i> Customer List
             </h3>
             <form method="GET" action="{{ route('customers.index') }}" class="flex items-center gap-2 flex-wrap">
                 <input type="hidden" name="show_deactivated" value="{{ $showDeactivated ? '1' : '0' }}">
-                <input type="text" name="search" value="{{ $search }}" placeholder="Search name or phone..." class="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded-md text-sm"/>
+                <input type="text" name="search" value="{{ $search }}" placeholder="Search name or phone..." class="w-full sm:w-auto px-3 py-1 border border-slate-300 dark:border-slate-600 rounded-md text-sm"/>
                 <button type="submit" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium">
                     <i class="fas fa-search"></i>
                 </button>
-                <a href="{{ route('customers.index', array_merge(request()->except('show_deactivated', 'page'), ['show_deactivated' => $showDeactivated ? '0' : '1'])) }}"
+                <a href="{{ route('customers.index', array_merge(request()->except('show_deactivated', 'page'), ['show_deactivated' => $showDeactivated ? '0' : '1']))}}"
                    class="px-3 py-1 {{ $showDeactivated ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300' }} rounded-md text-sm font-semibold hover:opacity-80 transition flex items-center gap-1">
                     <i class="fas fa-user-slash text-xs"></i>
                     {{ $showDeactivated ? 'Hide Deactivated' : 'Show Deactivated' }}
@@ -170,8 +170,8 @@
     </div>
 
     {{-- Import Modal (Alpine.js) --}}
-    <div x-show="showImportModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50" style="display:none;">
-        <div class="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-lg p-6">
+    <div x-show="showImportModal" class="fixed inset-0 flex items-center justify-center p-3 sm:p-4 bg-black bg-opacity-50" style="display:none;">
+        <div class="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
             <h2 class="text-xl font-bold text-slate-800 dark:text-white mb-4">Import Customers</h2>
             <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">Download the sample format <a href="{{ route('customers.sample_excel') }}" class="text-indigo-600 hover:underline">here</a> and upload your filled file.</p>
             <input type="file" x-ref="excelInput" @change="excelFileSelected" class="mb-4 w-full" accept=".xlsx,.xls,.csv,.txt" />

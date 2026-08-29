@@ -140,7 +140,8 @@
 
     {{-- Supplier Table --}}
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <table class="w-full text-left text-sm">
+        <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm min-w-[700px]">
             <thead class="bg-slate-50 dark:bg-slate-950 text-slate-500 uppercase font-bold text-xs">
                 <tr>
                     <th class="p-4">Code</th>
@@ -242,6 +243,7 @@
                 @endforeach
             </tbody>
         </table>
+        </div>{{-- /overflow-x-auto --}}
         <div class="p-4 border-t border-slate-100 dark:border-slate-800">
             {{ $suppliers->links() }}
         </div>

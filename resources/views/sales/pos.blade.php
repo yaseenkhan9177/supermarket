@@ -5,16 +5,16 @@
 
 @section('content')
 
-<div class="h-[calc(100vh-80px)] flex flex-col md:flex-row gap-6" x-data="posSystem()" @keydown.f2.window="handleF2($event)">
+<div class="min-h-[calc(100vh-100px)] md:h-[calc(100vh-80px)] flex flex-col md:flex-row gap-4 md:gap-6" x-data="posSystem()" @keydown.f2.window="handleF2($event)">
 
-    <div class="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+    <div class="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800 min-h-[420px]">
 
-        <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex gap-4 bg-slate-50 dark:bg-slate-950">
+        <div class="p-3 sm:p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row gap-3 sm:gap-4 bg-slate-50 dark:bg-slate-950">
             <div class="relative flex-1">
                 <x-smart-product-search @product-selected="addToCart($event.detail)" />
                 <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1"><i class="fas fa-keyboard mr-1"></i> F2: Go to checkout</div>
             </div>
-            <select x-model="category" class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-bold text-slate-600 dark:text-slate-300">
+            <select x-model="category" class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-bold text-slate-600 dark:text-slate-300 text-sm">
                 <option value="all">All Categories</option>
                 <option value="Inventory">Inventory</option>
                 <option value="Service">Services</option>
@@ -22,8 +22,8 @@
             </select>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-950/50 custom-scrollbar">
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div class="flex-1 overflow-y-auto p-3 sm:p-4 bg-slate-100 dark:bg-slate-950/50 custom-scrollbar">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
 
                 <template x-for="product in filteredProducts" :key="product.id">
                     <div @click="addToCart(product)"
@@ -61,7 +61,7 @@
         </div>
     </div>
 
-    <div class="w-full md:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-xl flex flex-col border border-slate-200 dark:border-slate-800 h-full">
+    <div class="w-full md:w-80 lg:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-xl flex flex-col border border-slate-200 dark:border-slate-800 md:h-full min-h-[340px]">
 
         <div class="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-between items-center rounded-t-2xl">
             <div>
@@ -144,15 +144,15 @@
         </div>
     </div>
 
-    <div x-show="isPaymentOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" style="display: none;">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-zoomIn">
+    <div x-show="isPaymentOpen" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm" style="display: none;">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-zoomIn">
 
-            <div class="bg-green-600 p-6 text-center">
-                <h3 class="text-white text-lg font-bold opacity-80 uppercase tracking-wider">Amount Due</h3>
-                <h1 class="text-4xl font-extrabold text-white mt-1" x-text="'Rs. ' + grandTotal"></h1>
+            <div class="bg-green-600 p-4 sm:p-6 text-center flex-shrink-0">
+                <h3 class="text-white text-base sm:text-lg font-bold opacity-80 uppercase tracking-wider">Amount Due</h3>
+                <h1 class="text-3xl sm:text-4xl font-extrabold text-white mt-1" x-text="'Rs. ' + grandTotal"></h1>
             </div>
 
-            <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <div class="p-4 sm:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Payment Method</label>
                     <select x-model="paymentMode" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 font-bold text-slate-800 dark:text-white outline-none">

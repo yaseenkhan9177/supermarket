@@ -28,6 +28,11 @@ class SalesController extends Controller
 
     public function index()
     {
+        return $this->pos();
+    }
+
+    public function pos()
+    {
         // Get all items for POS display with canonical on_hand and backward-compatible aliases
         $items = Item::select(
                 'id',

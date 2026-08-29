@@ -419,14 +419,14 @@
     </div>
 
     <!-- Sticky Bottom Bar -->
-    <div class="fixed bottom-0 left-0 w-full bg-gray-900 border-t border-gray-800 shadow-[0_-5px_25px_rgba(0,0,0,0.5)] z-40 p-4">
-        <div class="container mx-auto max-w-[1400px] flex justify-between items-center">
-            <div class="flex gap-6 text-xs">
-                <div class="text-right">
+    <div class="fixed bottom-0 left-0 w-full bg-gray-900 border-t border-gray-800 shadow-[0_-5px_25px_rgba(0,0,0,0.5)] z-40 p-3 sm:p-4">
+        <div class="container mx-auto max-w-[1400px] flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
+            <div class="flex flex-wrap justify-between sm:justify-start gap-4 sm:gap-6 text-xs">
+                <div class="text-left sm:text-right">
                     <span class="block text-[10px] text-gray-400 uppercase">Subtotal</span>
                     <span class="font-bold text-gray-200 text-sm" x-text="'Rs. ' + subtotal.toFixed(2)"></span>
                 </div>
-                <div class="text-right">
+                <div class="text-left sm:text-right">
                     <span class="block text-[10px] text-gray-400 uppercase">Charges/Tax</span>
                     <span class="font-bold text-amber-400 text-sm" x-text="'Rs. ' + chargesTotal.toFixed(2)"></span>
                     <input type="hidden" x-model="tax" name="tax_amount">
@@ -437,16 +437,16 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-6">
+            <div class="flex items-center justify-between sm:justify-end gap-3 sm:gap-6">
                 <div class="text-right">
                     <span class="block text-[10px] font-bold text-gray-400 uppercase">Net Payable</span>
-                    <span class="block text-2xl font-bold text-indigo-400 font-mono" x-text="'Rs. ' + netAfterCredit.toFixed(2)"></span>
+                    <span class="block text-xl sm:text-2xl font-bold text-indigo-400 font-mono" x-text="'Rs. ' + netAfterCredit.toFixed(2)"></span>
                 </div>
-                <div class="h-10 w-px bg-gray-800"></div>
+                <div class="hidden sm:block h-10 w-px bg-gray-800"></div>
                 <button type="button" @click="submitForm()"
                         :disabled="Math.abs(splitRemaining) > 0.5 || rows.filter(r=>r.item_id||r.code).length === 0"
                         :class="Math.abs(splitRemaining) < 0.5 && rows.filter(r=>r.item_id||r.code).length > 0 ? 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer' : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'"
-                        class="px-8 py-3 font-bold rounded-xl shadow-lg transition transform active:scale-95 disabled:transform-none flex items-center gap-2 text-sm">
+                        class="flex-1 sm:flex-none justify-center px-6 sm:px-8 py-2.5 sm:py-3 font-bold rounded-xl shadow-lg transition transform active:scale-95 disabled:transform-none flex items-center gap-2 text-xs sm:text-sm">
                     <i class="fas fa-save"></i> Save Bill
                 </button>
             </div>

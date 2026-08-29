@@ -19,6 +19,7 @@ class DebitSale extends Model
         'gross_total',
         'discount',
         'net_total',
+        'paid_amount',
         'adjusted_amount',
         'status',
     ];
@@ -36,6 +37,11 @@ class DebitSale extends Model
     public function items()
     {
         return $this->hasMany(DebitSaleItem::class);
+    }
+
+    public function allocations()
+    {
+        return $this->hasMany(ReceiptAllocation::class);
     }
 
     public function refundItems()

@@ -245,22 +245,22 @@
             </div>
 
             <!-- Sticky Bottom Bar -->
-            <div class="fixed bottom-0 left-0 w-full bg-gray-900 border-t border-gray-800 p-4 shadow-[0_-5px_25px_rgba(0,0,0,0.5)] z-40">
-                <div class="container mx-auto max-w-[1400px] flex justify-between items-center">
+            <div class="fixed bottom-0 left-0 w-full bg-gray-900 border-t border-gray-800 p-3 sm:p-4 shadow-[0_-5px_25px_rgba(0,0,0,0.5)] z-40">
+                <div class="container mx-auto max-w-[1400px] flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
 
-                    <div class="w-1/3">
+                    <div class="w-full sm:w-1/3">
                         <input type="text" name="memo" placeholder="Remarks (e.g. Delivered via Rider)" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 outline-none">
                     </div>
 
-                    <div class="flex items-center gap-6">
+                    <div class="flex items-center justify-between sm:justify-end gap-3 sm:gap-6">
                         <div class="text-right">
                             <span class="block text-[10px] font-bold text-gray-400 uppercase">Total Credit Amount</span>
-                            <span class="block text-2xl font-bold text-amber-400 font-mono" x-text="'Rs. ' + subtotal"></span>
+                            <span class="block text-xl sm:text-2xl font-bold text-amber-400 font-mono" x-text="'Rs. ' + subtotal"></span>
                         </div>
 
-                        <div class="h-10 w-px bg-gray-800"></div>
+                        <div class="hidden sm:block h-10 w-px bg-gray-800"></div>
 
-                        <button type="submit" class="px-8 py-3 bg-amber-600 text-white font-bold rounded-xl shadow-lg hover:bg-amber-700 transition transform active:scale-95 text-xs flex items-center gap-2">
+                        <button type="submit" class="flex-1 sm:flex-none justify-center px-6 sm:px-8 py-2.5 sm:py-3 bg-amber-600 text-white font-bold rounded-xl shadow-lg hover:bg-amber-700 transition transform active:scale-95 text-xs sm:text-sm flex items-center gap-2">
                             <i class="fas fa-save"></i> Save Credit Bill
                         </button>
                     </div>
@@ -271,8 +271,8 @@
     </div>
 
     <!-- Add Supplier Modal -->
-    <div x-show="showSupplierModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm" style="display: none;">
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 text-white">
+    <div x-show="showSupplierModal" class="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm" style="display: none;">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-4 sm:p-6 max-h-[90vh] overflow-y-auto text-white">
             <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <i class="fas fa-user-plus text-amber-400"></i> Add New Supplier
             </h3>

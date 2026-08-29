@@ -168,14 +168,146 @@
         color: #fff; font-weight: bold; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .pos-mobile-toggle {
-        display: none; background: none; border: none; color: var(--pos-text-muted); cursor: pointer; padding: 6px;
+        display: none; background: none; border: none; color: var(--pos-text-muted); cursor: pointer; padding: 6px; font-size: 18px;
     }
     .pos-mobile-nav {
         display: none; background-color: var(--pos-surface); border-bottom: 1px solid var(--pos-border);
-        padding: 8px 12px;
+        padding: 10px 12px;
     }
     .pos-mobile-nav-inner {
         display: flex; flex-wrap: wrap; gap: 6px;
+    }
+
+    @media (max-width: 1200px) {
+        .pos-desktop-search {
+            max-width: 240px !important;
+            min-width: 160px !important;
+            margin: 0 8px !important;
+        }
+        .pos-nav-status {
+            display: none !important;
+        }
+    }
+
+    @media (max-width: 1023px) {
+        .pos-nav-tabs {
+            display: none !important;
+        }
+        .pos-mobile-toggle {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+        .pos-desktop-search {
+            display: none !important;
+        }
+        .pos-mobile-nav {
+            display: block;
+        }
+    }
+    @media (min-width: 1024px) {
+        .pos-mobile-toggle {
+            display: none !important;
+        }
+        .pos-mobile-nav {
+            display: none !important;
+        }
+        .pos-nav-tabs {
+            display: flex !important;
+        }
+    }
+    @media (max-width: 768px) {
+        .pos-nav-inner {
+            height: 52px;
+            padding: 0 4px;
+        }
+        .pos-nav-left, .pos-nav-right {
+            gap: 8px;
+        }
+        .pos-nav-left .pos-desktop-only-btn {
+            display: none !important;
+        }
+        .pos-nav-status {
+            display: none !important;
+        }
+        .pos-search-dropdown {
+            min-width: 0 !important;
+            width: calc(100vw - 16px) !important;
+            max-width: 100vw !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            max-height: calc(100vh - 70px);
+        }
+        .pos-global-search {
+            margin: 0 0 10px 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .pos-container {
+            padding: 0 8px;
+        }
+        .pos-logo {
+            font-size: 15px;
+            gap: 6px;
+        }
+        .pos-logo span {
+            max-width: 130px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .pos-logo-icon {
+            padding: 5px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .pos-nav-left, .pos-nav-right {
+            gap: 6px;
+        }
+        .pos-nav-user {
+            padding-left: 6px;
+        }
+        .pos-subnav-inner {
+            padding: 0 4px;
+        }
+        .pos-subnav-link {
+            min-width: 56px;
+            padding: 4px 2px;
+        }
+        .pos-subnav-icon {
+            width: 28px;
+            height: 28px;
+            font-size: 11px;
+        }
+        .pos-subnav-label {
+            font-size: 9px;
+        }
+        .pos-subnav-menu {
+            gap: 6px;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .pos-logo span {
+            max-width: 95px;
+            font-size: 13px;
+        }
+        .pos-logo-icon {
+            padding: 4px;
+            border-radius: 6px;
+            font-size: 11px;
+        }
+        .pos-user-avatar {
+            width: 28px;
+            height: 28px;
+            font-size: 10px;
+        }
     }
 
     .pos-subnav {
@@ -523,7 +655,7 @@
                         </span>
                     </a>
 
-                    <a href="{{ route('dashboard') }}" class="pos-gradient-btn pos-tab-btn" style="text-decoration: none;" title="Dashboard">
+                    <a href="{{ route('dashboard') }}" class="pos-gradient-btn pos-tab-btn pos-desktop-only-btn" style="text-decoration: none;" title="Dashboard">
                         <div class="pos-gradient-inner" style="display: flex; align-items: center; gap: 6px;">
                             <i class="fas fa-home" style="font-size: 12px; color: var(--pos-blue);"></i>
                             <span>Dashboard</span>
@@ -544,7 +676,7 @@
                 {{-- ============================================================ --}}
                 {{-- GLOBAL SEARCH BAR (DESKTOP)                                 --}}
                 {{-- ============================================================ --}}
-                <div class="pos-global-search desktop-search"
+                <div class="pos-global-search pos-desktop-search desktop-search"
                      x-data="{
                         query: '',
                         results: {},

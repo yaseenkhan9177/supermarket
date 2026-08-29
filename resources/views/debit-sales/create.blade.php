@@ -197,7 +197,7 @@
     </div>
 
     <!-- Success Modal -->
-    <div x-show="showSuccess" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" style="display: none;">
+    <div x-show="showSuccess" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm" style="display: none;">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm flex flex-col max-h-[90vh]">
             <div class="bg-red-600 p-4 text-center">
                 <h2 class="text-white font-bold text-lg"><i class="fas fa-check-circle"></i> Sale Saved</h2>
@@ -213,8 +213,8 @@
     </div>
 
     <!-- Add Customer Modal -->
-    <div x-show="showCustomerModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" style="display: none;">
-        <div class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md p-6">
+    <div x-show="showCustomerModal" class="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm" style="display: none;">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
             <h3 class="text-xl font-bold text-white mb-4"><i class="fas fa-user-plus text-blue-500 mr-2"></i>Add New Customer</h3>
             <div class="space-y-4">
                 <div>

@@ -117,7 +117,7 @@
 
 
     <!-- CONTENT WRAPPER -->
-    <div class="flex-grow container mx-auto px-6 max-w-[1400px] py-4 sm:py-6">
+    <div class="flex-grow container mx-auto px-3 sm:px-4 md:px-6 max-w-[1400px] py-3 sm:py-6 w-full">
         @yield('content')
     </div>
 
@@ -226,6 +226,35 @@
             z-index: 9999;
             width: 52px;
             height: 52px;
+        }
+
+        @media (max-width: 640px) {
+            #rm-root {
+                right: 14px;
+                bottom: 80px;
+                top: auto;
+                transform: none;
+                width: 44px;
+                height: 44px;
+            }
+            #rm-trigger {
+                width: 44px !important;
+                height: 44px !important;
+            }
+            #rm-ring {
+                width: 190px !important;
+                height: 190px !important;
+            }
+            .rm-item {
+                top: 22px !important;
+                left: 22px !important;
+                width: 38px !important;
+                height: 38px !important;
+            }
+            .rm-item a {
+                width: 38px !important;
+                height: 38px !important;
+            }
         }
 
         /* ── Backdrop overlay (click-outside to close) ── */

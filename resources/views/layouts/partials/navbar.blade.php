@@ -1,6 +1,6 @@
 <!-- TOP NAVBAR -->
-<nav class="bg-white border-b border-gray-200 px-6 py-3 shadow-sm sticky top-0 z-50 mb-8">
-    <div class="container mx-auto max-w-[1400px] flex justify-between items-center">
+<nav class="bg-white border-b border-gray-200 px-3 sm:px-6 py-2.5 sm:py-3 shadow-sm sticky top-0 z-50 mb-6 sm:mb-8">
+    <div class="container mx-auto max-w-[1400px] flex flex-wrap justify-between items-center gap-2">
 
         <div class="flex items-center gap-4">
             <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-md">

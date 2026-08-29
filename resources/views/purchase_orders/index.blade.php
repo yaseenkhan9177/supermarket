@@ -18,12 +18,12 @@
                 Manage stock purchases, landed cost tracking, and supplier receipts
             </p>
         </div>
-        <div class="flex items-center gap-3">
-            <a href="{{ route('dashboard') }}" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-xl flex items-center gap-2 transition-transform hover:scale-105">
+        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <a href="{{ route('dashboard') }}" class="flex-1 sm:flex-none justify-center px-3 sm:px-4 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm rounded-xl flex items-center gap-2 transition-transform hover:scale-105">
                 <i class="fas fa-home"></i> Dashboard
             </a>
-            <a href="{{ route('purchase-orders.create') }}" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-500/20 flex items-center gap-2 transition-transform hover:scale-105">
-                <i class="fas fa-plus"></i> Create Purchase Order
+            <a href="{{ route('purchase-orders.create') }}" class="flex-1 sm:flex-none justify-center px-4 sm:px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-indigo-500/20 flex items-center gap-2 transition-transform hover:scale-105">
+                <i class="fas fa-plus"></i> <span class="hidden xs:inline">Create Purchase Order</span><span class="xs:hidden">New PO</span>
             </a>
         </div>
     </div>
@@ -31,7 +31,7 @@
     {{-- Filter Bar --}}
     <form method="GET" action="{{ route('purchase-orders.index') }}" class="bg-white dark:bg-slate-800/90 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 mb-6 flex flex-wrap items-center gap-3">
         {{-- Status Filter --}}
-        <div class="w-40">
+        <div class="w-full sm:w-40">
             <select name="status" class="w-full text-xs font-semibold px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200">
                 <option value="all">All Statuses</option>
                 <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
@@ -43,7 +43,7 @@
         </div>
 
         {{-- Supplier Filter --}}
-        <div class="w-56">
+        <div class="w-full sm:w-56">
             <select name="supplier_id" class="w-full text-xs font-semibold px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200">
                 <option value="">All Suppliers</option>
                 @foreach($suppliers as $sup)
@@ -53,17 +53,19 @@
         </div>
 
         {{-- Search Input --}}
-        <div class="flex-1 min-w-[200px]">
+        <div class="flex-1 min-w-[180px]">
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Search PO # or supplier name..." class="w-full text-xs font-medium px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
 
-        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors">
-            <i class="fas fa-filter mr-1"></i> Filter
-        </button>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+            <button type="submit" class="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors">
+                <i class="fas fa-filter mr-1"></i> Filter
+            </button>
 
-        @if(request()->hasAny(['status', 'supplier_id', 'search']))
-        <a href="{{ route('purchase-orders.index') }}" class="px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold">Reset</a>
-        @endif
+            @if(request()->hasAny(['status', 'supplier_id', 'search']))
+            <a href="{{ route('purchase-orders.index') }}" class="flex-1 sm:flex-none px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold text-center">Reset</a>
+            @endif
+        </div>
     </form>
 
     {{-- PO Table --}}
