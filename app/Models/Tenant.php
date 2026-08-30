@@ -7,6 +7,7 @@ use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 
 class Tenant extends BaseTenant implements TenantWithDatabase
 {
@@ -86,5 +87,29 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         }
 
         return parent::getInternal($key);
+    }
+
+    /**
+     * Generate a safe, sanitized database name from the store name.
+     * Example: "Al-Madina Mart" -> "tenant_al_madina_mart_a1b2c3"
+     *
+     * @param string $storeName
+     * @param string|null $tenantId
+     * @return string
+     */
+    public static function generateDatabaseName(string $storeName, ?string $tenantId = null): string
+    {
+        $cleanName = Str::slug($storeName, '_');
+        if (empty($cleanName)) {
+            $cleanName = 'store';
+        }
+
+        // Limit store slug to 25 chars for clean and valid MySQL naming
+        $cleanName = substr($cleanName, 0, 25);
+
+        // Append 6-character unique suffix from tenant ID (or random string)
+        $suffix = $tenantId ? substr(str_replace('-', '', $tenantId), 0, 6) : strtolower(Str::random(6));
+
+        return 'tenant_' . trim($cleanName, '_') . '_' . $suffix;
     }
 }

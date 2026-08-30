@@ -32,7 +32,7 @@ class PublicSignupController extends Controller
 
         $subdomain = Str::slug($request->subdomain);
         $tenantId = (string) Str::uuid();
-        $databaseName = 'vectabyte_tenant_' . str_replace('-', '_', $tenantId);
+        $databaseName = Tenant::generateDatabaseName($request->store_name, $tenantId);
 
         // 1. Create tenant record with status = 'pending'
         // Database provisioning is deferred until Super Admin approval

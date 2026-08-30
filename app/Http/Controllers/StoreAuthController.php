@@ -32,7 +32,7 @@ class StoreAuthController extends Controller
 
         // 1. Create the tenant
         $tenantId = (string) Str::uuid();
-        $databaseName = 'vectabyte_tenant_' . str_replace('-', '_', $tenantId);
+        $databaseName = Tenant::generateDatabaseName($request->store_name, $tenantId);
         $tenant = Tenant::create([
             'id' => $tenantId,
             'store_name' => $request->store_name,
