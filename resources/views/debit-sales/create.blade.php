@@ -52,8 +52,8 @@
                 <span>Subtotal</span>
                 <span class="font-mono text-slate-300 font-bold" x-text="'Rs. ' + subtotal"></span>
             </div>
-            <div class="flex justify-between items-center mb-2 text-xs font-bold uppercase" x-show="taxSettings.tax_enabled">
-                <span class="text-rose-400" x-text="'Tax (' + (parseFloat(taxSettings.tax_rate) || 0) + '%)'"></span>
+            <div class="flex justify-between items-center mb-2 text-xs font-bold uppercase" x-show="parseFloat(taxAmount) > 0">
+                <span class="text-rose-400">Tax</span>
                 <span class="font-mono text-rose-400 font-bold" x-text="'Rs. ' + taxAmount"></span>
             </div>
             <div class="flex justify-between items-end mb-3 pt-2 border-t border-slate-800">
@@ -137,6 +137,7 @@
                         <th class="p-4">Item Name</th>
                         <th class="p-4 w-20 text-center">Qty</th>
                         <th class="p-4 w-28 text-right">Rate</th>
+                        <th class="p-4 w-24 text-center">Tax %</th>
                         <th class="p-4 w-28 text-right">Total</th>
                         <th class="p-4 w-12 text-center"></th>
                     </tr>
@@ -163,6 +164,7 @@
                                     <span class="text-[10px] text-slate-500 mt-0.5">
                                         Stock: <span class="text-yellow-500 font-mono font-bold" x-text="row.stock"></span>
                                     </span>
+                                    <input type="text" x-model="row.note" placeholder="Item note (optional)..." class="w-full bg-slate-950/80 border border-slate-700/60 rounded px-2 py-1 text-xs text-slate-300 focus:border-blue-500 outline-none mt-1">
                                 </div>
                             </td>
                             <td class="p-4">
@@ -171,6 +173,17 @@
                             <td class="p-4 text-right">
                                 <input type="number" x-model="row.price" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-right text-white font-mono focus:border-blue-500 outline-none">
                             </td>
+                            <!-- Per-row editable Tax % -->
+                            <td class="p-4 text-center">
+                                <div class="flex flex-col items-center gap-0.5">
+                                    <input type="number"
+                                           x-model="row.tax_rate"
+                                           min="0" max="100" step="0.01"
+                                           placeholder="0"
+                                           class="w-16 bg-slate-950 border border-rose-800/60 rounded p-1 text-center text-rose-300 font-mono text-xs focus:border-rose-500 outline-none">
+                                    <span class="text-[10px] text-slate-500" x-text="'Rs.' + ((parseFloat(row.qty||0)*parseFloat(row.price||0)) * (parseFloat(row.tax_rate)||0) / 100).toFixed(2)"></span>
+                                </div>
+                            </td>
                             <td class="p-4 text-right font-bold text-white font-mono" x-text="(row.qty * row.price).toFixed(2)"></td>
                             <td class="p-4 text-center">
                                 <button @click="removeRow(index)" class="text-red-500 hover:text-white transition"><i class="fas fa-trash-alt"></i></button>
@@ -178,10 +191,15 @@
                         </tr>
                     </template>
 
-
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <!-- Invoice Note Field -->
+    <div class="p-4 bg-slate-900 border-t border-slate-800">
+        <label class="block text-xs font-bold text-slate-400 mb-1">Invoice Note / Instructions (Optional)</label>
+        <input type="text" x-model="invoice_note" placeholder="e.g. Special customer debit arrangement note..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:border-blue-500 outline-none">
     </div>
 
     <!-- Sticky Footer Actions -->
@@ -196,18 +214,69 @@
         </div>
     </div>
 
-    <!-- Success Modal -->
+    <!-- Success & Print Format Selector Modal -->
     <div x-show="showSuccess" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm" style="display: none;">
-        <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm flex flex-col max-h-[90vh]">
-            <div class="bg-red-600 p-4 text-center">
-                <h2 class="text-white font-bold text-lg"><i class="fas fa-check-circle"></i> Sale Saved</h2>
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh] overflow-hidden">
+            <div class="bg-gradient-to-r from-red-600 to-rose-600 p-5 text-center">
+                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2 text-white text-2xl">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h2 class="text-white font-bold text-xl">Debit Sale Saved!</h2>
+                <p class="text-red-100 text-xs mt-0.5" x-text="'Invoice #' + invoice_no"></p>
             </div>
-            <div class="p-4 bg-gray-100 overflow-y-auto flex-1 flex justify-center">
-                <div class="bg-white p-2 shadow-sm w-[300px] text-black" x-html="receiptHtml"></div>
+            
+            <div class="p-5 space-y-4 overflow-y-auto">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Select Print Format</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" @click="selectedPrintFormat = '80mm'" :class="selectedPrintFormat === '80mm' ? 'bg-blue-600 border-blue-500 text-white font-bold' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750'" class="p-3 border rounded-xl flex items-center gap-2.5 text-left transition">
+                            <i class="fas fa-print text-lg"></i>
+                            <div>
+                                <div class="text-xs">Thermal 80mm</div>
+                                <div class="text-[10px] opacity-75">Standard POS</div>
+                            </div>
+                        </button>
+                        <button type="button" @click="selectedPrintFormat = '58mm'" :class="selectedPrintFormat === '58mm' ? 'bg-blue-600 border-blue-500 text-white font-bold' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750'" class="p-3 border rounded-xl flex items-center gap-2.5 text-left transition">
+                            <i class="fas fa-receipt text-lg"></i>
+                            <div>
+                                <div class="text-xs">Thermal 58mm</div>
+                                <div class="text-[10px] opacity-75">Compact Slip</div>
+                            </div>
+                        </button>
+                        <button type="button" @click="selectedPrintFormat = 'a4'" :class="selectedPrintFormat === 'a4' ? 'bg-blue-600 border-blue-500 text-white font-bold' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750'" class="p-3 border rounded-xl flex items-center gap-2.5 text-left transition">
+                            <i class="fas fa-file-invoice text-lg"></i>
+                            <div>
+                                <div class="text-xs">A4 Invoice</div>
+                                <div class="text-[10px] opacity-75">Full Page</div>
+                            </div>
+                        </button>
+                        <button type="button" @click="selectedPrintFormat = 'simple'" :class="selectedPrintFormat === 'simple' ? 'bg-blue-600 border-blue-500 text-white font-bold' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750'" class="p-3 border rounded-xl flex items-center gap-2.5 text-left transition">
+                            <i class="fas fa-file-alt text-lg"></i>
+                            <div>
+                                <div class="text-xs">Simple Slip</div>
+                                <div class="text-[10px] opacity-75">Text Format</div>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        <button type="button" @click="selectedPrintFormat = 'customer'" :class="selectedPrintFormat === 'customer' ? 'bg-blue-600 border-blue-500 text-white font-bold' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750'" class="w-full p-3 border rounded-xl flex items-center gap-2.5 text-left transition">
+                            <i class="fas fa-user-tag text-lg"></i>
+                            <div>
+                                <div class="text-xs">Customer Invoice</div>
+                                <div class="text-[10px] opacity-75">Formal detailed customer layout</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="p-4 bg-white border-t border-gray-200 flex gap-3">
-                <button @click="printReceipt()" class="flex-1 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold">Print</button>
-                <button @click="resetForm()" class="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 font-bold">New Sale</button>
+
+            <div class="p-4 bg-slate-950 border-t border-slate-800 flex gap-3">
+                <button @click="printReceiptFormatted()" class="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg flex items-center justify-center gap-2">
+                    <i class="fas fa-print"></i> Print Receipt
+                </button>
+                <button @click="resetForm()" class="flex-1 py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800">
+                    New Sale
+                </button>
             </div>
         </div>
     </div>
@@ -248,6 +317,8 @@
             date: new Date().toISOString().slice(0, 10),
             rows: [],
             received_amount: '', // Can be empty or partial
+            invoice_note: '',
+            selectedPrintFormat: '80mm',
             searchQuery: '',
             searchResults: [],
             showSuccess: false,
@@ -261,11 +332,13 @@
                 return this.rows.reduce((sum, row) => sum + (parseFloat(row.qty || 0) * parseFloat(row.price || 0)), 0).toFixed(2);
             },
 
+            // Tax is now summed per-row based on each row's individual tax_rate
             get taxAmount() {
-                if (!this.taxSettings || !this.taxSettings.tax_enabled) return (0).toFixed(2);
-                let rate = parseFloat(this.taxSettings.tax_rate) || 0;
-                let sub = parseFloat(this.subtotal) || 0;
-                return ((sub * rate) / 100).toFixed(2);
+                return this.rows.reduce((sum, row) => {
+                    const lineTotal = parseFloat(row.qty || 0) * parseFloat(row.price || 0);
+                    const rate = parseFloat(row.tax_rate) || 0;
+                    return sum + (lineTotal * rate / 100);
+                }, 0).toFixed(2);
             },
 
             get netTotal() {
@@ -339,8 +412,13 @@
                             name: item.name,
                             qty: 1,
                             price: item.price,
+                            note: '',
                             stock: isServ ? 999999 : availStock,
-                            item_type: item.item_type ?? 'Inventory'
+                            item_type: item.item_type ?? 'Inventory',
+                            // Initialise per-row tax_rate from item data if available
+                            tax_rate: (item.tax_rate !== undefined && item.tax_rate !== null)
+                                ? parseFloat(item.tax_rate)
+                                : (this.taxSettings && this.taxSettings.tax_enabled ? parseFloat(this.taxSettings.tax_rate) || 0 : 0)
                         });
                     } else {
                         alert('Out of Stock!');
@@ -383,6 +461,7 @@
                     customer_id: this.customer_id,
                     salesman_id: this.salesman_id,
                     date: this.date,
+                    note: this.invoice_note,
                     rows: this.rows,
                     grand_total: this.netTotal,
                     received_amount: this.received_amount
@@ -403,11 +482,6 @@
                         this.receiptHtml = result.receipt_html;
                         this.lastSaleId = result.sale_id;
                         this.showSuccess = true;
-
-                        // Auto-Show Bill Logic
-                        if (result.print_url) {
-                            window.open(result.print_url, '_blank', 'width=400,height=600');
-                        }
                     } else {
                         alert("Error: " + result.message);
                     }
@@ -416,8 +490,10 @@
                 }
             },
 
-            printReceipt() {
-                if (this.lastSaleId) window.open(`/debit-sales/${this.lastSaleId}/print`, '_blank', 'width=400,height=600');
+            printReceiptFormatted() {
+                if (this.lastSaleId) {
+                    window.open(`/debit-sales/${this.lastSaleId}/print?format=${this.selectedPrintFormat}`, '_blank', 'width=800,height=800');
+                }
             },
             resetForm() {
                 window.location.reload();

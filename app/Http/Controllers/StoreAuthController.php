@@ -147,6 +147,15 @@ class StoreAuthController extends Controller
                 ])->onlyInput('email');
             }
 
+            // Automatically ensure owner has Spatie role assigned
+            if (isset($user->role) && strtolower($user->role) === 'owner' && method_exists($user, 'hasRole') && !$user->hasRole('owner')) {
+                $role = \Spatie\Permission\Models\Role::firstOrCreate([
+                    'name' => 'owner',
+                    'guard_name' => 'web'
+                ]);
+                $user->assignRole($role);
+            }
+
             // Role-based redirect after login
             if ($user->hasRole('cashier')) {
                 return redirect()->intended(route('sales.pos'));

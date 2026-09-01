@@ -156,10 +156,15 @@ class SalesController extends Controller
                     $qty = (float) $cartItem['qty'];
                     $saleRate = (float) ($cartItem['price'] ?? $cartItem['rate'] ?? $product->sale_rate ?? $product->price);
 
+                    // Use user-supplied per-item tax_rate if provided; otherwise fall back to product's stored rate.
+                    $effectiveTaxRate = array_key_exists('tax_rate', $cartItem) && $cartItem['tax_rate'] !== null
+                        ? (float) $cartItem['tax_rate']
+                        : $product->tax_rate;
+
                     if ($product->item_type === 'Service') {
                         // Service items: no stock deduction
                         $lineTotal = round($qty * $saleRate, 2);
-                        $lineTax   = $this->taxService->calculateLineTax($lineTotal, $product->tax_rate);
+                        $lineTax   = $this->taxService->calculateLineTax($lineTotal, $effectiveTaxRate);
 
                         SaleItem::create([
                             'sale_id'   => $sale->id,
@@ -180,7 +185,7 @@ class SalesController extends Controller
 
                         foreach ($result['batches_used'] as $batchUsed) {
                             $lineTotal = round($batchUsed['quantity_deducted'] * $batchUsed['sale_price'], 2);
-                            $lineTax   = $this->taxService->calculateLineTax($lineTotal, $product->tax_rate);
+                            $lineTax   = $this->taxService->calculateLineTax($lineTotal, $effectiveTaxRate);
 
                             SaleItem::create([
                                 'sale_id'   => $sale->id,
@@ -517,6 +522,7 @@ class SalesController extends Controller
             'tax_total'            => 'nullable|numeric|min:0',
             'paid_amount'          => 'nullable|numeric|min:0',
             'reason'               => 'nullable|string|max:1000',
+            'change_reason'        => 'nullable|string|max:1000',
             'original_updated_at'  => 'required|string',
             'items'                => 'required|array|min:1',
             'items.*.item_id'      => 'required|exists:items,id',
@@ -533,7 +539,7 @@ class SalesController extends Controller
                 $request->all(),
                 $userId,
                 $userName,
-                $request->input('reason'),
+                $request->input('change_reason') ?? $request->input('reason'),
                 $request->ip(),
                 $request->input('original_updated_at')
             );

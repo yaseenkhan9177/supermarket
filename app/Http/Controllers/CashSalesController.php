@@ -114,6 +114,7 @@ class CashSalesController extends Controller
                     'change_amount'     => 0,
                     'payment_mode'      => 'Cash',
                     'status'            => 'completed',
+                    'note'              => $request->note ?? $request->invoice_note,
                 ]);
 
                 $calculatedSubtotal = 0;
@@ -126,6 +127,7 @@ class CashSalesController extends Controller
                     }
 
                     $qty = (float) $row['qty'];
+                    $itemNote = $row['note'] ?? null;
 
                     if ($item->item_type === 'Service') {
                         // Service items: no stock, use the rate the cashier entered
@@ -138,6 +140,7 @@ class CashSalesController extends Controller
                             'qty'       => $qty,
                             'rate'      => $row['price'],
                             'total'     => $lineTotal,
+                            'note'      => $itemNote,
                         ]);
                         $calculatedSubtotal += $lineTotal;
                     } else {
@@ -154,6 +157,7 @@ class CashSalesController extends Controller
                                 'qty'       => $batchUsed['quantity_deducted'],
                                 'rate'      => $batchUsed['sale_price'],
                                 'total'     => $lineTotal,
+                                'note'      => $itemNote,
                             ]);
                             $calculatedSubtotal += $lineTotal;
                         }

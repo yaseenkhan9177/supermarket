@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-// use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -21,6 +21,15 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Grant all permissions & access to Store Owner / Admin automatically
+        Gate::before(function ($user, $ability) {
+            if (isset($user->role) && in_array(strtolower($user->role), ['owner', 'admin', 'store admin'])) {
+                return true;
+            }
+
+            if (method_exists($user, 'hasRole') && $user->hasRole('owner')) {
+                return true;
+            }
+        });
     }
 }

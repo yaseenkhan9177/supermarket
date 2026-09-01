@@ -19,6 +19,7 @@ class SaleItem extends Model
         'total',
         'tax_rate',
         'tax_amount',
+        'note',
     ];
 
     public function sale()

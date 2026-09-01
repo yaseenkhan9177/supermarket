@@ -63,6 +63,7 @@ class DebitSalesController extends Controller
                 'on_hand',
                 'on_hand as stock_qty',
                 'on_hand as stock',
+                'tax_rate',
                 'item_type',
                 'item_type as category',
                 'image_path'
@@ -73,6 +74,7 @@ class DebitSalesController extends Controller
                 $item->on_hand   = (float) ($item->on_hand ?? 0);
                 $item->stock_qty = $item->on_hand;
                 $item->stock     = $item->on_hand;
+                $item->tax_rate  = $item->tax_rate !== null ? (float) $item->tax_rate : null;
                 $item->item_type = $item->item_type ?? 'Inventory';
                 return $item;
             });
@@ -114,9 +116,11 @@ class DebitSalesController extends Controller
                     'change_amount'=> 0,
                     'payment_mode' => 'Debit',
                     'status'       => 'completed',
+                    'note'         => $request->note ?? $request->invoice_note,
                 ]);
 
                 $calculatedSubtotal = 0;
+                $calculatedTaxTotal = 0;
 
                 // B. Save Items & Deduct Stock via FIFO
                 foreach ($request->rows as $row) {
@@ -126,50 +130,65 @@ class DebitSalesController extends Controller
                     }
 
                     $qty = (float) $row['qty'];
+                    $itemNote = $row['note'] ?? null;
+
+                    // Use user-supplied per-row tax_rate if present; fall back to product's stored rate.
+                    $effectiveTaxRate = array_key_exists('tax_rate', $row) && $row['tax_rate'] !== null
+                        ? (float) $row['tax_rate']
+                        : $item->tax_rate;
 
                     if ($item->item_type === 'Service') {
                         // Service items: no stock deduction
-                        $lineTotal = $qty * $row['price'];
+                        $lineTotal   = round($qty * $row['price'], 2);
+                        $taxAmount   = round($lineTotal * ($effectiveTaxRate ?? 0) / 100, 2);
+
                         SaleItem::create([
-                            'sale_id'   => $sale->id,
-                            'item_id'   => $item->id,
-                            'item_name' => $item->description,
-                            'batch_id'  => null,
-                            'qty'       => $qty,
-                            'rate'      => $row['price'],
-                            'total'     => $lineTotal,
+                            'sale_id'    => $sale->id,
+                            'item_id'    => $item->id,
+                            'item_name'  => $item->description,
+                            'batch_id'   => null,
+                            'qty'        => $qty,
+                            'rate'       => $row['price'],
+                            'total'      => $lineTotal,
+                            'tax_rate'   => $effectiveTaxRate,
+                            'tax_amount' => $taxAmount,
+                            'note'       => $itemNote,
                         ]);
                         $calculatedSubtotal += $lineTotal;
+                        $calculatedTaxTotal += $taxAmount;
                     } else {
                         // Stock item: FIFO deduction — may span multiple batches
                         $result = $fifo->deductStock($item->id, $qty, $sale->id, Auth::id());
 
                         foreach ($result['batches_used'] as $batchUsed) {
-                            $lineTotal = $batchUsed['quantity_deducted'] * $batchUsed['sale_price'];
+                            $lineTotal   = round($batchUsed['quantity_deducted'] * $batchUsed['sale_price'], 2);
+                            $taxAmount   = round($lineTotal * ($effectiveTaxRate ?? 0) / 100, 2);
+
                             SaleItem::create([
-                                'sale_id'   => $sale->id,
-                                'item_id'   => $item->id,
-                                'item_name' => $item->description,
-                                'batch_id'  => $batchUsed['batch_id'],
-                                'qty'       => $batchUsed['quantity_deducted'],
-                                'rate'      => $batchUsed['sale_price'],
-                                'total'     => $lineTotal,
+                                'sale_id'    => $sale->id,
+                                'item_id'    => $item->id,
+                                'item_name'  => $item->description,
+                                'batch_id'   => $batchUsed['batch_id'],
+                                'qty'        => $batchUsed['quantity_deducted'],
+                                'rate'       => $batchUsed['sale_price'],
+                                'total'      => $lineTotal,
+                                'tax_rate'   => $effectiveTaxRate,
+                                'tax_amount' => $taxAmount,
+                                'note'       => $itemNote,
                             ]);
                             $calculatedSubtotal += $lineTotal;
+                            $calculatedTaxTotal += $taxAmount;
                         }
                     }
                 }
 
-                // C. Authoritative backend Tax & Grand Total calculation
-                $taxResult = $this->taxService->calculate($calculatedSubtotal, 0, 0);
-                $grandTotal = $taxResult['grand_total'];
-                $taxTotal   = $taxResult['tax_amount'];
-                $taxRate    = $taxResult['tax_rate'];
+                // C. Authoritative backend Grand Total calculation using per-row accumulated tax
+                $grandTotal = round($calculatedSubtotal + $calculatedTaxTotal, 2);
 
                 $sale->update([
                     'subtotal'    => $calculatedSubtotal,
-                    'tax_rate'    => $taxRate,
-                    'tax_total'   => $taxTotal,
+                    'tax_rate'    => $calculatedSubtotal > 0 ? round(($calculatedTaxTotal / $calculatedSubtotal) * 100, 4) : 0,
+                    'tax_total'   => $calculatedTaxTotal,
                     'grand_total' => $grandTotal,
                 ]);
 

@@ -174,6 +174,7 @@
                                     <span class="text-[10px] text-slate-500 mt-0.5">
                                         Stock: <span class="text-yellow-500 font-mono font-bold" x-text="row.stock"></span>
                                     </span>
+                                    <input type="text" x-model="row.note" placeholder="Item note (optional)..." class="w-full bg-slate-950/80 border border-slate-700/60 rounded px-2 py-1 text-xs text-slate-300 focus:border-blue-500 outline-none mt-1">
                                 </div>
                             </td>
                             <td class="p-4">
@@ -189,10 +190,15 @@
                         </tr>
                     </template>
 
-
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <!-- Invoice Note Field -->
+    <div class="p-4 bg-slate-900 border-t border-slate-800">
+        <label class="block text-xs font-bold text-slate-400 mb-1">Invoice Note / Instructions (Optional)</label>
+        <input type="text" x-model="invoice_note" placeholder="e.g. Special customer request or delivery note..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:border-blue-500 outline-none">
     </div>
 
     <!-- Sticky Footer Actions -->
@@ -207,18 +213,69 @@
         </div>
     </div>
 
-    <!-- Success Modal -->
-    <div x-show="showSuccess" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" style="display: none;">
-        <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm flex flex-col max-h-[90vh]">
-            <div class="bg-green-600 p-4 text-center">
-                <h2 class="text-white font-bold text-lg"><i class="fas fa-check-circle"></i> Sale Complete</h2>
+    <!-- Success & Print Format Selector Modal -->
+    <div x-show="showSuccess" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm" style="display: none;">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh] overflow-hidden">
+            <div class="bg-gradient-to-r from-green-600 to-emerald-600 p-5 text-center">
+                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2 text-white text-2xl">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h2 class="text-white font-bold text-xl">Sale Completed!</h2>
+                <p class="text-green-100 text-xs mt-0.5" x-text="'Invoice #' + invoice_no"></p>
             </div>
-            <div class="p-4 bg-gray-100 overflow-y-auto flex-1 flex justify-center">
-                <div class="bg-white p-2 shadow-sm w-[300px] text-black" x-html="receiptHtml"></div>
+            
+            <div class="p-5 space-y-4 overflow-y-auto">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Select Print Format</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" @click="selectedPrintFormat = '80mm'" :class="selectedPrintFormat === '80mm' ? 'bg-blue-600 border-blue-500 text-white font-bold' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750'" class="p-3 border rounded-xl flex items-center gap-2.5 text-left transition">
+                            <i class="fas fa-print text-lg"></i>
+                            <div>
+                                <div class="text-xs">Thermal 80mm</div>
+                                <div class="text-[10px] opacity-75">Standard POS</div>
+                            </div>
+                        </button>
+                        <button type="button" @click="selectedPrintFormat = '58mm'" :class="selectedPrintFormat === '58mm' ? 'bg-blue-600 border-blue-500 text-white font-bold' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750'" class="p-3 border rounded-xl flex items-center gap-2.5 text-left transition">
+                            <i class="fas fa-receipt text-lg"></i>
+                            <div>
+                                <div class="text-xs">Thermal 58mm</div>
+                                <div class="text-[10px] opacity-75">Compact Slip</div>
+                            </div>
+                        </button>
+                        <button type="button" @click="selectedPrintFormat = 'a4'" :class="selectedPrintFormat === 'a4' ? 'bg-blue-600 border-blue-500 text-white font-bold' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750'" class="p-3 border rounded-xl flex items-center gap-2.5 text-left transition">
+                            <i class="fas fa-file-invoice text-lg"></i>
+                            <div>
+                                <div class="text-xs">A4 Invoice</div>
+                                <div class="text-[10px] opacity-75">Full Page</div>
+                            </div>
+                        </button>
+                        <button type="button" @click="selectedPrintFormat = 'simple'" :class="selectedPrintFormat === 'simple' ? 'bg-blue-600 border-blue-500 text-white font-bold' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750'" class="p-3 border rounded-xl flex items-center gap-2.5 text-left transition">
+                            <i class="fas fa-file-alt text-lg"></i>
+                            <div>
+                                <div class="text-xs">Simple Slip</div>
+                                <div class="text-[10px] opacity-75">Text Format</div>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        <button type="button" @click="selectedPrintFormat = 'customer'" :class="selectedPrintFormat === 'customer' ? 'bg-blue-600 border-blue-500 text-white font-bold' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750'" class="w-full p-3 border rounded-xl flex items-center gap-2.5 text-left transition">
+                            <i class="fas fa-user-tag text-lg"></i>
+                            <div>
+                                <div class="text-xs">Customer Invoice</div>
+                                <div class="text-[10px] opacity-75">Formal detailed customer layout</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="p-4 bg-white border-t border-gray-200 flex gap-3">
-                <button @click="printReceipt()" class="flex-1 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold">Print</button>
-                <button @click="resetForm()" class="flex-1 py-3 rounded-lg border border-gray-300 text-gray-700 font-bold">New Sale</button>
+
+            <div class="p-4 bg-slate-950 border-t border-slate-800 flex gap-3">
+                <button @click="printReceiptFormatted()" class="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg flex items-center justify-center gap-2">
+                    <i class="fas fa-print"></i> Print Receipt
+                </button>
+                <button @click="resetForm()" class="flex-1 py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800">
+                    New Sale
+                </button>
             </div>
         </div>
     </div>
@@ -261,6 +318,8 @@
             rows: [],
             received_amount: '',
             return_adjustment: '',
+            invoice_note: '',
+            selectedPrintFormat: '80mm',
             searchQuery: '',
             searchResults: [],
             showSuccess: false,
@@ -353,6 +412,7 @@
                             name: item.name,
                             qty: 1,
                             price: item.price,
+                            note: '',
                             stock: isServ ? 999999 : availStock,
                             item_type: item.item_type ?? 'Inventory'
                         });
@@ -392,6 +452,7 @@
                     customer_id: this.customer_id,
                     salesman_id: this.salesman_id,
                     date: this.date,
+                    note: this.invoice_note,
                     rows: this.rows,
                     grand_total: this.netTotal,
                     received_amount: this.received_amount,
@@ -411,11 +472,6 @@
                         this.receiptHtml = result.receipt_html;
                         this.lastSaleId = result.sale_id;
                         this.showSuccess = true;
-
-                        // Auto-Show Bill Logic
-                        if (result.print_url) {
-                            window.open(result.print_url, '_blank', 'width=400,height=600');
-                        }
                     } else {
                         alert("Error: " + result.message);
                     }
@@ -424,8 +480,10 @@
                 }
             },
 
-            printReceipt() {
-                if (this.lastSaleId) window.open(`/cash-sales/${this.lastSaleId}/print`, '_blank', 'width=400,height=600');
+            printReceiptFormatted() {
+                if (this.lastSaleId) {
+                    window.open(`/cash-sales/${this.lastSaleId}/print?format=${this.selectedPrintFormat}`, '_blank', 'width=800,height=800');
+                }
             },
             resetForm() {
                 window.location.reload();

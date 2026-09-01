@@ -76,27 +76,39 @@
         <div class="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar relative">
 
             <template x-for="(item, index) in cart" :key="index">
-                <div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-transparent hover:border-blue-200 dark:hover:border-blue-900 transition group">
-                    <div class="flex flex-col items-center gap-1 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-1">
-                        <button @click="updateQty(index, 1)" class="w-6 h-6 rounded flex items-center justify-center bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition text-xs">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                        <span class="font-bold text-sm text-slate-700 dark:text-white" x-text="item.qty"></span>
-                        <button @click="updateQty(index, -1)" class="w-6 h-6 rounded flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white transition text-xs">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                    </div>
+                <div class="flex flex-col gap-1 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-transparent hover:border-blue-200 dark:hover:border-blue-900 transition group">
+                    <div class="flex items-center gap-3">
+                        <div class="flex flex-col items-center gap-1 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-1">
+                            <button @click="updateQty(index, 1)" class="w-6 h-6 rounded flex items-center justify-center bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition text-xs">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <span class="font-bold text-sm text-slate-700 dark:text-white" x-text="item.qty"></span>
+                            <button @click="updateQty(index, -1)" class="w-6 h-6 rounded flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white transition text-xs">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
 
-                    <div class="flex-1 min-w-0">
-                        <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate" x-text="item.name || item.description"></h4>
-                        <p class="text-xs text-slate-500" x-text="'@ ' + Number(item.price || item.rate || 0).toFixed(2)"></p>
-                    </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate" x-text="item.name || item.description"></h4>
+                            <p class="text-xs text-slate-500" x-text="'@ ' + Number(item.price || item.rate || 0).toFixed(2)"></p>
+                        </div>
 
-                    <div class="text-right">
-                        <div class="font-bold text-slate-800 dark:text-white" x-text="'Rs. ' + ((Number(item.price || item.rate || 0)) * item.qty).toFixed(2)"></div>
-                        <button @click="removeItem(index)" class="text-slate-300 hover:text-red-500 text-xs transition mt-1 opacity-0 group-hover:opacity-100">
-                            <i class="fas fa-times"></i>
-                        </button>
+                        <div class="text-right">
+                            <div class="font-bold text-slate-800 dark:text-white" x-text="'Rs. ' + ((Number(item.price || item.rate || 0)) * item.qty).toFixed(2)"></div>
+                            <button @click="removeItem(index)" class="text-slate-300 hover:text-red-500 text-xs transition mt-1 opacity-0 group-hover:opacity-100">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Per-item Tax Rate Input -->
+                    <div class="flex items-center gap-2 pl-9 mt-0.5">
+                        <label class="text-[10px] text-slate-400 font-semibold uppercase whitespace-nowrap"><i class="fas fa-percent text-[9px] mr-0.5"></i> Tax %</label>
+                        <input type="number"
+                               x-model="item.tax_rate"
+                               min="0" max="100" step="0.01"
+                               placeholder="0"
+                               class="w-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-0.5 text-xs text-right text-slate-700 dark:text-slate-300 outline-none focus:ring-1 focus:ring-blue-400">
+                        <span class="text-[10px] text-slate-400">Tax: <span class="font-mono font-bold" x-text="'Rs.' + (((Number(item.price||item.rate||0)*item.qty) * (parseFloat(item.tax_rate)||0)) / 100).toFixed(2)"></span></span>
                     </div>
                 </div>
             </template>
@@ -290,7 +302,12 @@
                             ...product,
                             price: product.price || product.sale_rate || product.rate || 0,
                             name: product.name || product.description,
-                            qty: 1
+                            qty: 1,
+                            // Initialise per-item tax_rate from the product record;
+                            // falls back to global tax settings if product has no rate.
+                            tax_rate: (product.tax_rate !== null && product.tax_rate !== undefined)
+                                ? product.tax_rate
+                                : (this.taxSettings && this.taxSettings.tax_enabled ? parseFloat(this.taxSettings.tax_rate) || 0 : 0)
                         });
                     } else {
                         alert('Out of stock!');
@@ -374,9 +391,13 @@
                     return;
                 }
 
-                // 1. Prepare Data
+                // 1. Prepare Data — include per-item tax_rate so backend can save it accurately
+                const cartWithTax = this.cart.map(item => ({
+                    ...item,
+                    tax_rate: (item.tax_rate !== null && item.tax_rate !== undefined) ? parseFloat(item.tax_rate) : null
+                }));
                 const payload = {
-                    cart: this.cart,
+                    cart: cartWithTax,
                     total: this.grandTotal,
                     amount_received: this.amountReceived,
                     return_adjustment: parseFloat(this.returnAdjustment) || 0,

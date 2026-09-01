@@ -11,13 +11,14 @@ use Tests\TestCase;
 
 class TodaySalesDateRangeTest extends TestCase
 {
-    use RefreshDatabase;
+    use \Illuminate\Foundation\Testing\DatabaseTransactions;
 
     protected User $user;
 
     protected function setUp(): void
     {
         parent::setUp();
+        Sale::query()->delete();
         $this->user = User::factory()->create();
     }
 

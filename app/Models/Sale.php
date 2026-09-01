@@ -27,6 +27,7 @@ class Sale extends Model
         'change_amount', // Added
         'return_adjustment',
         'wallet_id',
+        'note',
     ];
 
     protected $casts = [
@@ -109,6 +110,7 @@ class Sale extends Model
             'paid_amount'    => (float) ($this->paid_amount ?? 0),
             'change_amount'  => (float) ($this->change_amount ?? 0),
             'status'         => $this->status,
+            'note'           => $this->note,
             'items'          => $this->items->map(function ($item) {
                 return [
                     'id'        => $item->id,
@@ -120,6 +122,7 @@ class Sale extends Model
                     'qty'       => (float) $item->qty,
                     'rate'      => (float) $item->rate,
                     'total'     => (float) $item->total,
+                    'note'      => $item->note,
                 ];
             })->values()->toArray(),
         ];

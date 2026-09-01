@@ -320,6 +320,7 @@ class UnifiedImportController extends Controller
         }
 
         $creditLimit    = $this->numericCell($raw, $colMap, 'credit_limit', 0);
+        // opening_balance sign is preserved: negative means the store owes the customer (credit to customer).
         $openingBalance = $this->numericCell($raw, $colMap, 'opening_balance', 0);
         $phone          = $this->cell($raw, $colMap, 'phone');
         $address        = $this->cell($raw, $colMap, 'address');
@@ -691,7 +692,10 @@ class UnifiedImportController extends Controller
             'employee_code'   => $find(['employee code', 'employee_code', 'emp code', 'emp_code']),
             'commission_rate' => $find(['commission rate', 'commission_rate', 'commission', 'rate']),
             'credit_limit'    => $find(['credit limit', 'credit_limit', 'limit']),
-            'opening_balance' => $find(['opening balance', 'opening_balance', 'balance', 'opening debt', 'debt']),
+            // opening_balance: negative values are accepted and preserved (e.g. -500 means store owes customer)
+            'opening_balance' => $find(['opening balance', 'opening_balance', 'balance', 'opening debt', 'debt',
+                                        'money', 'amount', 'credit', 'opening amount', 'start balance',
+                                        'initial balance', 'balance due', 'due']),
         ];
     }
 
@@ -707,6 +711,8 @@ class UnifiedImportController extends Controller
 
     /**
      * Get a numeric cell value; returns $default if absent or non-numeric.
+     * IMPORTANT: negative values (e.g. -500) are preserved exactly as provided.
+     * Do NOT apply abs() here — negative customer balance means the store owes the customer.
      */
     private function numericCell(array $row, array $colMap, string $field, float $default = 0.0): float
     {

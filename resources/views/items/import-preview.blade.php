@@ -164,7 +164,7 @@
     <!-- STEP 2: PREVIEW TABLE -->
     <div x-show="step === 2" class="space-y-6" x-cloak>
         <!-- Summary Stats Card -->
-        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-md">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-md">
             <div class="text-center p-3 border-r border-gray-100 dark:border-slate-700/50">
                 <span class="text-sm text-gray-500 dark:text-slate-400 font-semibold block uppercase">Total Rows</span>
                 <span class="text-3xl font-black text-gray-900 dark:text-white" x-text="summary.total">0</span>
@@ -177,9 +177,20 @@
                 <span class="text-sm text-yellow-500 font-semibold block uppercase">Warnings ⚠</span>
                 <span class="text-3xl font-black text-yellow-500" x-text="summary.warnings">0</span>
             </div>
-            <div class="text-center p-3">
+            <div class="text-center p-3 border-r border-gray-100 dark:border-slate-700/50">
                 <span class="text-sm text-red-500 font-semibold block uppercase">Errors ✗</span>
                 <span class="text-3xl font-black text-red-500" x-text="summary.errors">0</span>
+            </div>
+            <div class="text-center p-3">
+                <span class="text-sm text-orange-500 font-semibold block uppercase">Need Correction</span>
+                <span class="text-3xl font-black text-orange-500" x-text="summary.errors">0</span>
+                <template x-if="summary.errors > 0">
+                    <button @click="errorsOnlyFilter = !errorsOnlyFilter; currentPage = 1"
+                            :class="errorsOnlyFilter ? 'bg-red-600 text-white' : 'bg-red-50 dark:bg-red-950/20 text-red-600'"
+                            class="mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-300 dark:border-red-800 transition hover:bg-red-600 hover:text-white">
+                        <span x-text="errorsOnlyFilter ? 'Show All' : 'Show Errors'"></span>
+                    </button>
+                </template>
             </div>
         </div>
 
@@ -239,10 +250,20 @@
 
         <!-- Preview Table -->
         <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xl overflow-hidden">
-            <div class="p-6 border-b border-gray-100 dark:border-slate-700/50 flex justify-between items-center">
+            <div class="p-6 border-b border-gray-100 dark:border-slate-700/50 flex flex-wrap justify-between items-center gap-3">
                 <h3 class="text-gray-900 dark:text-white font-bold text-lg">Sheet Preview</h3>
-                <div class="text-xs text-gray-500 dark:text-slate-400">
-                    Showing <span x-text="pageStart">1</span> to <span x-text="pageEnd">50</span> of <span x-text="rows.length"></span> rows
+                <div class="flex items-center gap-3">
+                    <template x-if="summary.errors > 0">
+                        <button @click="errorsOnlyFilter = !errorsOnlyFilter; currentPage = 1"
+                                :class="errorsOnlyFilter ? 'bg-red-600 text-white border-red-600' : 'bg-white dark:bg-slate-800 text-red-600 border-red-300 dark:border-red-700'"
+                                class="flex items-center gap-1.5 px-4 py-2 rounded-lg border text-sm font-bold transition">
+                            <i class="fas fa-filter text-xs"></i>
+                            <span x-text="errorsOnlyFilter ? 'Show All Rows' : ('Errors Only (' + summary.errors + ')')"></span>
+                        </button>
+                    </template>
+                    <div class="text-xs text-gray-500 dark:text-slate-400">
+                        Showing <span x-text="pageStart">1</span> to <span x-text="pageEnd">50</span> of <span x-text="filteredRows.length"></span> rows
+                    </div>
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -300,19 +321,28 @@
                                 <td class="p-4 text-xs text-gray-600 dark:text-slate-400 truncate max-w-[130px]" :title="row.supplier_name || row.supplier_code || '-'" x-text="row.supplier_name || row.supplier_code || '-'"></td>
                                 <td class="p-4 text-right font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400" x-text="row.due > 0 ? ('Rs.' + parseFloat(row.due).toFixed(2)) : '-'"></td>
                                 <td class="p-4 text-center">
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-                                          :class="{
-                                              'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400': row.status === 'ready',
-                                              'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-400': row.status === 'warning',
-                                              'bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400': row.status === 'error'
-                                          }">
-                                        <i class="fas" :class="{
-                                            'fa-check-circle': row.status === 'ready',
-                                            'fa-exclamation-triangle': row.status === 'warning',
-                                            'fa-times-circle': row.status === 'error'
-                                        }"></i>
-                                        <span x-text="row.status"></span>
-                                    </span>
+                                    <div class="flex flex-col items-center gap-1.5">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                                              :class="{
+                                                  'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400': row.status === 'ready',
+                                                  'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-400': row.status === 'warning',
+                                                  'bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400': row.status === 'error'
+                                              }">
+                                            <i class="fas" :class="{
+                                                'fa-check-circle': row.status === 'ready',
+                                                'fa-exclamation-triangle': row.status === 'warning',
+                                                'fa-times-circle': row.status === 'error'
+                                            }"></i>
+                                            <span x-text="row.status"></span>
+                                        </span>
+                                        <!-- Edit button for error/warning rows -->
+                                        <template x-if="row.status === 'error' || row.status === 'warning'">
+                                            <button @click="openEditModal(row)"
+                                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold transition shadow">
+                                                <i class="fas fa-pencil-alt text-[9px]"></i> Edit
+                                            </button>
+                                        </template>
+                                    </div>
                                 </td>
                             </tr>
                         </template>
@@ -348,6 +378,99 @@
                         <i class="fas fa-upload"></i> Import Valid Rows (<span x-text="summary.ready + summary.warnings"></span>)
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== INLINE EDIT MODAL ========== -->
+    <div x-show="editModal.open"
+         class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+         style="display:none;"
+         @keydown.escape.window="editModal.open = false">
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 flex-shrink-0">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-white font-bold text-lg"><i class="fas fa-pencil-alt mr-2"></i>Edit Row <span x-text="'#' + (editModal.row ? editModal.row.index : '')"></span></h3>
+                        <p class="text-blue-100 text-xs mt-0.5">Correct the data below and click Re-validate to fix errors.</p>
+                    </div>
+                    <button @click="editModal.open = false" class="text-white/70 hover:text-white transition">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <!-- Current errors -->
+                <template x-if="editModal.row && editModal.row.issues.length > 0">
+                    <div class="mt-3 bg-red-500/20 border border-red-400/30 rounded-lg p-3">
+                        <p class="text-red-100 text-xs font-bold mb-1"><i class="fas fa-exclamation-circle mr-1"></i>Current Issues:</p>
+                        <template x-for="issue in editModal.row.issues">
+                            <p class="text-red-200 text-[11px]" x-text="'• ' + issue"></p>
+                        </template>
+                    </div>
+                </template>
+            </div>
+            <!-- Modal Body -->
+            <div class="p-5 space-y-4 overflow-y-auto flex-1">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-1">Item Name <span class="text-red-500">*</span></label>
+                        <input type="text" x-model="editModal.draft.name"
+                               class="w-full bg-gray-50 dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                               placeholder="Product name...">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-1">Type <span class="text-red-500">*</span></label>
+                        <select x-model="editModal.draft.type"
+                                class="w-full bg-gray-50 dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="inventory">Inventory</option>
+                            <option value="service">Service</option>
+                            <option value="package">Package</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-1">SKU / Code</label>
+                        <input type="text" x-model="editModal.draft.sku"
+                               class="w-full bg-gray-50 dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                               placeholder="Auto-Gen if empty">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-1">Category</label>
+                        <input type="text" x-model="editModal.draft.category"
+                               class="w-full bg-gray-50 dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                               placeholder="e.g. Beverages">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-1">Sale Price <span class="text-red-500">*</span></label>
+                        <input type="number" x-model="editModal.draft.price" min="0" step="0.01"
+                               class="w-full bg-gray-50 dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-1">Cost Price</label>
+                        <input type="number" x-model="editModal.draft.cost" min="0" step="0.01"
+                               class="w-full bg-gray-50 dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-1">Opening Stock</label>
+                        <input type="number" x-model="editModal.draft.stock" min="0" step="0.01"
+                               class="w-full bg-gray-50 dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-1">Min Stock</label>
+                        <input type="number" x-model="editModal.draft.min_stock" min="0" step="1"
+                               class="w-full bg-gray-50 dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+            </div>
+            <!-- Modal Footer -->
+            <div class="p-5 border-t border-gray-100 dark:border-slate-700/50 bg-gray-50 dark:bg-slate-950 flex gap-3 flex-shrink-0">
+                <button @click="editModal.open = false"
+                        class="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-slate-700 text-gray-600 dark:text-slate-400 font-bold hover:bg-gray-100 dark:hover:bg-slate-800 transition text-sm">
+                    Cancel
+                </button>
+                <button @click="saveEditedRow()"
+                        class="flex-1 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow-lg text-sm flex items-center justify-center gap-2">
+                    <i class="fas fa-sync-alt"></i> Re-validate & Save
+                </button>
             </div>
         </div>
     </div>
@@ -435,15 +558,25 @@
             csrfToken: '{{ csrf_token() }}',
             supplierDues: [],
             totalSupplierDues: 0,
+            // Error filter & edit modal state
+            errorsOnlyFilter: false,
+            editModal: { open: false, row: null, draft: {} },
+
+            get filteredRows() {
+                if (this.errorsOnlyFilter) {
+                    return this.rows.filter(r => r.status === 'error' || r.status === 'warning');
+                }
+                return this.rows;
+            },
 
             get paginatedRows() {
                 const start = (this.currentPage - 1) * this.pageSize;
                 const end = start + this.pageSize;
-                return this.rows.slice(start, end);
+                return this.filteredRows.slice(start, end);
             },
 
             get totalPages() {
-                return Math.ceil(this.rows.length / this.pageSize) || 1;
+                return Math.ceil(this.filteredRows.length / this.pageSize) || 1;
             },
 
             get pageStart() {
@@ -451,7 +584,7 @@
             },
 
             get pageEnd() {
-                return Math.min(this.currentPage * this.pageSize, this.rows.length);
+                return Math.min(this.currentPage * this.pageSize, this.filteredRows.length);
             },
 
             get validRowsToImport() {
@@ -462,6 +595,93 @@
                 if (this.validRowsToImport.length === 0) return 0;
                 return Math.round((this.processedRows / this.validRowsToImport.length) * 100);
             },
+
+            // ---- Edit Modal Methods ----
+
+            openEditModal(row) {
+                this.editModal.row = row;
+                // Deep copy draft so edits don't mutate the live row until confirmed
+                this.editModal.draft = {
+                    name: row.name || '',
+                    type: row.type || 'inventory',
+                    sku: row.sku || '',
+                    category: row.category || '',
+                    price: row.price !== undefined ? row.price : 0,
+                    cost: row.cost !== undefined ? row.cost : 0,
+                    stock: row.stock !== undefined ? row.stock : 0,
+                    min_stock: row.min_stock !== undefined ? row.min_stock : 0,
+                };
+                this.editModal.open = true;
+            },
+
+            saveEditedRow() {
+                const draft = this.editModal.draft;
+                const row = this.editModal.row;
+                if (!row) return;
+
+                // Apply draft back to row
+                row.name     = (draft.name || '').trim();
+                row.type     = (draft.type || 'inventory').toLowerCase().trim();
+                row.sku      = (draft.sku || '').trim();
+                row.category = (draft.category || '').trim();
+                row.price    = parseFloat(draft.price) || 0;
+                row.cost     = parseFloat(draft.cost) || 0;
+                row.stock    = parseFloat(draft.stock) || 0;
+                row.min_stock= parseFloat(draft.min_stock) || 0;
+
+                // Re-validate this row using the same rules as parsePastedData
+                const issues = [];
+                let status = 'ready';
+
+                if (!row.name) {
+                    status = 'error'; issues.push('Item Name is required.');
+                }
+                const validTypes = ['inventory', 'service', 'package'];
+                if (!validTypes.includes(row.type)) {
+                    status = 'error'; issues.push("Invalid type '" + row.type + "'. Must be: inventory, service, or package.");
+                }
+                if (isNaN(row.price) || row.price < 0) {
+                    status = 'error'; issues.push('Sale Price must be a valid non-negative number.');
+                }
+                if (isNaN(row.cost) || row.cost < 0) {
+                    status = 'error'; issues.push('Cost Price must be a valid non-negative number.');
+                }
+                if (isNaN(row.stock) || row.stock < 0) {
+                    status = 'error'; issues.push('Stock must be a valid non-negative number.');
+                }
+                if (status !== 'error' && !row.category) {
+                    status = 'warning'; issues.push('Category is empty (optional but recommended).');
+                }
+
+                row.issues = issues;
+                row.status = status;
+
+                // Recalculate summary from all rows
+                this.recalculateSummary();
+
+                this.editModal.open = false;
+            },
+
+            recalculateSummary() {
+                let ready = 0, warnings = 0, errors = 0;
+                for (const r of this.rows) {
+                    if (r.status === 'ready')        ready++;
+                    else if (r.status === 'warning') warnings++;
+                    else if (r.status === 'error')   errors++;
+                }
+                this.summary.ready    = ready;
+                this.summary.warnings = warnings;
+                this.summary.errors   = errors;
+                this.summary.total    = this.rows.length;
+
+                // If errors filter is active but no errors remain, deactivate it
+                if (this.errorsOnlyFilter && errors === 0) {
+                    this.errorsOnlyFilter = false;
+                }
+                this.currentPage = 1;
+            },
+
+            // ---- End Edit Modal Methods ----
 
             handleFileSelect(event) {
                 const file = event.target.files[0];
