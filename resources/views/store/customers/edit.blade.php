@@ -40,6 +40,17 @@
                     @enderror
                 </div>
 
+                {{-- Email --}}
+                <div>
+                    <label for="email" class="block text-sm font-bold text-slate-700 dark:text-slate-350 mb-2">Email Address</label>
+                    <input type="email" name="email" id="email" value="{{ old('email', $customer->email) }}"
+                           class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-transparent text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-600 transition"
+                           placeholder="e.g. customer@example.com">
+                    @error('email')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 {{-- Address --}}
                 <div>
                     <label for="address" class="block text-sm font-bold text-slate-700 dark:text-slate-350 mb-2">Address</label>

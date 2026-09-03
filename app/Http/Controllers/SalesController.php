@@ -474,6 +474,7 @@ class SalesController extends Controller
                 'item_type' => $i->item?->item_type ?? 'Inventory',
                 'qty'       => (float) $i->qty,
                 'rate'      => (float) $i->rate,
+                'tax_rate'  => (float) ($i->tax_rate ?? 0),
             ];
         })->values()->toArray();
 
@@ -487,6 +488,7 @@ class SalesController extends Controller
                 'batch_id'  => $i->batch_id,
                 'qty'       => (float) $i->qty,
                 'rate'      => (float) $i->rate,
+                'tax_rate'  => (float) ($i->tax_rate ?? 0),
             ];
         })->values()->toArray();
 

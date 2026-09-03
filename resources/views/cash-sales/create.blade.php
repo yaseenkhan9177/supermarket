@@ -61,8 +61,8 @@
                 <span>Subtotal</span>
                 <span class="font-mono text-slate-300 font-bold" x-text="'Rs. ' + subtotal"></span>
             </div>
-            <div class="flex justify-between items-center mb-2 text-xs font-bold uppercase" x-show="taxSettings.tax_enabled">
-                <span class="text-blue-400" x-text="'Tax (' + (parseFloat(taxSettings.tax_rate) || 0) + '%)'"></span>
+            <div class="flex justify-between items-center mb-2 text-xs font-bold uppercase" x-show="parseFloat(taxAmount) > 0 || (taxSettings && taxSettings.tax_enabled)">
+                <span class="text-blue-400">Total Tax</span>
                 <span class="font-mono text-blue-400 font-bold" x-text="'Rs. ' + taxAmount"></span>
             </div>
             <div class="flex justify-between items-center mb-3">
@@ -148,6 +148,7 @@
                         <th class="p-4">Item Name</th>
                         <th class="p-4 w-20 text-center">Qty</th>
                         <th class="p-4 w-28 text-right">Rate</th>
+                        <th class="p-4 w-24 text-center">Tax %</th>
                         <th class="p-4 w-28 text-right">Total</th>
                         <th class="p-4 w-12 text-center"></th>
                     </tr>
@@ -156,7 +157,7 @@
 
                     
                     <tr x-show="rows.length === 0">
-                        <td colspan="7" class="px-4 py-12 text-center">
+                        <td colspan="8" class="px-4 py-12 text-center">
                             <div class="flex flex-col items-center opacity-50">
                                 <i class="fas fa-shopping-cart text-3xl text-slate-600 mb-3"></i>
                                 <span class="text-slate-500 text-sm font-medium">No items added yet</span>
@@ -182,6 +183,17 @@
                             </td>
                             <td class="p-4 text-right">
                                 <input type="number" x-model="row.price" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-right text-white font-mono focus:border-blue-500 outline-none">
+                            </td>
+                            <!-- Per-row editable Tax % -->
+                            <td class="p-4 text-center">
+                                <div class="flex flex-col items-center gap-0.5">
+                                    <input type="number"
+                                           x-model="row.tax_rate"
+                                           min="0" max="100" step="0.01"
+                                           placeholder="0"
+                                           class="w-16 bg-slate-950 border border-blue-800/60 rounded p-1 text-center text-blue-300 font-mono text-xs focus:border-blue-500 outline-none">
+                                    <span class="text-[10px] text-slate-500" x-text="'Rs.' + ((parseFloat(row.qty||0)*parseFloat(row.price||0)) * (parseFloat(row.tax_rate)||0) / 100).toFixed(2)"></span>
+                                </div>
                             </td>
                             <td class="p-4 text-right font-bold text-green-400 font-mono" x-text="(row.qty * row.price).toFixed(2)"></td>
                             <td class="p-4 text-center">
@@ -333,11 +345,13 @@
                 return this.rows.reduce((sum, row) => sum + (parseFloat(row.qty || 0) * parseFloat(row.price || 0)), 0).toFixed(2);
             },
 
+            // Tax is summed per-row based on each row's individual tax_rate
             get taxAmount() {
-                if (!this.taxSettings || !this.taxSettings.tax_enabled) return (0).toFixed(2);
-                let rate = parseFloat(this.taxSettings.tax_rate) || 0;
-                let sub = parseFloat(this.subtotal) || 0;
-                return ((sub * rate) / 100).toFixed(2);
+                return this.rows.reduce((sum, row) => {
+                    const lineTotal = parseFloat(row.qty || 0) * parseFloat(row.price || 0);
+                    const rate = parseFloat(row.tax_rate) || 0;
+                    return sum + (lineTotal * rate / 100);
+                }, 0).toFixed(2);
             },
 
             get netTotal() {
@@ -414,7 +428,11 @@
                             price: item.price,
                             note: '',
                             stock: isServ ? 999999 : availStock,
-                            item_type: item.item_type ?? 'Inventory'
+                            item_type: item.item_type ?? 'Inventory',
+                            // Initialise per-row tax_rate from item data if available
+                            tax_rate: (item.tax_rate !== undefined && item.tax_rate !== null)
+                                ? parseFloat(item.tax_rate)
+                                : (this.taxSettings && this.taxSettings.tax_enabled ? parseFloat(this.taxSettings.tax_rate) || 0 : 0)
                         });
                     } else {
                         alert('Out of Stock!');

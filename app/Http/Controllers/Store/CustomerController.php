@@ -101,19 +101,23 @@ class CustomerController extends Controller
     {
         $customer = Customer::findOrFail($id);
 
-        // ── DebitSales (credit invoices) ─────────────────────────────────────
-        $debitSales = $customer->debitSales()
+        // ── DebitSales (credit invoices from sales table) ─────────────────────
+        $debitSales = $customer->sales()
+            ->where('payment_mode', 'Debit')
             ->withCount('items')
-            ->orderBy('invoice_date', 'desc')
+            ->orderBy('sale_date', 'desc')
+            ->orderBy('id', 'desc')
             ->get();
 
         $totalDebitCount  = $debitSales->count();
-        $totalDebitAmount = $debitSales->sum('net_total');
+        $totalDebitAmount = $debitSales->sum('grand_total');
 
-        // ── CashSales (POS / cash invoices) ──────────────────────────────────
-        $cashSales = $customer->cashSales()
+        // ── CashSales (POS / cash invoices from sales table) ──────────────────
+        $cashSales = $customer->sales()
+            ->where('payment_mode', '!=', 'Debit')
             ->withCount('items')
             ->orderBy('sale_date', 'desc')
+            ->orderBy('id', 'desc')
             ->get();
 
         $totalCashCount  = $cashSales->count();
@@ -129,13 +133,13 @@ class CustomerController extends Controller
         $totalRefundAmount = $refunds->sum('total_amount');
 
         // ── Grand total items sold (qty) ──────────────────────────────────────
-        $totalItemsFromDebit = DebitSaleItem::whereHas('sale', function ($q) use ($id) {
-            $q->where('customer_id', $id);
-        })->sum('quantity');
+        $totalItemsFromDebit = \App\Models\SaleItem::whereHas('sale', function ($q) use ($id) {
+            $q->where('customer_id', $id)->where('payment_mode', 'Debit');
+        })->sum('qty');
 
-        $totalItemsFromCash = CashSaleItem::whereHas('cashSale', function ($q) use ($id) {
-            $q->where('customer_id', $id);
-        })->sum('quantity');
+        $totalItemsFromCash = \App\Models\SaleItem::whereHas('sale', function ($q) use ($id) {
+            $q->where('customer_id', $id)->where('payment_mode', '!=', 'Debit');
+        })->sum('qty');
 
         $totalItemsSold = $totalItemsFromDebit + $totalItemsFromCash;
 
@@ -231,6 +235,7 @@ class CustomerController extends Controller
         $request->validate([
             'name'         => 'required|string|max:255',
             'phone'        => 'nullable|string|max:30',
+            'email'        => 'nullable|email|max:255',
             'address'      => 'nullable|string|max:500',
             'credit_limit' => 'nullable|numeric|min:0',
         ]);
@@ -238,12 +243,21 @@ class CustomerController extends Controller
         $customer->update([
             'name'         => $request->name,
             'phone'        => $request->phone,
+            'email'        => $request->email,
             'address'      => $request->address,
             'credit_limit' => $request->credit_limit ?? $customer->credit_limit,
         ]);
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Customer profile updated successfully.',
+                'customer' => $customer,
+            ]);
+        }
+
         return redirect()->route('customers.show', $customer->id)
-            ->with('success', 'Customer updated successfully.');
+            ->with('success', 'Customer profile updated successfully.');
     }
 
     /**
@@ -505,6 +519,24 @@ class CustomerController extends Controller
             }
             $customer->save();
 
+            // Allocate payment to customer's open debit sales (FIFO)
+            $remainingAllocation = min($amount, max(0.0, (float) ($customer->getOriginal('balance') ?? $amount)));
+            $pendingSales = \App\Models\Sale::where('customer_id', $customer->id)
+                ->where('payment_mode', 'Debit')
+                ->whereRaw('grand_total > COALESCE(paid_amount, 0)')
+                ->orderBy('sale_date', 'asc')
+                ->orderBy('id', 'asc')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($pendingSales as $sale) {
+                if ($remainingAllocation <= 0) break;
+                $unpaid = max(0.00, round((float) $sale->grand_total - (float) ($sale->paid_amount ?? 0), 2));
+                $alloc = min($remainingAllocation, $unpaid);
+                $sale->increment('paid_amount', $alloc);
+                $remainingAllocation = round($remainingAllocation - $alloc, 2);
+            }
+
             $ledgerEntry = CustomerLedgerEntry::create([
                 'customer_id'   => $customer->id,
                 'type'          => 'payment_received',
@@ -523,11 +555,16 @@ class CustomerController extends Controller
 
             Receipt::create([
                 'receipt_number'    => $receiptNumber,
+                'receipt_no'        => $receiptNumber,
+                'receipt_date'      => $request->filled('date') ? $request->date : now()->toDateString(),
                 'customer_id'       => $customer->id,
                 'ledger_entry_id'   => $ledgerEntry->id,
                 'amount'            => $amount,
+                'amount_received'   => $amount,
+                'total_adjusted'    => $amount,
                 'remaining_balance' => $customer->balance,
                 'payment_method'    => $request->method,
+                'payment_mode'      => ucfirst($request->method),
                 'received_by'       => auth()->id(),
                 'store_name'        => $storeName,
             ]);

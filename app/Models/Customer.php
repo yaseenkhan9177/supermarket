@@ -12,6 +12,7 @@ class Customer extends Model
     protected $fillable = [
         'name',
         'phone',
+        'email',
         'address',
         'credit_limit',
         'balance',
@@ -23,15 +24,15 @@ class Customer extends Model
 
     public function debitSales()
     {
-        return $this->hasMany(DebitSale::class);
+        return $this->hasMany(Sale::class)->where('payment_mode', 'Debit');
     }
 
     public function cashSales()
     {
-        return $this->hasMany(CashSale::class);
+        return $this->hasMany(Sale::class)->where('payment_mode', '!=', 'Debit');
     }
 
-    // POS Sales (Sale model from sales controller)
+    // All sales for this customer (POS, Cash, Debit)
     public function sales()
     {
         return $this->hasMany(Sale::class);

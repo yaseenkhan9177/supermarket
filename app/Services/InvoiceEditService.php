@@ -242,6 +242,7 @@ class InvoiceEditService
             $sale->items()->delete();
 
             $calculatedSubtotal = 0;
+            $calculatedTaxTotal = 0;
             $newItemsCreated    = [];
 
             foreach ($payload['items'] as $row) {
@@ -252,17 +253,26 @@ class InvoiceEditService
                 $rate      = (float) $row['rate'];
                 $lineTotal = round($qty * $rate, 2);
 
+                $effectiveTaxRate = array_key_exists('tax_rate', $row) && $row['tax_rate'] !== null && $row['tax_rate'] !== ''
+                    ? (float) $row['tax_rate']
+                    : ($item->tax_rate !== null ? (float) $item->tax_rate : null);
+
+                $lineTax = $this->taxService->calculateLineTax($lineTotal, $effectiveTaxRate);
+
                 $saleItem = SaleItem::create([
-                    'sale_id'   => $sale->id,
-                    'item_id'   => $item->id,
-                    'item_name' => $item->description,
-                    'batch_id'  => $row['batch_id'] ?? null,
-                    'qty'       => $qty,
-                    'rate'      => $rate,
-                    'total'     => $lineTotal,
+                    'sale_id'    => $sale->id,
+                    'item_id'    => $item->id,
+                    'item_name'  => $item->description,
+                    'batch_id'   => $row['batch_id'] ?? null,
+                    'qty'        => $qty,
+                    'rate'       => $rate,
+                    'total'      => $lineTotal,
+                    'tax_rate'   => $lineTax['tax_rate'],
+                    'tax_amount' => $lineTax['tax_amount'],
                 ]);
 
                 $calculatedSubtotal += $lineTotal;
+                $calculatedTaxTotal += $lineTax['tax_amount'];
                 $newItemsCreated[]   = $saleItem;
             }
 
@@ -270,11 +280,11 @@ class InvoiceEditService
             $discountTotal = (float) ($payload['discount_total'] ?? $sale->discount_total ?? 0);
             $returnAdj     = (float) ($payload['return_adjustment'] ?? $sale->return_adjustment ?? 0);
 
-            // Authoritative Tax Calculation using current Store Admin settings
-            $taxResult     = $this->taxService->calculate($calculatedSubtotal, $discountTotal, $returnAdj);
-            $taxTotal      = $taxResult['tax_amount'];
-            $taxRate       = $taxResult['tax_rate'];
-            $grandTotal    = $taxResult['grand_total'];
+            // Authoritative Tax Calculation using line items
+            $taxTotal      = $calculatedTaxTotal;
+            $taxableSub    = max(0.00, round($calculatedSubtotal - $discountTotal, 2));
+            $taxRate       = $taxableSub > 0 ? round(($taxTotal / $taxableSub) * 100, 2) : 0;
+            $grandTotal    = max(0.00, round($taxableSub + $taxTotal - $returnAdj, 2));
 
             $paidAmount    = (float) ($payload['paid_amount'] ?? $grandTotal);
             $changeAmount  = max(0, $paidAmount - $grandTotal);

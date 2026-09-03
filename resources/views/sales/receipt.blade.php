@@ -154,7 +154,7 @@
                 <td style="padding-top: 4px;">
                     <span class="font-bold">{{ $item->item_name }}</span>
                     @if(($item->tax_rate ?? 0) > 0)
-                        <span style="font-size: 9px; color: #444;">(T: {{ number_format($item->tax_rate, 0) }}%)</span>
+                        <span style="font-size: 9px; color: #444;">(Tax {{ rtrim(rtrim(number_format($item->tax_rate, 2), '0'), '.') }}%)</span>
                     @endif
                     @if(!empty($item->note))
                         <div style="font-size: 10px; color: #475569; font-style: italic;">Note: {{ $item->note }}</div>
@@ -184,7 +184,7 @@
 
     @if(($sale->tax_total ?? 0) > 0 || ($sale->tax_rate ?? 0) > 0)
     <div class="item-row">
-        <span>Tax ({{ number_format($sale->tax_rate ?? 0, 0) }}%)</span>
+        <span>Tax {{ ($sale->tax_rate ?? 0) > 0 ? '(' . rtrim(rtrim(number_format($sale->tax_rate, 2), '0'), '.') . '%)' : '' }}</span>
         <span>+{{ number_format($sale->tax_total ?? 0, 2) }}</span>
     </div>
     @endif

@@ -198,6 +198,27 @@ class ReceiptController extends Controller
                 }
             }
 
+            // 8b. Allocate remaining payment to pending Debit Sales in sales table (FIFO)
+            if ($remainingToAllocate > 0) {
+                $pendingSales = \App\Models\Sale::where('customer_id', $customer->id)
+                    ->where('payment_mode', 'Debit')
+                    ->whereRaw('grand_total > COALESCE(paid_amount, 0)')
+                    ->orderBy('sale_date', 'asc')
+                    ->orderBy('id', 'asc')
+                    ->lockForUpdate()
+                    ->get();
+
+                foreach ($pendingSales as $sale) {
+                    if ($remainingToAllocate <= 0) break;
+                    $saleDue = max(0.00, round((float) $sale->grand_total - (float) ($sale->paid_amount ?? 0), 2));
+                    if ($saleDue > 0) {
+                        $allocated = min($remainingToAllocate, $saleDue);
+                        $sale->increment('paid_amount', $allocated);
+                        $remainingToAllocate = round($remainingToAllocate - $allocated, 2);
+                    }
+                }
+            }
+
             // 9. Deposit / Accounting Ledger updates
             $depositAc = $request->deposit_account ?: 'Cash Account / Drawer';
             $matchedWalletId = null;
@@ -391,6 +412,16 @@ class ReceiptController extends Controller
                 ->orderBy('id', 'asc')
                 ->select('id', 'invoice_date', 'invoice_no', 'net_total', 'paid_amount', 'status')
                 ->get();
+
+            if ($rawInvoices->isEmpty()) {
+                $rawInvoices = \App\Models\Sale::where('customer_id', $customerId)
+                    ->where('payment_mode', 'Debit')
+                    ->whereRaw('grand_total > COALESCE(paid_amount, 0)')
+                    ->orderBy('sale_date', 'asc')
+                    ->orderBy('id', 'asc')
+                    ->select('id', 'sale_date as invoice_date', 'invoice_no', 'grand_total as net_total', 'paid_amount', 'status')
+                    ->get();
+            }
 
             $totalInvoicesAmount = 0.0;
             $totalPaidAmount = 0.0;

@@ -52,8 +52,8 @@
                 <span>Subtotal</span>
                 <span class="font-mono text-slate-300 font-bold" x-text="'Rs. ' + subtotal"></span>
             </div>
-            <div class="flex justify-between items-center mb-2 text-xs font-bold uppercase" x-show="parseFloat(taxAmount) > 0">
-                <span class="text-rose-400">Tax</span>
+            <div class="flex justify-between items-center mb-2 text-xs font-bold uppercase" x-show="parseFloat(taxAmount) > 0 || (taxSettings && taxSettings.tax_enabled)">
+                <span class="text-rose-400">Total Tax</span>
                 <span class="font-mono text-rose-400 font-bold" x-text="'Rs. ' + taxAmount"></span>
             </div>
             <div class="flex justify-between items-end mb-3 pt-2 border-t border-slate-800">
@@ -346,7 +346,7 @@
                 const tax = parseFloat(this.taxAmount) || 0;
                 return (sub + tax).toFixed(2);
             },
-
+ 
             async saveCustomer() {
                 if (!this.newCustomer.name) {
                     alert('Customer name is required.');

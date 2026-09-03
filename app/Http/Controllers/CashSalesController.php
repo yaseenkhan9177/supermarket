@@ -62,6 +62,7 @@ class CashSalesController extends Controller
                 'on_hand',
                 'on_hand as stock_qty',
                 'on_hand as stock',
+                'tax_rate',
                 'item_type',
                 'item_type as category',
                 'image_path'
@@ -72,6 +73,7 @@ class CashSalesController extends Controller
                 $item->on_hand   = (float) ($item->on_hand ?? 0);
                 $item->stock_qty = $item->on_hand;
                 $item->stock     = $item->on_hand;
+                $item->tax_rate  = $item->tax_rate !== null ? (float) $item->tax_rate : null;
                 $item->item_type = $item->item_type ?? 'Inventory';
                 return $item;
             });
@@ -98,12 +100,13 @@ class CashSalesController extends Controller
             $fifo = new FifoStockService();
 
             $sale = DB::transaction(function () use ($request, $fifo) {
-                $returnAdj = $request->input('return_adjustment', 0);
+                $returnAdj = (float) $request->input('return_adjustment', 0);
+                $customerId = !empty($request->customer_id) ? $request->customer_id : null;
 
                 // A. Create Invoice Header with placeholder totals (recalculated below)
                 $sale = Sale::create([
                     'invoice_no'        => $request->invoice_no,
-                    'customer_id'       => $request->customer_id,
+                    'customer_id'       => $customerId,
                     'wallet_id'         => $request->wallet_id,
                     'user_id'           => $request->salesman_id ?? Auth::id(),
                     'sale_date'         => $request->date ?? now(),
@@ -118,6 +121,7 @@ class CashSalesController extends Controller
                 ]);
 
                 $calculatedSubtotal = 0;
+                $calculatedTaxTotal = 0;
 
                 // B. Save Items & Deduct Stock via FIFO
                 foreach ($request->rows as $row) {
@@ -129,53 +133,66 @@ class CashSalesController extends Controller
                     $qty = (float) $row['qty'];
                     $itemNote = $row['note'] ?? null;
 
+                    // Per-row user-supplied tax_rate or item stored rate
+                    $effectiveTaxRate = array_key_exists('tax_rate', $row) && $row['tax_rate'] !== null
+                        ? (float) $row['tax_rate']
+                        : ($item->tax_rate !== null ? (float) $item->tax_rate : null);
+
                     if ($item->item_type === 'Service') {
-                        // Service items: no stock, use the rate the cashier entered
-                        $lineTotal = $qty * $row['price'];
+                        // Service items: no stock, use rate cashier entered
+                        $lineTotal = round($qty * (float) $row['price'], 2);
+                        $lineTax   = $this->taxService->calculateLineTax($lineTotal, $effectiveTaxRate);
+
                         SaleItem::create([
-                            'sale_id'   => $sale->id,
-                            'item_id'   => $item->id,
-                            'item_name' => $item->description,
-                            'batch_id'  => null,
-                            'qty'       => $qty,
-                            'rate'      => $row['price'],
-                            'total'     => $lineTotal,
-                            'note'      => $itemNote,
+                            'sale_id'    => $sale->id,
+                            'item_id'    => $item->id,
+                            'item_name'  => $item->description,
+                            'batch_id'   => null,
+                            'qty'        => $qty,
+                            'rate'       => (float) $row['price'],
+                            'total'      => $lineTotal,
+                            'tax_rate'   => $lineTax['tax_rate'],
+                            'tax_amount' => $lineTax['tax_amount'],
+                            'note'       => $itemNote,
                         ]);
                         $calculatedSubtotal += $lineTotal;
+                        $calculatedTaxTotal += $lineTax['tax_amount'];
                     } else {
                         // Stock item: FIFO deduction — may span multiple batches
                         $result = $fifo->deductStock($item->id, $qty, $sale->id, Auth::id());
 
                         foreach ($result['batches_used'] as $batchUsed) {
-                            $lineTotal = $batchUsed['quantity_deducted'] * $batchUsed['sale_price'];
+                            $lineTotal = round($batchUsed['quantity_deducted'] * $batchUsed['sale_price'], 2);
+                            $lineTax   = $this->taxService->calculateLineTax($lineTotal, $effectiveTaxRate);
+
                             SaleItem::create([
-                                'sale_id'   => $sale->id,
-                                'item_id'   => $item->id,
-                                'item_name' => $item->description,
-                                'batch_id'  => $batchUsed['batch_id'],
-                                'qty'       => $batchUsed['quantity_deducted'],
-                                'rate'      => $batchUsed['sale_price'],
-                                'total'     => $lineTotal,
-                                'note'      => $itemNote,
+                                'sale_id'    => $sale->id,
+                                'item_id'    => $item->id,
+                                'item_name'  => $item->description,
+                                'batch_id'   => $batchUsed['batch_id'],
+                                'qty'        => $batchUsed['quantity_deducted'],
+                                'rate'       => $batchUsed['sale_price'],
+                                'total'      => $lineTotal,
+                                'tax_rate'   => $lineTax['tax_rate'],
+                                'tax_amount' => $lineTax['tax_amount'],
+                                'note'       => $itemNote,
                             ]);
                             $calculatedSubtotal += $lineTotal;
+                            $calculatedTaxTotal += $lineTax['tax_amount'];
                         }
                     }
                 }
 
-                // C. Authoritative backend Tax & Grand Total calculation
-                $taxResult = $this->taxService->calculate($calculatedSubtotal, 0, $returnAdj);
-                $grandTotal = $taxResult['grand_total'];
-                $taxTotal   = $taxResult['tax_amount'];
-                $taxRate    = $taxResult['tax_rate'];
+                // C. Authoritative backend Tax & Grand Total calculation using per-item accumulated taxes
+                $grandTotal = max(0.00, round($calculatedSubtotal + $calculatedTaxTotal - $returnAdj, 2));
+                $effectiveTaxRate = $calculatedSubtotal > 0 ? round(($calculatedTaxTotal / $calculatedSubtotal) * 100, 2) : 0;
 
                 $sale->update([
                     'subtotal'      => $calculatedSubtotal,
-                    'tax_rate'      => $taxRate,
-                    'tax_total'     => $taxTotal,
+                    'tax_rate'      => $effectiveTaxRate,
+                    'tax_total'     => $calculatedTaxTotal,
                     'grand_total'   => $grandTotal,
-                    'change_amount' => ($request->received_amount ?? 0) - $grandTotal,
+                    'change_amount' => max(0.00, ($request->received_amount ?? 0) - $grandTotal),
                 ]);
 
                 // D. Adjust Active Wallet Balance

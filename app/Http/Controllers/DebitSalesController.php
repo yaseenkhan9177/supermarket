@@ -7,6 +7,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Item;
 use App\Models\Customer;
+use App\Models\CustomerLedgerEntry;
 use App\Models\User;
 use App\Services\FifoStockService;
 use App\Services\TaxService;
@@ -135,12 +136,12 @@ class DebitSalesController extends Controller
                     // Use user-supplied per-row tax_rate if present; fall back to product's stored rate.
                     $effectiveTaxRate = array_key_exists('tax_rate', $row) && $row['tax_rate'] !== null
                         ? (float) $row['tax_rate']
-                        : $item->tax_rate;
+                        : ($item->tax_rate !== null ? (float) $item->tax_rate : null);
 
                     if ($item->item_type === 'Service') {
                         // Service items: no stock deduction
-                        $lineTotal   = round($qty * $row['price'], 2);
-                        $taxAmount   = round($lineTotal * ($effectiveTaxRate ?? 0) / 100, 2);
+                        $lineTotal = round($qty * (float) $row['price'], 2);
+                        $lineTax   = $this->taxService->calculateLineTax($lineTotal, $effectiveTaxRate);
 
                         SaleItem::create([
                             'sale_id'    => $sale->id,
@@ -148,21 +149,21 @@ class DebitSalesController extends Controller
                             'item_name'  => $item->description,
                             'batch_id'   => null,
                             'qty'        => $qty,
-                            'rate'       => $row['price'],
+                            'rate'       => (float) $row['price'],
                             'total'      => $lineTotal,
-                            'tax_rate'   => $effectiveTaxRate,
-                            'tax_amount' => $taxAmount,
+                            'tax_rate'   => $lineTax['tax_rate'],
+                            'tax_amount' => $lineTax['tax_amount'],
                             'note'       => $itemNote,
                         ]);
                         $calculatedSubtotal += $lineTotal;
-                        $calculatedTaxTotal += $taxAmount;
+                        $calculatedTaxTotal += $lineTax['tax_amount'];
                     } else {
                         // Stock item: FIFO deduction — may span multiple batches
                         $result = $fifo->deductStock($item->id, $qty, $sale->id, Auth::id());
 
                         foreach ($result['batches_used'] as $batchUsed) {
-                            $lineTotal   = round($batchUsed['quantity_deducted'] * $batchUsed['sale_price'], 2);
-                            $taxAmount   = round($lineTotal * ($effectiveTaxRate ?? 0) / 100, 2);
+                            $lineTotal = round($batchUsed['quantity_deducted'] * $batchUsed['sale_price'], 2);
+                            $lineTax   = $this->taxService->calculateLineTax($lineTotal, $effectiveTaxRate);
 
                             SaleItem::create([
                                 'sale_id'    => $sale->id,
@@ -172,12 +173,12 @@ class DebitSalesController extends Controller
                                 'qty'        => $batchUsed['quantity_deducted'],
                                 'rate'       => $batchUsed['sale_price'],
                                 'total'      => $lineTotal,
-                                'tax_rate'   => $effectiveTaxRate,
-                                'tax_amount' => $taxAmount,
+                                'tax_rate'   => $lineTax['tax_rate'],
+                                'tax_amount' => $lineTax['tax_amount'],
                                 'note'       => $itemNote,
                             ]);
                             $calculatedSubtotal += $lineTotal;
-                            $calculatedTaxTotal += $taxAmount;
+                            $calculatedTaxTotal += $lineTax['tax_amount'];
                         }
                     }
                 }
@@ -187,16 +188,26 @@ class DebitSalesController extends Controller
 
                 $sale->update([
                     'subtotal'    => $calculatedSubtotal,
-                    'tax_rate'    => $calculatedSubtotal > 0 ? round(($calculatedTaxTotal / $calculatedSubtotal) * 100, 4) : 0,
+                    'tax_rate'    => $calculatedSubtotal > 0 ? round(($calculatedTaxTotal / $calculatedSubtotal) * 100, 2) : 0,
                     'tax_total'   => $calculatedTaxTotal,
                     'grand_total' => $grandTotal,
                 ]);
 
-                // D. Update customer balance (amount still owed)
+                // D. Update customer balance (amount still owed) and record ledger entry
                 $customer = Customer::lockForUpdate()->find($request->customer_id);
                 if ($customer) {
                     $due = max(0, $grandTotal - $paid);
                     $customer->increment('balance', $due);
+
+                    CustomerLedgerEntry::create([
+                        'customer_id'   => $customer->id,
+                        'type'          => 'sale',
+                        'amount'        => $due,
+                        'balance_after' => $customer->balance,
+                        'method'        => 'Debit',
+                        'note'          => 'Debit Sale Invoice #' . ($sale->invoice_no ?? $sale->id) . ($paid > 0 ? ' (Paid: Rs. ' . number_format($paid, 2) . ')' : ''),
+                        'created_by'    => Auth::id(),
+                    ]);
                 }
 
                 return $sale;

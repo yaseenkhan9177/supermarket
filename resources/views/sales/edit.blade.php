@@ -214,6 +214,7 @@
                             <th class="py-3 px-4">Item Name / Code</th>
                             <th class="py-3 px-4 w-32 text-center">Qty</th>
                             <th class="py-3 px-4 w-36 text-right">Unit Rate (Rs.)</th>
+                            <th class="py-3 px-4 w-28 text-center">Tax %</th>
                             <th class="py-3 px-4 w-36 text-right">Total (Rs.)</th>
                             <th class="py-3 px-4 w-36 text-center">Stock Delta</th>
                             <th class="py-3 px-4 w-16 text-center">Action</th>
@@ -235,6 +236,7 @@
                                     <input type="hidden" :name="'items[' + index + '][batch_id]'" :value="row.batch_id || ''">
                                     <input type="hidden" :name="'items[' + index + '][qty]'" :value="row.qty">
                                     <input type="hidden" :name="'items[' + index + '][rate]'" :value="row.rate">
+                                    <input type="hidden" :name="'items[' + index + '][tax_rate]'" :value="row.tax_rate ?? 0">
                                 </td>
                                 <td class="py-3 px-4 text-center">
                                     <input type="number" step="any" min="0.01"
@@ -247,6 +249,16 @@
                                         x-model.number="row.rate"
                                         @input="recalculateTotals()"
                                         class="w-28 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-right font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 text-sm">
+                                </td>
+                                {{-- Tax % Input --}}
+                                <td class="py-3 px-4 text-center">
+                                    <div class="flex flex-col items-center gap-0.5">
+                                        <input type="number" step="0.01" min="0" max="100"
+                                            x-model.number="row.tax_rate"
+                                            @input="recalculateTotals()"
+                                            class="w-16 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-1 text-center font-bold text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-blue-500">
+                                        <span class="text-[10px] text-slate-500" x-text="'Rs. ' + (((parseFloat(row.qty)||0) * (parseFloat(row.rate)||0) * (parseFloat(row.tax_rate)||0)) / 100).toFixed(2)"></span>
+                                    </div>
                                 </td>
                                 <td class="py-3 px-4 text-right font-bold text-slate-800 dark:text-white">
                                     Rs. <span x-text="(row.qty * row.rate).toFixed(2)"></span>
@@ -282,7 +294,7 @@
                         </template>
 
                         <tr x-show="items.length === 0">
-                            <td colspan="7" class="py-8 text-center text-slate-400">
+                            <td colspan="8" class="py-8 text-center text-slate-400">
                                 <i class="fas fa-shopping-basket text-3xl mb-2 opacity-40"></i>
                                 <p class="font-bold">No items on this invoice.</p>
                                 <p class="text-xs">Use the search bar above to add products.</p>
@@ -465,18 +477,19 @@
             },
 
             get calculatedTax() {
-                if (!this.taxSettings || !this.taxSettings.tax_enabled) {
-                    return parseFloat(this.taxTotal) || 0;
-                }
-                let rate = parseFloat(this.taxSettings.tax_rate) || 0;
-                let taxable = Math.max(0, this.subtotal - (parseFloat(this.discountTotal) || 0));
-                return Math.round((taxable * rate / 100) * 100) / 100;
+                let sum = 0;
+                this.items.forEach(i => {
+                    let lineTotal = (parseFloat(i.qty) || 0) * (parseFloat(i.rate) || 0);
+                    let rate = parseFloat(i.tax_rate) || 0;
+                    sum += (lineTotal * rate / 100);
+                });
+                return Math.round(sum * 100) / 100;
             },
 
             get grandTotal() {
                 let sub = this.subtotal;
                 let disc = parseFloat(this.discountTotal) || 0;
-                let tax = (this.taxSettings && this.taxSettings.tax_enabled) ? this.calculatedTax : (parseFloat(this.taxTotal) || 0);
+                let tax = parseFloat(this.taxTotal) || this.calculatedTax || 0;
                 return Math.max(0, Math.round((sub - disc + tax) * 100) / 100);
             },
 
@@ -517,6 +530,9 @@
                         batch_id: null,
                         qty: 1,
                         rate: parseFloat(product.sale_rate || product.sale_price || product.price || 0),
+                        tax_rate: (product.tax_rate !== undefined && product.tax_rate !== null)
+                            ? parseFloat(product.tax_rate)
+                            : (this.taxSettings && this.taxSettings.tax_enabled ? parseFloat(this.taxSettings.tax_rate) || 0 : 0),
                     });
                 }
 
@@ -531,9 +547,7 @@
             },
 
             recalculateTotals() {
-                if (this.taxSettings && this.taxSettings.tax_enabled) {
-                    this.taxTotal = this.calculatedTax;
-                }
+                this.taxTotal = this.calculatedTax;
                 if (this.paymentMode === 'Cash' && (!this.paidAmount || this.paidAmount <= 0)) {
                     this.paidAmount = this.grandTotal;
                 }

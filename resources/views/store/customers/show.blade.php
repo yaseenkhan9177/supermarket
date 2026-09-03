@@ -28,9 +28,13 @@
                 {{ $customer->balance > 0 ? 'Has Debit Balance'
                    : ($customer->balance < 0 ? 'Overpaid' : 'Settled') }}
             </span>
+            <button type="button" @click="openEditModal = true"
+               class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition shadow-sm">
+                <i class="fas fa-user-edit"></i> Edit Profile
+            </button>
             <a href="{{ route('customers.edit', $customer->id) }}"
                class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 hover:dark:bg-indigo-900/60 text-xs font-bold rounded-lg transition">
-                <i class="fas fa-edit"></i> Edit
+                <i class="fas fa-external-link-alt"></i> Full Edit
             </a>
             <form action="{{ route('customers.destroy', $customer->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this customer?');" class="inline">
                 @csrf
@@ -55,6 +59,11 @@
                     @if($customer->phone)
                         <span class="px-2.5 py-1 bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs font-semibold rounded-full">
                             <i class="fas fa-phone mr-1"></i>{{ $customer->phone }}
+                        </span>
+                    @endif
+                    @if(!empty($customer->email))
+                        <span class="px-2.5 py-1 bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-xs font-semibold rounded-full">
+                            <i class="fas fa-envelope mr-1"></i>{{ $customer->email }}
                         </span>
                     @endif
                     {{-- Status badge --}}
@@ -300,6 +309,7 @@
                                 <th class="p-4">Invoice No</th>
                                 <th class="p-4">Date</th>
                                 <th class="p-4 text-center">Items</th>
+                                <th class="p-4 text-right">Tax</th>
                                 <th class="p-4 text-right">Total</th>
                                 <th class="p-4 text-center">Actions</th>
                             </tr>
@@ -311,24 +321,33 @@
                                     {{ $sale->invoice_no ?: '—' }}
                                 </td>
                                 <td class="p-4 text-slate-600 dark:text-slate-400">
-                                    {{ \Carbon\Carbon::parse($sale->sale_date)->format('d M Y') }}
+                                    {{ \Carbon\Carbon::parse($sale->sale_date ?? $sale->created_at)->format('d M Y') }}
                                 </td>
                                 <td class="p-4 text-center font-semibold text-slate-700 dark:text-slate-300">
                                     {{ $sale->items_count }}
+                                </td>
+                                <td class="p-4 text-right font-semibold text-slate-600 dark:text-slate-400">
+                                    Rs. {{ number_format($sale->tax_total ?? 0, 2) }}
                                 </td>
                                 <td class="p-4 text-right font-black text-slate-800 dark:text-white">
                                     Rs. {{ number_format($sale->grand_total, 2) }}
                                 </td>
                                 <td class="p-4 text-center">
-                                    <a href="{{ route('cash-sales.show', $sale->id) }}" target="_blank"
-                                       class="inline-flex items-center gap-1 text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 px-2.5 py-1.5 rounded-lg text-xs font-bold transition">
-                                        <i class="fas fa-print"></i> Print
-                                    </a>
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <a href="{{ route('cash-sales.show', $sale->id) }}" target="_blank"
+                                           class="inline-flex items-center gap-1 text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 px-2.5 py-1.5 rounded-lg text-xs font-bold transition">
+                                            <i class="fas fa-print"></i> Print
+                                        </a>
+                                        <a href="{{ route('sales.edit', $sale->id) }}"
+                                           class="inline-flex items-center gap-1 text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" class="p-10 text-center text-slate-400 dark:text-slate-500">
+                                <td colspan="6" class="p-10 text-center text-slate-400 dark:text-slate-500">
                                     <i class="fas fa-receipt text-3xl mb-2 block opacity-30"></i>
                                     No cash sales recorded for this customer.
                                 </td>
@@ -358,53 +377,75 @@
                             <tr>
                                 <th class="p-4">Invoice No</th>
                                 <th class="p-4">Date</th>
-                                <th class="p-4">Due Date</th>
                                 <th class="p-4 text-center">Items</th>
-                                <th class="p-4 text-right">Net Total</th>
-                                <th class="p-4">Status</th>
+                                <th class="p-4 text-right">Tax</th>
+                                <th class="p-4 text-right">Total</th>
+                                <th class="p-4 text-right">Paid</th>
+                                <th class="p-4 text-right">Balance Due</th>
+                                <th class="p-4 text-center">Status</th>
                                 <th class="p-4 text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                             @forelse($debitSales as $sale)
+                            @php
+                                $paid = (float) ($sale->paid_amount ?? 0);
+                                $total = (float) $sale->grand_total;
+                                $balanceDue = max(0.00, round($total - $paid, 2));
+                            @endphp
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
                                 <td class="p-4 font-mono font-bold text-slate-800 dark:text-white text-sm">
                                     {{ $sale->invoice_no ?: '—' }}
                                 </td>
                                 <td class="p-4 text-slate-600 dark:text-slate-400">
-                                    {{ \Carbon\Carbon::parse($sale->invoice_date)->format('d M Y') }}
-                                </td>
-                                <td class="p-4 text-slate-600 dark:text-slate-400">
-                                    {{ $sale->due_date ? \Carbon\Carbon::parse($sale->due_date)->format('d M Y') : '—' }}
+                                    {{ \Carbon\Carbon::parse($sale->sale_date ?? $sale->created_at)->format('d M Y') }}
                                 </td>
                                 <td class="p-4 text-center font-semibold text-slate-700 dark:text-slate-300">
                                     {{ $sale->items_count }}
                                 </td>
-                                <td class="p-4 text-right font-black text-slate-800 dark:text-white">
-                                    Rs. {{ number_format($sale->net_total, 2) }}
+                                <td class="p-4 text-right font-semibold text-slate-600 dark:text-slate-400">
+                                    Rs. {{ number_format($sale->tax_total ?? 0, 2) }}
                                 </td>
-                                <td class="p-4">
-                                    @php
-                                        $statusMap = [
-                                            'open'    => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-400',
-                                            'paid'    => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400',
-                                            'overdue' => 'bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400',
-                                        ];
-                                    @endphp
-                                    <span class="px-2 py-0.5 text-xs font-bold rounded-full {{ $statusMap[$sale->status] ?? 'bg-slate-100 text-slate-600' }}">
-                                        {{ ucfirst($sale->status) }}
-                                    </span>
+                                <td class="p-4 text-right font-black text-slate-800 dark:text-white">
+                                    Rs. {{ number_format($total, 2) }}
+                                </td>
+                                <td class="p-4 text-right font-semibold text-emerald-600 dark:text-emerald-400">
+                                    Rs. {{ number_format($paid, 2) }}
+                                </td>
+                                <td class="p-4 text-right font-black {{ $balanceDue > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-400' }}">
+                                    Rs. {{ number_format($balanceDue, 2) }}
                                 </td>
                                 <td class="p-4 text-center">
-                                    <a href="{{ route('debit-sales.show', $sale->id) }}" target="_blank"
-                                       class="inline-flex items-center gap-1 text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 px-2.5 py-1.5 rounded-lg text-xs font-bold transition">
-                                        <i class="fas fa-print"></i> Print
-                                    </a>
+                                    @if($balanceDue <= 0)
+                                        <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400">
+                                            Paid
+                                        </span>
+                                    @elseif($paid > 0)
+                                        <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-400">
+                                            Partial
+                                        </span>
+                                    @else
+                                        <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400">
+                                            Unpaid
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="p-4 text-center">
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <a href="{{ route('debit-sales.show', $sale->id) }}" target="_blank"
+                                           class="inline-flex items-center gap-1 text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50 px-2.5 py-1.5 rounded-lg text-xs font-bold transition">
+                                            <i class="fas fa-print"></i> Print
+                                        </a>
+                                        <a href="{{ route('sales.edit', $sale->id) }}"
+                                           class="inline-flex items-center gap-1 text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="p-10 text-center text-slate-400 dark:text-slate-500">
+                                <td colspan="9" class="p-10 text-center text-slate-400 dark:text-slate-500">
                                     <i class="fas fa-file-invoice text-3xl mb-2 block opacity-30"></i>
                                     No debit sales recorded for this customer.
                                 </td>
@@ -931,6 +972,70 @@
 
     @endif
 
+    {{-- 7. QUICK EDIT CUSTOMER PROFILE MODAL --}}
+    <div x-show="openEditModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" @click="openEditModal = false"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-indigo-200 dark:border-indigo-900 max-w-lg w-full p-6 md:p-8 relative z-10" @click.stop>
+                <div class="flex items-center justify-between mb-5">
+                    <h3 class="text-xl font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-user-edit text-indigo-600 dark:text-indigo-400"></i> Edit Customer Profile
+                    </h3>
+                    <button @click="openEditModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-5">
+                    Update customer contact details safely. Customer balance and ledger entries will remain completely intact.
+                </p>
+                <form @submit.prevent="submitEditCustomer" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Customer Name <span class="text-red-500">*</span></label>
+                        <input type="text" x-model="editCustomerData.name" required
+                               class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
+                            <input type="text" x-model="editCustomerData.phone"
+                                   placeholder="e.g. 03001234567"
+                                   class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
+                            <input type="email" x-model="editCustomerData.email"
+                                   placeholder="customer@example.com"
+                                   class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Address</label>
+                        <input type="text" x-model="editCustomerData.address"
+                               placeholder="Street, City, Area"
+                               class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Credit Limit (Rs.)</label>
+                        <input type="number" step="0.01" min="0" x-model="editCustomerData.credit_limit"
+                               class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <span class="text-[10px] text-slate-400">Maximum allowable outstanding debit balance.</span>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
+                        <button type="button" @click="openEditModal = false"
+                                class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl transition">
+                            Cancel
+                        </button>
+                        <button type="submit" :disabled="loading"
+                                class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-2">
+                            <i class="fas fa-spinner fa-spin" x-show="loading" style="display: none;"></i>
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -943,6 +1048,47 @@ function customerLedger() {
         openWriteOffModal: false,
         openReinstateModal: false,
         openReverseEntryModal: false,
+        openEditModal: false,
+
+        editCustomerData: {
+            name: @json($customer->name),
+            phone: @json($customer->phone ?? ''),
+            email: @json($customer->email ?? ''),
+            address: @json($customer->address ?? ''),
+            credit_limit: {{ (float) ($customer->credit_limit ?? 0) }},
+        },
+
+        async submitEditCustomer() {
+            if (!this.editCustomerData.name || this.editCustomerData.name.trim().length < 1) {
+                alert('Customer name is required.');
+                return;
+            }
+            this.loading = true;
+            try {
+                const res = await fetch('{{ route("customers.update", $customer->id) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-HTTP-Method-Override': 'PUT',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(this.editCustomerData)
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    this.openEditModal = false;
+                    this.showToast(data.message || 'Profile updated successfully!', 'success');
+                    setTimeout(() => window.location.reload(), 600);
+                } else {
+                    alert(data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Error updating profile.'));
+                }
+            } catch (e) {
+                alert('Network or server error.');
+            } finally {
+                this.loading = false;
+            }
+        },
 
         receiveData: {
             amount: '{{ $customer->balance > 0 ? number_format($customer->balance, 2, ".", "") : 0 }}',
