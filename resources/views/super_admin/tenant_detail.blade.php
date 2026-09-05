@@ -49,7 +49,11 @@
                 <p class="text-xs text-slate-400 font-mono mt-0.5">Tenant ID: {{ $tenant->id }}</p>
                 <p class="text-xs text-slate-400 font-mono mt-0.5">Database: {{ $tenant->database_name }}</p>
             </div>
-            <div>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('super.balance-conversion.preview', $tenant->id) }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-bold rounded-lg transition shadow-sm">
+                    <i class="fas fa-exchange-alt text-amber-600"></i> Convert Balances
+                </a>
                 @if($tenant->status === 'pending')
                     <span class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider">
                         <i class="fas fa-clock mr-1"></i> Pending Approval

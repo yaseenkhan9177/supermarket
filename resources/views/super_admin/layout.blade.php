@@ -152,6 +152,12 @@
                     System Logs
                 </a>
 
+                <a href="{{ route('super.balance-conversion.index') }}"
+                   class="nav-link flex items-center px-3 py-2.5 text-slate-300 rounded-lg text-sm {{ request()->routeIs('super.balance-conversion.*') ? 'nav-active' : '' }}">
+                    <i class="fas fa-exchange-alt w-4 h-4 mr-3 text-center text-amber-400 flex-shrink-0"></i>
+                    Convert Customer Balances
+                </a>
+
                 <a href="{{ route('super.settings') }}"
                    class="nav-link flex items-center px-3 py-2.5 text-slate-300 rounded-lg text-sm {{ request()->routeIs('super.settings') ? 'nav-active' : '' }}">
                     <i class="fas fa-cogs w-4 h-4 mr-3 text-center text-slate-400 flex-shrink-0"></i>

@@ -699,6 +699,70 @@ class CustomerController extends Controller
         ]);
     }
 
+    /**
+     * Convert customer balance (+ to - or - to +).
+     * Formula: new_balance = old_balance * -1
+     */
+    public function convertBalance(Request $request, $id)
+    {
+        $this->checkAdminPermission();
+
+        $request->validate([
+            'note' => 'nullable|string|max:1000',
+        ]);
+
+        $customer = Customer::findOrFail($id);
+        $oldBalance = (float) $customer->balance;
+
+        if ($oldBalance == 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Balance is already zero — nothing to convert.'
+            ], 422);
+        }
+
+        $newBalance = -$oldBalance;
+        $delta = $newBalance - $oldBalance; // e.g. from +50 to -50: delta is -100
+
+        $note = $request->filled('note')
+            ? $request->note
+            : "Balance converted from " . ($oldBalance > 0 ? "+Rs. " : "-Rs. ") . number_format(abs($oldBalance), 2)
+              . " to " . ($newBalance > 0 ? "+Rs. " : "-Rs. ") . number_format(abs($newBalance), 2);
+
+        DB::transaction(function () use ($customer, $oldBalance, $newBalance, $delta, $note) {
+            $customer->balance = $newBalance;
+            $customer->save();
+
+            CustomerLedgerEntry::create([
+                'customer_id'   => $customer->id,
+                'type'          => 'balance_conversion',
+                'amount'        => $delta,
+                'balance_after' => $newBalance,
+                'note'          => $note,
+                'created_by'    => auth()->id(),
+            ]);
+
+            AuditLog::record(
+                'customer_balance_conversion',
+                "Converted balance for customer {$customer->name} from Rs. " . number_format($oldBalance, 2) . " to Rs. " . number_format($newBalance, 2) . " — Note: {$note}",
+                'Customer',
+                $customer->id,
+                ['old_balance' => $oldBalance, 'new_balance' => $newBalance, 'delta' => $delta]
+            );
+        });
+
+        $customer->refresh();
+
+        return response()->json([
+            'success'           => true,
+            'message'           => 'Customer balance converted successfully.',
+            'old_balance'       => $oldBalance,
+            'balance'           => (float) $customer->balance,
+            'store_credit'      => (float) $customer->store_credit,
+            'formatted_balance' => ($customer->balance < 0 ? '-' : '') . 'Rs. ' . number_format(abs($customer->balance), 2),
+        ]);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // WRITE OFF
     // ─────────────────────────────────────────────────────────────────────────

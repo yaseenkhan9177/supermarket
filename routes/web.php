@@ -228,6 +228,7 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
     // Item create/edit
     Route::get('/items/create', [\App\Http\Controllers\ItemController::class, 'create'])->name('items.create');
     Route::post('/items/store', [\App\Http\Controllers\ItemController::class, 'store'])->name('items.store');
+    Route::post('/items/quick-store', [\App\Http\Controllers\ItemController::class, 'quickStore'])->name('items.quick-store');
     Route::get('/items/{id}/edit', [\App\Http\Controllers\ItemController::class, 'edit'])->name('items.edit');
     Route::post('/items/{id}/update', [\App\Http\Controllers\ItemController::class, 'update'])->name('items.update');
 
@@ -259,6 +260,7 @@ Route::middleware(['auth:web,employee', 'role_or_permission:owner|manager'])->gr
     Route::post('/customers/{id}/payments/receive', [\App\Http\Controllers\Store\CustomerController::class, 'receivePayment'])->name('customers.payments.receive');
     Route::post('/customers/{id}/payments/pay', [\App\Http\Controllers\Store\CustomerController::class, 'payCustomer'])->name('customers.payments.pay');
     Route::post('/customers/{id}/adjust-balance', [\App\Http\Controllers\Store\CustomerController::class, 'adjustBalance'])->name('customers.adjust-balance');
+    Route::post('/customers/{id}/convert-balance', [\App\Http\Controllers\Store\CustomerController::class, 'convertBalance'])->name('customers.convert-balance');
     Route::post('/customers/{id}/write-off', [\App\Http\Controllers\Store\CustomerController::class, 'writeOffBalance'])->name('customers.write-off');
     Route::post('/customers/{id}/reinstate', [\App\Http\Controllers\Store\CustomerController::class, 'reinstateCustomer'])->name('customers.reinstate');
     Route::post('/customers/{id}/ledger/{entryId}/reverse', [\App\Http\Controllers\Store\CustomerController::class, 'reverseLedgerEntry'])->name('customers.ledger.reverse');
@@ -488,6 +490,7 @@ Route::middleware(['auth:web', 'role:owner'])->group(function () {
 
 use App\Http\Controllers\SuperAdmin\AuthController as SuperAuthController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperDashboardController;
+use App\Http\Controllers\SuperAdmin\CustomerBalanceConversionController;
 
 // Platform Admin routes (/platform-admin & /super)
 Route::prefix('platform-admin')->group(function () {
@@ -505,6 +508,9 @@ Route::prefix('platform-admin')->group(function () {
         Route::post('/tenants/{id}/update-paid-until', [SuperDashboardController::class, 'updatePaidUntil'])->name('platform.tenants.updatePaidUntil');
         Route::post('/tenants/{id}/suspend', [SuperDashboardController::class, 'suspendTenant'])->name('platform.tenants.suspend');
         Route::post('/tenants/{id}/unsuspend', [SuperDashboardController::class, 'unsuspendTenant'])->name('platform.tenants.unsuspend');
+        Route::get('/balance-conversion', [CustomerBalanceConversionController::class, 'index'])->name('platform.balance-conversion.index');
+        Route::get('/balance-conversion/{tenant}', [CustomerBalanceConversionController::class, 'preview'])->name('platform.balance-conversion.preview');
+        Route::post('/balance-conversion/{tenant}/convert', [CustomerBalanceConversionController::class, 'convert'])->name('platform.balance-conversion.convert');
     });
 });
 
@@ -546,5 +552,10 @@ Route::prefix('super')->group(function () {
         Route::post('/users/{id}/update', [SuperDashboardController::class, 'updateUser'])->name('super.users.update');
         Route::post('/users/{id}/delete', [SuperDashboardController::class, 'destroyUser'])->name('super.users.destroy');
         Route::post('/users/{id}/toggle', [SuperDashboardController::class, 'toggleUser'])->name('super.users.toggle');
+
+        // Customer Balance Conversion Tool
+        Route::get('/balance-conversion', [CustomerBalanceConversionController::class, 'index'])->name('super.balance-conversion.index');
+        Route::get('/balance-conversion/{tenant}', [CustomerBalanceConversionController::class, 'preview'])->name('super.balance-conversion.preview');
+        Route::post('/balance-conversion/{tenant}/convert', [CustomerBalanceConversionController::class, 'convert'])->name('super.balance-conversion.convert');
     });
 });

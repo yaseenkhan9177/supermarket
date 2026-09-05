@@ -22,11 +22,11 @@
         </a>
         <div class="flex items-center gap-3">
             <span class="px-3 py-1 text-xs font-bold uppercase rounded-full
-                {{ $customer->balance > 0 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
-                : ($customer->balance < 0 ? 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300'
+                {{ $customer->balance > 0 ? 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300'
+                : ($customer->balance < 0 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
                 : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-400') }}">
-                {{ $customer->balance > 0 ? 'Has Debit Balance'
-                   : ($customer->balance < 0 ? 'Overpaid' : 'Settled') }}
+                {{ $customer->balance > 0 ? 'Pay to Store'
+                   : ($customer->balance < 0 ? 'Pay to Customer' : 'No Balance') }}
             </span>
             <button type="button" @click="openEditModal = true"
                class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition shadow-sm">
@@ -87,18 +87,18 @@
 
             {{-- Right side — balance + store credit --}}
             <div class="flex flex-col sm:flex-row gap-6 text-left sm:text-right">
-                {{-- Debit Balance --}}
+                {{-- Balance --}}
                 <div class="flex flex-col">
-                    <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Debit Balance</p>
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Balance</p>
                     @if($customer->balance > 0)
                         <h2 class="text-2xl font-black text-red-600 dark:text-red-400 mt-0.5" id="lbl-customer-balance">Rs. {{ number_format($customer->balance, 2) }}</h2>
-                        <span class="text-xs text-red-500/80 mt-0.5">Customer owes us</span>
+                        <span class="text-xs font-bold text-red-600 dark:text-red-400 mt-0.5">Pay to Store</span>
                     @elseif($customer->balance < 0)
-                        <h2 class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5" id="lbl-customer-balance">Rs. {{ number_format(abs($customer->balance), 2) }}</h2>
-                        <span class="text-xs text-emerald-500/80 mt-0.5">We owe customer</span>
+                        <h2 class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5" id="lbl-customer-balance">Rs. {{ number_format($customer->balance, 2) }}</h2>
+                        <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">Pay to Customer</span>
                     @else
                         <h2 class="text-2xl font-black text-slate-400 mt-0.5" id="lbl-customer-balance">Rs. 0.00</h2>
-                        <span class="text-xs text-slate-400 mt-0.5">No balance outstanding</span>
+                        <span class="text-xs font-bold text-slate-400 mt-0.5">No Balance</span>
                     @endif
                 </div>
 
@@ -139,6 +139,14 @@
                                 class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white dark:bg-slate-700 dark:hover:bg-slate-600 text-xs font-extrabold rounded-xl shadow-sm transition transform active:scale-95">
                             <i class="fas fa-sliders-h text-sm"></i> Adjust Balance
                         </button>
+
+                        @if(($customer->balance ?? 0) != 0)
+                            <button @click="openConvertModal = true"
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold rounded-xl shadow-sm transition transform active:scale-95"
+                                    title="Invert balance: positive to negative or negative to positive">
+                                <i class="fas fa-exchange-alt text-sm"></i> Convert Balance
+                            </button>
+                        @endif
                     @endif
 
                     {{-- Write Off / Reinstate --}}
@@ -574,6 +582,7 @@
                                             'payment_received'  => ['label' => 'Payment Received',  'class' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'],
                                             'payment_made'      => ['label' => 'Payout (Made)',     'class' => 'bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300'],
                                             'manual_adjustment' => ['label' => 'Adjustment',        'class' => 'bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300'],
+                                            'balance_conversion'=> ['label' => 'Balance Converted', 'class' => 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300'],
                                             'write_off'         => ['label' => 'Write Off',         'class' => 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400'],
                                             'write_off_reversal'=> ['label' => 'Write Off Reversed','class' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300'],
                                             'payment_reversal'  => ['label' => 'Reversed',          'class' => 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-400'],
@@ -836,6 +845,78 @@
             </div>
         </div>
 
+        {{-- 3B. CONVERT BALANCE MODAL --}}
+        <div x-show="openConvertModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" @click="openConvertModal = false"></div>
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-amber-200 dark:border-amber-900 max-w-md w-full p-6 md:p-8 relative z-10" @click.stop>
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-xl font-extrabold text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                            <i class="fas fa-exchange-alt"></i> Convert Balance
+                        </h3>
+                        <button @click="openConvertModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    @php
+                        $curBal = (float)($customer->balance ?? 0);
+                        $invBal = -$curBal;
+                    @endphp
+
+                    <div class="mb-5 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl space-y-3">
+                        <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                            This will invert the customer's balance sign from positive to negative or vice versa.
+                        </p>
+                        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-amber-200/60 dark:border-amber-800/60 text-center">
+                            <div class="p-2.5 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+                                <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Current Balance</span>
+                                <span class="text-sm font-extrabold {{ $curBal > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400' }}">
+                                    {{ $curBal > 0 ? '+Rs. ' . number_format($curBal, 2) : '-Rs. ' . number_format(abs($curBal), 2) }}
+                                </span>
+                                <span class="block text-[10px] font-medium text-slate-500 mt-0.5">
+                                    {{ $curBal > 0 ? 'Customer owes Store' : 'Store owes Customer' }}
+                                </span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+                                <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">After Conversion</span>
+                                <span class="text-sm font-extrabold {{ $invBal > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400' }}">
+                                    {{ $invBal > 0 ? '+Rs. ' . number_format($invBal, 2) : '-Rs. ' . number_format(abs($invBal), 2) }}
+                                </span>
+                                <span class="block text-[10px] font-medium text-slate-500 mt-0.5">
+                                    {{ $invBal > 0 ? 'Customer owes Store' : 'Store owes Customer' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form @submit.prevent="submitConvertBalance">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                    Note / Reason <span class="text-slate-400 font-normal">(Optional)</span>
+                                </label>
+                                <textarea x-model="convertData.note" rows="2" placeholder="e.g. Inverted balance per audit / account adjustment..."
+                                          class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white font-normal text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex items-center justify-end gap-3">
+                            <button type="button" @click="openConvertModal = false"
+                                    class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl transition">
+                                Cancel
+                            </button>
+                            <button type="submit" :disabled="loading"
+                                    class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-2">
+                                <i class="fas fa-spinner fa-spin" x-show="loading" style="display: none;"></i>
+                                Confirm Conversion
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         {{-- 4. WRITE OFF MODAL --}}
         <div x-show="openWriteOffModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
             <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" @click="openWriteOffModal = false"></div>
@@ -1045,6 +1126,7 @@ function customerLedger() {
         openReceiveModal: false,
         openPayModal: false,
         openAdjustModal: false,
+        openConvertModal: false,
         openWriteOffModal: false,
         openReinstateModal: false,
         openReverseEntryModal: false,
@@ -1105,6 +1187,9 @@ function customerLedger() {
         adjustData: {
             action: 'reduce_debt',
             amount: '',
+            note: ''
+        },
+        convertData: {
             note: ''
         },
         writeOffData: {
@@ -1218,6 +1303,33 @@ function customerLedger() {
                     setTimeout(() => window.location.reload(), 800);
                 } else {
                     alert(data.message || 'Error adjusting balance.');
+                }
+            } catch (e) {
+                alert('Network or server error.');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async submitConvertBalance() {
+            this.loading = true;
+            try {
+                const res = await fetch('{{ route("customers.convert-balance", $customer->id) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(this.convertData)
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    this.openConvertModal = false;
+                    this.showToast(data.message, 'success');
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    alert(data.message || 'Error converting balance.');
                 }
             } catch (e) {
                 alert('Network or server error.');

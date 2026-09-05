@@ -120,10 +120,16 @@
                     <h3 class="font-bold text-white text-sm flex items-center gap-2">
                         <i class="fas fa-boxes text-indigo-400"></i> Items Received
                     </h3>
-                    <button type="button" @click="addRow()"
-                            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow">
-                        <i class="fas fa-plus mr-1"></i> Add Row
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button type="button" @click="openQuickProductModal({})"
+                                class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition shadow flex items-center gap-1.5">
+                            <i class="fas fa-box-open"></i> New Product
+                        </button>
+                        <button type="button" @click="addRow()"
+                                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow">
+                            <i class="fas fa-plus mr-1"></i> Add Row
+                        </button>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-sm">
@@ -501,6 +507,9 @@
                     <i class="fas fa-save mr-1"></i> Save
                 </button>
             </div>
+        </div>
+    </div>
+
     <!-- Modal: Quick Add Product -->
     <div x-show="showQuickProductModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100]" style="display:none;">
         <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl text-white">
@@ -595,24 +604,40 @@
             quickProduct: { description: '', code: '', barcode: '', cost_rate: 0, price: 0, tax_rate: '', item_type: 'Inventory' },
             openQuickProductModal(detail) {
                 let q = (detail && detail.query) ? detail.query : '';
-                this.quickProduct.description = q;
-                this.quickProduct.code = q;
-                this.quickProduct.barcode = q;
+                this.quickProduct = {
+                    description: q,
+                    code: q,
+                    barcode: q,
+                    cost_rate: 0,
+                    price: 0,
+                    tax_rate: '',
+                    item_type: 'Inventory'
+                };
                 this.showQuickProductModal = true;
             },
             async saveQuickProduct() {
-                if (!this.quickProduct.description) {
+                if (!this.quickProduct.description || !this.quickProduct.description.trim()) {
                     alert('Product name is required.');
                     return;
                 }
+                const payload = {
+                    description: this.quickProduct.description.trim(),
+                    code: this.quickProduct.code || '',
+                    barcode: this.quickProduct.barcode || '',
+                    cost_rate: parseFloat(this.quickProduct.cost_rate) || 0,
+                    price: parseFloat(this.quickProduct.price) || 0,
+                    tax_rate: (this.quickProduct.tax_rate !== '' && this.quickProduct.tax_rate !== null) ? parseFloat(this.quickProduct.tax_rate) : null,
+                    item_type: this.quickProduct.item_type || 'Inventory'
+                };
                 try {
-                    let res = await fetch('/items/quick-store', {
+                    let res = await fetch('{{ route("items.quick-store") }}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
                         },
-                        body: JSON.stringify(this.quickProduct)
+                        body: JSON.stringify(payload)
                     });
                     let data = await res.json();
                     if (data.success) {
@@ -627,10 +652,10 @@
                         this.showQuickProductModal = false;
                         this.quickProduct = { description: '', code: '', barcode: '', cost_rate: 0, price: 0, tax_rate: '', item_type: 'Inventory' };
                         if (typeof Swal !== 'undefined') {
-                            Swal.fire({ title: 'Added!', text: 'Product created successfully.', icon: 'success', background: '#1f2937', color: '#fff', timer: 1500, showConfirmButton: false });
+                            Swal.fire({ title: 'Added!', text: 'Product created and added to bill.', icon: 'success', background: '#1f2937', color: '#fff', timer: 1500, showConfirmButton: false });
                         }
                     } else {
-                        alert(data.message || 'Error creating product.');
+                        alert(data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Error creating product.'));
                     }
                 } catch(e) {
                     console.error('Quick store failed', e);
